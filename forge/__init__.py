@@ -19,9 +19,14 @@
     dist      分发：清单与收包（导入时逐条查路径，恶意包整包拒收）
     sandbox   沙箱友好模式：只创建、只覆盖 —— 不许删 / 不许改名时也能干活
     guard     只读禁区名单（任何写操作落盘前先问它）
+    png       卡 → 图片卡（PNG tEXt `eleckoi-card`，手机端导入唯一认的）
+    preset    卡 → ElecKoi 创作预设（PNG tEXt `eleckoi_agent_preset`；**不 gzip**）
+    plan      规划书：九节模板 / 从现成卡反推 / `--查` 体检
+    lint      正文体检（防八股）：只查句式骨架，不查词
+    cli       薄壳：找到仓库根，把 `forge.py` 当脚本跑起来（`python -m forge` / `pip` 入口）
 """
 
-__version__ = "0.27.0"
+__version__ = "0.28.0"
 
 # 内核里的提示语是中文 + ✔ / ✘ 这类符号，而 Windows 控制台默认是 GBK：
 # 不换编码就会 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2714'`。

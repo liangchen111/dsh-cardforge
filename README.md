@@ -39,6 +39,7 @@ forge <命令>
 ## 三分钟上手
 
 ```
+python forge.py plan                                   # ① 开工先落一份规划书（九节空模板 —— 填满再动手）
 python forge.py new   我的世界                        # 开一张新卡（内容层 + 界面层一起生成）
 python forge.py check 我的世界                         # 体检（含界面规矩、皮肤可读性）
 python forge.py hud   我的世界 --写回                   # 改过 hud/ 之后重新组装界面
@@ -54,6 +55,8 @@ python forge.py new    深夜便利店 --从 同事的卡.card.json   # 接手�
 python forge.py theme  --导出 我的世界                   # 把这张卡调好的配色导成一份皮肤文件（可发人）
 python forge.py png    我的世界/成品/我的世界.card.json  # 出卡图（.card.png，ElecKoi 手机端「导入角色」认的就是它）
 python forge.py preset 我的世界/成品/我的世界.card.json --png  # 出「创作预设」（.preset.json / .preset.png）
+python forge.py lint   我的世界/成品/我的世界.card.json  # 正文体检（防八股）：只查句式骨架，不查词
+python forge.py lint   -                               # 刚写完一轮？直接从标准输入丢进去查（硬判据按「一轮」标定）
 ```
 
 往卡里**加东西**（以前只能改已有的，现在能从无到有）：
