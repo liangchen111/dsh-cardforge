@@ -73,6 +73,49 @@ function 定工作目录(配置, 参数cwd) {
 const 只读命令 = new Set(['--help', '-h', '--h', '--version', '--版本', 'guide', 'manual', 'check', 'lint'])
 
 /**
+ * 把「一整条命令」拆成参数数组。
+ *
+ * 为什么要有这个兜底：**没人会记命令行语法**。用户会直接说一句「make E:/卡库/我的卡.yaml」，
+ * 模型也可能顺手把整条命令塞进 `args` 的一个元素里。与其让调用失败，不如替他拆开。
+ * 规矩：空白分隔，但引号里的不拆（单双引号都认，剥掉外壳）。
+ */
+function 拆命令(项) {
+  const 出 = []
+  let 当前 = ''
+  let 引号 = null
+  for (const ch of String(项)) {
+    if (引号) {
+      if (ch === 引号) 引号 = null
+      else 当前 += ch
+      continue
+    }
+    if (ch === '"' || ch === "'") { 引号 = ch; continue }
+    if (/\s/.test(ch)) {
+      if (当前) { 出.push(当前); 当前 = '' }
+      continue
+    }
+    当前 += ch
+  }
+  if (当前) 出.push(当前)
+  return 出
+}
+
+/**
+ * 定 `args`：空的当问路；只有一项且「像一整条命令」的，替它拆开。
+ *
+ * 「像一整条命令」的判据：里面有空白，且拆出来的第一个词是 ASCII 单词（`make` / `new` /
+ * `entry` …）或以 `-` 开头。这一条把「单个带空格的名字」挡在外面，不会误拆。
+ */
+function 定实参(args) {
+  let 实参 = Array.isArray(args) && args.length > 0 ? args : ['--help']
+  if (实参.length === 1 && /\s/.test(String(实参[0]))) {
+    const 拆 = 拆命令(实参[0])
+    if (拆.length > 1 && /^(-|[A-Za-z][\w-]*$)/.test(拆[0])) 实参 = 拆
+  }
+  return 实参
+}
+
+/**
  * 可配置项（写进 `cordis.patch.yml`，改它不用动代码）。
  *
  * `python` + `pythonPath` 的组合是**故意的**：`pythonPath` 指到隔离 venv 的
@@ -130,7 +173,7 @@ export const inject = ['tools']
  */
 const 工具说明 = [
   '做 ElecKoi 角色卡的本机工具（forge）：建卡 / 改卡 / 体检 / 出成品都走它。',
-  'args ＝ 传给 forge.py 的命令行参数，逐项给；元素里不要再加引号，也别把多个词并进一个元素。',
+  'args ＝ 传给 forge.py 的命令行参数；逐项给最好，把整条命令塞进一项也行（会替你拆开）。',
   '',
   '**先取规程，再动笔** —— 怎么问玩家、怎么写内容、哪条踩红线，全在里面：',
   '  ["guide"]  先拿目录；再按目录取具体的：["guide","--节","一"] · ["guide","--篇","预算"] · ["guide","--对话","红线"]',
@@ -511,8 +554,8 @@ export function apply(ctx, config) {
         ],
       },
       async execute(调用参数, exec) {
-        // 空 args 不给报错，直接当问路 —— 这一条是给「人就说了句『用 cardforge』」准备的。
-        const 实参 = Array.isArray(调用参数.args) && 调用参数.args.length > 0 ? 调用参数.args : ['--help']
+        // 空 args 不给报错，直接当问路；「一整条命令」也替它拆开 —— 都是给「人不记语法」准备的。
+        const 实参 = 定实参(调用参数.args)
         const 工作目录 = 定工作目录(config, 调用参数.cwd)
         // 只读命令：不为它造目录；默认目录压根不存在时，退到插件目录去跑（照样能看规程）。
         let 跑在哪儿 = 工作目录

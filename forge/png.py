@@ -9,12 +9,16 @@ ElecKoi 原生导入只认一条路：PNG 的 tEXt 块 `eleckoi-card`，值是
 这是本工具离「发给别人用」最远的一步。（艾瑟兰第 311 轮实测踩过这个坑，
 配方就是从那一次验证过的脚本抄下来的。）
 
-**写进三块，像素数据一个字节都不动：**
+**写进两块，像素数据一个字节都不动：**
 
     1. tEXt `eleckoi-card`  = base64(gzip(源卡原始字节))   <- 客户端唯一认的
-    2. tEXt `chara`         = base64(酒馆 V2 外壳)         <- 酒馆系工具认的，
-                               完整卡在 data.extensions.eleckoi.source_card
-    3. iTXt `<卡名>-meta`   = 人能看懂的摘要（便于日后核对）
+    2. iTXt `<卡名>-meta`   = 人能看懂的摘要（便于日后核对）
+
+★ **不写酒馆的 `chara` 块**（2026-10-15 按官方合同改的）。官方
+`docs/CHARACTER_CARD_TRANSFER.md` 明写：ElecKoi 导出**禁止**携带 `chara` /
+`ccv3` / `chara_card_v2` 这类第三方兼容载荷，验收条款第 4 条要查「只有一个
+`eleckoi-card` 文本块、且不存在 `chara` / `ccv3`」。真要一份也能喂酒馆的图，
+显式传 `tavern=True`（命令行的 `--带酒馆块`）—— 那是明确选择，不是默认行为。
 
 **两条规矩**（艾瑟兰那版用真机换来的）：
 
@@ -136,8 +140,13 @@ def _swallow(*_a, **_k):
 
 
 # ------------------------------------------------------------------ 干活
-def write(card_path, out_path=None, cover=None, kind="card", quiet=False, out=print):
+def write(card_path, out_path=None, cover=None, kind="card", quiet=False, tavern=False, out=print):
     """把 `card_path`（原生卡 .json）嵌进一张 PNG，落到 `out_path`。
+
+    `tavern=True` 时额外写一个酒馆 `chara` 块（默认**不写**）—— 官方「角色卡同步协议」
+    明写：ElecKoi 导出**禁止**携带 `chara` / `ccv3` / `chara_card_v2` 这类第三方兼容载荷，
+    而且验收条款里要查「只有一个 `eleckoi-card` 文本块、不存在 `chara` / `ccv3`」。
+    所以默认照合同走；真要一份也能喂酒馆的图，显式开这一项。
 
     返回 {"png": …, "bytes": …, "native_bytes": …, "sha256": …}。
     """
@@ -175,12 +184,12 @@ def write(card_path, out_path=None, cover=None, kind="card", quiet=False, out=pr
 
     blocks = [_mk_text(KEYWORD[kind], native_b64.decode("ascii"))]
 
-    # ② 酒馆外壳（只有卡有；预设不走酒馆那条路）
+    # ② 酒馆外壳（只给「显式要一份也能喂酒馆的图」用；默认不写 —— 官方合同禁止）
     chara_note = ""
-    if kind == "card":
+    if kind == "card" and tavern:
         chara_bytes = _chara_wrapper(card_path, raw, native)
         blocks.append(_mk_text("chara", base64.b64encode(chara_bytes).decode("ascii")))
-        chara_note = "酒馆 V2 外壳 %d 字节" % len(chara_bytes)
+        chara_note = "酒馆 V2 外壳 %d 字节（非默认，按官方合同本不该带）" % len(chara_bytes)
 
     # ③ 给人看的摘要
     meta = json.dumps({
@@ -296,7 +305,7 @@ def _chara_wrapper(card_path, raw, native):
         SB.cleanup(tmp)
 
 
-def verify(png_path, expect_native=None, out=print):
+def verify(png_path, expect_native=None, allow_tavern=False, out=print):
     """照客户端的口径把刚写出来的 PNG 复读一遍。五条断言，一条不落。
 
     任何一条不过都抛 PngError —— 「导出成功但导不进去」是这份工具最该防的事。
@@ -326,6 +335,18 @@ def verify(png_path, expect_native=None, out=print):
     idat = b"".join(d for t, d, _, _ in cs if t == b"IDAT")
     if not idat:
         raise PngError("PNG 里没有 IDAT（不是一张真图）")
+
+    # ★ 官方合同：PNG 里**只该有一个** `eleckoi-card` 那条 tEXt，且不得带
+    #   `chara` / `ccv3` / `chara_card_v2` 这类第三方兼容载荷。验收条款第 4 条查的就是这个。
+    #   （显式开了 `--带酒馆块` 就放行 —— 那是明确选择，不是默认行为。）
+    textz = [d.split(b"\x00", 1)[0] for t, d, _, _ in cs if t == b"tEXt"]
+    禁止 = [k for k in (b"chara", b"ccv3", b"chara_card_v2") if k in textz]
+    if 禁止 and not allow_tavern:
+        raise PngError("PNG 里带了官方禁止的第三方块：%s（ElecKoi 导出的合同第 4 条验收会挂）"
+                       % "、".join(k.decode("ascii") for k in 禁止))
+    if kw == "eleckoi-card" and textz.count(b"eleckoi-card") != 1:
+        raise PngError("`eleckoi-card` 出现了 %d 次，官方合同要求只有一个文本块"
+                       % textz.count(b"eleckoi-card"))
 
     if out:
         wd = struct.unpack(">II", buf[16:24])

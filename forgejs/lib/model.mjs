@@ -46,7 +46,10 @@ export const VAR_ITEM_KEYS = ['id', 'title', 'object_id', 'enabled', 'type', 'de
   'description', 'update_rule', 'read_mode', 'order',
   'tree_view_order', 'created_at', 'updated_at']
 export const REGEX_KEYS = ['id', 'name', 'pattern', 'replacement', 'targets', 'enabled',
-  'display_only', 'prompt_only', 'run_on_edit', 'order']
+  'display_only', 'prompt_only', 'run_on_edit', 'order',
+  // ↓ 官方「角色卡同步协议」列的字段（docs/CHARACTER_CARD_TRANSFER.md §regex_rules）。
+  //   照官方合同走，别自己定形状。
+  'trim_strings', 'min_depth', 'max_depth', 'substitute_regex']
 
 /** 变量条件的运行时根路径。 */
 export const STAT_ROOT = 'stat_data.'

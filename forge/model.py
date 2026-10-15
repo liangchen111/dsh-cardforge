@@ -55,7 +55,11 @@ VAR_ITEM_KEYS = ["id", "title", "object_id", "enabled", "type", "default_value",
                  "description", "update_rule", "read_mode", "order",
                  "tree_view_order", "created_at", "updated_at"]
 REGEX_KEYS = ["id", "name", "pattern", "replacement", "targets", "enabled",
-              "display_only", "prompt_only", "run_on_edit", "order"]
+              "display_only", "prompt_only", "run_on_edit", "order",
+              # ↓ 官方「角色卡同步协议」里列的字段（docs/CHARACTER_CARD_TRANSFER.md §regex_rules），
+              #   2026-10-15 补齐：以前只写前 10 个，多出来的四键虽然不会丢（ordered 会原样跟在后面），
+              #   但**顺序与官方不一致** —— 公开工具照官方合同走，别自己定形状。
+              "trim_strings", "min_depth", "max_depth", "substitute_regex"]
 
 # 写回规格 YAML 的统一参数。多处引用，保证排版不随「最后跑的是谁」漂移。
 YAML_OPTS = dict(allow_unicode=True, sort_keys=False, default_flow_style=False,

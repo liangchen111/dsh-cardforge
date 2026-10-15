@@ -621,26 +621,30 @@ def cmd_to_tavern(argv):
 
 def cmd_png(argv):
     if not argv:
-        print("用法：python forge.py png <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]")
+        print("用法：python forge.py png <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png] [--带酒馆块]")
         print()
         print("  出一条**可以当图片导入**的卡：把成品卡嵌进 PNG 的 tEXt 块 `eleckoi-card`")
         print("  （= base64(gzip(卡 JSON))）—— 手机与客户端「导入角色」选图片走的就是这条路，")
         print("  只给 .card.json 对方是导不进去的。")
-        print("  另外还写 `chara` 块（酒馆 V2 外壳，完整卡在 extensions.eleckoi.source_card）")
-        print("  与一段 iTXt 摘要；像素一个字节不动，同一份卡跑两次得到同一个 PNG。")
+        print("  再加一段 iTXt 摘要；像素一个字节不动，同一份卡跑两次得到同一个 PNG。")
+        print("  **默认不写酒馆的 `chara` 块** —— 官方「角色卡同步协议」明写导出不得携带")
+        print("  第三方兼容载荷，验收条款还专门查这个。真要一份酒馆也能吃的图，加 --带酒馆块。")
         print("  --图 不给就现画一张渐变封面（本工具不依赖 Pillow）。")
         return 2
     src = argv[0]
     out_path = _opt(argv, ("-o", "--out")) or PNG.default_out(src)
     cover = _opt(argv, ("--图", "--cover"))
+    带酒馆块 = any(a in ("--带酒馆块", "--tavern") for a in argv)
+    if 带酒馆块:
+        argv = [a for a in argv if a not in ("--带酒馆块", "--tavern")]
     tmp = None
     try:
         if M.is_yaml(src):
             tmp = M.temp_json()
             pack.build(src, tmp)
             src = tmp
-        res = PNG.write(src, out_path, cover)
-        PNG.verify(res["png"])
+        res = PNG.write(src, out_path, cover, tavern=带酒馆块)
+        PNG.verify(res["png"], allow_tavern=带酒馆块)
     except Exception as exc:
         print("!! %s" % exc)
         return 1
