@@ -24,20 +24,34 @@ library:
   created_at: '2026-01-01T00:00:00+08:00'
   updated_at: '2026-01-01T00:00:00+08:00'
   groups:
-  - id: cardc34789-grp-3a872055
+  - id: cardc34789-grp-cf93e9d5
     name: 做法
     parent_id: ''
     order: 1
     tree_view_order: 1
-    created_at: '2026-10-15T18:52:59.148501+08:00'
-    updated_at: '2026-10-15T18:52:59.148536+08:00'
-  - id: cardc34789-grp-9e1627c9
+    created_at: '2026-10-15T18:57:08.075819+08:00'
+    updated_at: '2026-10-15T18:57:08.075857+08:00'
+  - id: cardc34789-grp-176f7013
     name: 设计
     parent_id: ''
     order: 2
     tree_view_order: 2
-    created_at: '2026-10-15T18:52:59.159995+08:00'
-    updated_at: '2026-10-15T18:52:59.160015+08:00'
+    created_at: '2026-10-15T18:57:08.088766+08:00'
+    updated_at: '2026-10-15T18:57:08.088784+08:00'
+  - id: cardc34789-grp-2a51b20f
+    name: 玩法
+    parent_id: ''
+    order: 3
+    tree_view_order: 3
+    created_at: '2026-10-15T18:57:19.844129+08:00'
+    updated_at: '2026-10-15T18:57:19.844146+08:00'
+  - id: cardc34789-grp-132119a9
+    name: 界面
+    parent_id: ''
+    order: 4
+    tree_view_order: 4
+    created_at: '2026-10-15T18:57:19.857118+08:00'
+    updated_at: '2026-10-15T18:57:19.857138+08:00'
   entries:
   - id: fixed-opening-assistant
     title: AI角色开场白
@@ -87,7 +101,7 @@ library:
     tree_view_order: 0
     created_at: '2026-01-01T00:00:00+08:00'
     updated_at: '2026-01-01T00:00:00+08:00'
-  - id: cardc34789-entry-8910e4f9
+  - id: cardc34789-entry-60c036c0
     title: 你是制卡师
     icon_id: chat
     kind: normal
@@ -115,9 +129,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 2
-    created_at: '2026-10-15T18:52:59.171861+08:00'
-    updated_at: '2026-10-15T18:52:59.171861+08:00'
-  - id: cardc34789-entry-09688068
+    created_at: '2026-10-15T18:57:08.101333+08:00'
+    updated_at: '2026-10-15T18:57:08.101333+08:00'
+  - id: cardc34789-entry-96d40e82
     title: 访谈 · 一层一层问
     icon_id: chat
     kind: normal
@@ -170,9 +184,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 3
-    created_at: '2026-10-15T18:52:59.188153+08:00'
-    updated_at: '2026-10-15T18:52:59.188153+08:00'
-  - id: cardc34789-entry-39c6756f
+    created_at: '2026-10-15T18:57:08.117085+08:00'
+    updated_at: '2026-10-15T18:57:08.117085+08:00'
+  - id: cardc34789-entry-930c4b05
     title: 交付 · 你输出什么
     icon_id: chat
     kind: normal
@@ -200,9 +214,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 4
-    created_at: '2026-10-15T18:52:59.207455+08:00'
-    updated_at: '2026-10-15T18:52:59.207455+08:00'
-  - id: cardc34789-entry-946421c7
+    created_at: '2026-10-15T18:57:08.136942+08:00'
+    updated_at: '2026-10-15T18:57:08.136942+08:00'
+  - id: cardc34789-entry-a4572021
     title: 红线 · 会被静默吃掉的写法
     icon_id: chat
     kind: normal
@@ -230,13 +244,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 5
-    created_at: '2026-10-15T18:52:59.231622+08:00'
-    updated_at: '2026-10-15T18:52:59.231622+08:00'
-  - id: cardc34789-entry-d0c39130
+    created_at: '2026-10-15T18:57:08.162315+08:00'
+    updated_at: '2026-10-15T18:57:08.162315+08:00'
+  - id: cardc34789-entry-d7ea500d
     title: 机制 · 一张卡由什么构成
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-3a872055
+    group_id: cardc34789-grp-cf93e9d5
     content: '【一张 ElecKoi 卡由什么构成】
 
 
@@ -299,13 +313,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 6
-    created_at: '2026-10-15T18:52:59.259506+08:00'
-    updated_at: '2026-10-15T18:52:59.259506+08:00'
-  - id: cardc34789-entry-1630b7ea
+    created_at: '2026-10-15T18:57:08.191702+08:00'
+    updated_at: '2026-10-15T18:57:08.191702+08:00'
+  - id: cardc34789-entry-4f6db230
     title: 机制 · 条目触发方式怎么选
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-3a872055
+    group_id: cardc34789-grp-cf93e9d5
     content: '【条目触发方式怎么选】
 
 
@@ -368,13 +382,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 7
-    created_at: '2026-10-15T18:52:59.290463+08:00'
-    updated_at: '2026-10-15T18:52:59.290463+08:00'
-  - id: cardc34789-entry-dcc51eb6
+    created_at: '2026-10-15T18:57:08.224420+08:00'
+    updated_at: '2026-10-15T18:57:08.224420+08:00'
+  - id: cardc34789-entry-57133742
     title: 预算 · 每句话都在跟聊天记录抢位置
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-3a872055
+    group_id: cardc34789-grp-cf93e9d5
     content: '【预算 · 每句话都在跟聊天记录抢位置】
 
 
@@ -437,13 +451,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 8
-    created_at: '2026-10-15T18:52:59.326587+08:00'
-    updated_at: '2026-10-15T18:52:59.326587+08:00'
-  - id: cardc34789-entry-ff6593c9
+    created_at: '2026-10-15T18:57:08.261233+08:00'
+    updated_at: '2026-10-15T18:57:08.261233+08:00'
+  - id: cardc34789-entry-9fa107fe
     title: 世界 · 世界观设计清单
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-9e1627c9
+    group_id: cardc34789-grp-176f7013
     content: '【世界观设计清单】
 
 
@@ -501,13 +515,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 9
-    created_at: '2026-10-15T18:52:59.366205+08:00'
-    updated_at: '2026-10-15T18:52:59.366205+08:00'
-  - id: cardc34789-entry-d27bc92b
+    created_at: '2026-10-15T18:57:08.301852+08:00'
+    updated_at: '2026-10-15T18:57:08.301852+08:00'
+  - id: cardc34789-entry-78ad263d
     title: 故事 · 主线、冲突与节奏
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-9e1627c9
+    group_id: cardc34789-grp-176f7013
     content: '【故事线设计】
 
 
@@ -560,13 +574,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 10
-    created_at: '2026-10-15T18:52:59.408992+08:00'
-    updated_at: '2026-10-15T18:52:59.408992+08:00'
-  - id: cardc34789-entry-a56be80f
+    created_at: '2026-10-15T18:57:08.347900+08:00'
+    updated_at: '2026-10-15T18:57:08.347900+08:00'
+  - id: cardc34789-entry-f101185a
     title: 角色 · 角色条目拆分法
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-9e1627c9
+    group_id: cardc34789-grp-176f7013
     content: '【把角色落成条目】
 
 
@@ -638,13 +652,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 11
-    created_at: '2026-10-15T18:52:59.457595+08:00'
-    updated_at: '2026-10-15T18:52:59.457595+08:00'
-  - id: cardc34789-entry-531b1137
+    created_at: '2026-10-15T18:57:08.398743+08:00'
+    updated_at: '2026-10-15T18:57:08.398743+08:00'
+  - id: cardc34789-entry-6189277b
     title: 写法 · 怎么把角色写活
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-9e1627c9
+    group_id: cardc34789-grp-176f7013
     content: '【写法 · 怎么把角色写活】
 
 
@@ -731,13 +745,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 12
-    created_at: '2026-10-15T18:52:59.510707+08:00'
-    updated_at: '2026-10-15T18:52:59.510707+08:00'
-  - id: cardc34789-entry-6cae7b2d
+    created_at: '2026-10-15T18:57:08.453084+08:00'
+    updated_at: '2026-10-15T18:57:08.453084+08:00'
+  - id: cardc34789-entry-203964fa
     title: 变量 · 什么时候需要变量
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-3a872055
+    group_id: cardc34789-grp-cf93e9d5
     content: '【什么时候需要变量】
 
 
@@ -835,13 +849,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 13
-    created_at: '2026-10-15T18:52:59.566875+08:00'
-    updated_at: '2026-10-15T18:52:59.566875+08:00'
-  - id: cardc34789-entry-a75aebd5
+    created_at: '2026-10-15T18:57:08.513665+08:00'
+    updated_at: '2026-10-15T18:57:08.513665+08:00'
+  - id: cardc34789-entry-533b0b5c
     title: 界面 · 卡内界面要不要做
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-3a872055
+    group_id: cardc34789-grp-cf93e9d5
     content: '【卡内界面要不要做】
 
 
@@ -898,7 +912,195 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 14
-    created_at: '2026-10-15T18:52:59.629214+08:00'
-    updated_at: '2026-10-15T18:52:59.629214+08:00'
+    created_at: '2026-10-15T18:57:08.579919+08:00'
+    updated_at: '2026-10-15T18:57:08.579919+08:00'
+  - id: cardc34789-entry-10d4cebe
+    title: 玩法 · 让玩家觉得「被记得」
+    icon_id: chat
+    kind: normal
+    group_id: cardc34789-grp-2a51b20f
+    content: "【玩法 · 让玩家觉得「被记得」】\n\n玩家留下来的理由只有三条，按重要性排：**被记得 · 有后果 · 有进展**。\n花哨的界面排在这三条后面 —— 内容没立住时，界面只是把空洞放大。\n\n四种便宜又有效的做法（都能只用「条目 + 变量」实现）：\n\n- **对账簿**：凡是「已经欠下 / 已经收下 / 已经说出」的东西，另立一条账，每轮末尾更新。\n  别指望模型记得第 7 轮的一句承诺 —— 它记不住，但账本记得住。\n- **在场名录 + 下一步动作**：每轮收尾，给**在场且有名有姓**的每个人写一句「他接下来打算干什么」。\n  **写不出下一步的那个人，本轮就该让他退场** —— 这是治「NPC 变布景」最便宜的一刀。\n- **未收的线**：立一个「还没兑现的线」清单，每行写清「什么线 / 埋在第几轮 / 打算怎么收」。\n  它同时救了两个毛病：AI 把伏笔忘掉，和 AI 每轮旧事重提。\n- **知情矩阵**：谁**知道**什么、谁**不知道**什么，写成分开的两栏。\n  只要这一栏在，AI 就不会让不该知道的人知道 —— 比事后解释便宜得多。\n\n写这些时守一条：**账必须有人更新**。加了没人维护的账，比不加更坏，因为它看起来是真的。"
+    opening_messages: []
+    default_opening_message_id: ''
+    agent_selection_hint: 玩家说「好玩」「记不住」「没进展」「NPC 像布景」，或要做长期连载卡时读这条。
+    agent_read_strategy: keyword
+    dynamic_mode: standard
+    keywords:
+    - 玩法
+    - 机制
+    - 记忆
+    - 线索
+    - 伏笔
+    - 在场
+    - NPC
+    - 下一步
+    - 账
+    keyword_scan_depth: 1
+    condition_keywords: []
+    keyword_condition: none
+    keyword_use_regex: false
+    keyword_ignore_case: true
+    keyword_whole_word: false
+    keyword_recursion_depth: 0
+    trigger_mode: agent_tool
+    enabled: true
+    position: ''
+    prompt_position_id: ''
+    insert_role: user
+    order: 15
+    view_order: 0
+    group_view_order: 0
+    tree_view_order: 15
+    created_at: '2026-10-15T18:57:20.413575+08:00'
+    updated_at: '2026-10-15T18:57:20.413575+08:00'
+  - id: cardc34789-entry-c11e46b7
+    title: 玩法 · 世界要会动，也要能查账
+    icon_id: chat
+    kind: normal
+    group_id: cardc34789-grp-2a51b20f
+    content: '【玩法 · 世界要会动，也要能查账】
+
+
+      **可复现的随机**：要随机就别用「随便一个数」。写成「骰子值」＋「种子」两个变量，
+
+      AI 每轮先报出骰子值与来源，再据此叙事。好处是同一颗骰子能重放、能对账、能复盘 ——
+
+      玩家不信的时候，你拿得出数字。**但别把骰子丢进面板**：面板是给玩家看的，不是给 AI 算的。
+
+
+      **世界快照与回滚点**：长线卡每过一段（一章 / 一个任务）留一份「世界当前状态」的快照条目。
+
+      玩家说「回到那次之前」时你有东西可回；你自己改坏了也有东西可退。
+
+      这和工具侧的回收站是两回事：**回收站管你改卡，快照管剧情**。
+
+
+      **门**：需要「开过的路」时，把条件写成一个变量 + 一条判定句（「什么满足 ⇒ 什么发生」），
+
+      不要写成一段可以绕过的散文。
+
+
+      **配方层（下一件事从哪来）**：新卡最容易死在「第 30 轮之后没事发生」。
+
+      规划 4–8 条生成器：新角色从哪来 / 新地点怎么长 / 委托怎么发 / 遭遇怎么捡 / 价格哪儿查。
+
+
+      **口径卡**：把「这个世界里没有的东西」写成一张短表（有没有魔法、有没有神、钱叫什么）。
+
+      它比长篇设定省钱，而且直接掐掉 AI 的胡思乱想。
+
+
+      **游玩中改设定**：玩家中途说「其实我还有个哥哥」—— 处理成**加法**（新增一条 + 记进账），
+
+      不要回头改写已经发生过的段落。'
+    opening_messages: []
+    default_opening_message_id: ''
+    agent_selection_hint: 玩家要「随机」「生成」「掷骰」「重开一次」，或要把卡做成长线世界时读这条。
+    agent_read_strategy: keyword
+    dynamic_mode: standard
+    keywords:
+    - 玩法
+    - 机制
+    - 骰子
+    - 随机
+    - 回滚
+    - 快照
+    - 配方
+    - 生成
+    - 口径
+    keyword_scan_depth: 1
+    condition_keywords: []
+    keyword_condition: none
+    keyword_use_regex: false
+    keyword_ignore_case: true
+    keyword_whole_word: false
+    keyword_recursion_depth: 0
+    trigger_mode: agent_tool
+    enabled: true
+    position: ''
+    prompt_position_id: ''
+    insert_role: user
+    order: 16
+    view_order: 0
+    group_view_order: 0
+    tree_view_order: 16
+    created_at: '2026-10-15T18:57:20.485430+08:00'
+    updated_at: '2026-10-15T18:57:20.485430+08:00'
+  - id: cardc34789-entry-3a638e83
+    title: 前端 · 小手机不是一条正则
+    icon_id: chat
+    kind: normal
+    group_id: cardc34789-grp-132119a9
+    content: "【前端 · 小手机不是一条正则】\n\n小手机 / 面板这类东西，**不是消息楼里的一块正则 HTML**，而是挂在宿主页面上的东西。\n按这个分工写，才不会写成一坨：\n\n- **入口层**：悬浮球 / 移动端抽屉 / 浮窗 —— **只负责发命令**（打开这个、打开那个），\n  自己**绝不读变量**。别再造第四套入口。\n- **内容层**：面板 / 状态栏 —— 读变量、分页、接交互。\n- **挂载层**：谁挂在哪、挂几份。**每楼一份的要自己去重**；挂在宿主页面上的**是单例**。\n\n四条通用纪律（换任何宿主都成立）：\n\n1. **别假定当前窗口就是主窗口**：脚本常跑在 iframe 里。最多向上找几层父窗口，\n   摸到宿主的 `document.body` 为止；**所有输入框操作都走那个宿主窗口**。\n2. **挂新的一份之前，先卸掉旧的**（用固定的键标记自己那份），否则监听会一层层叠上去。\n3. **界面用 `data-*` 属性当协议**（样式改版不会打断逻辑），根上开 `container-type`，\n   窄屏自动单列 —— 手机端是主战场，别只照桌面做。\n4. **大段 HTML 绝不塞进开场白**：它不但撑爆首轮预算，还会让界面在错误的时机出现。\n\n要「把 AI 写的选项变成按钮」时：正则只铺一个空容器，桥去找**最新一楼**的容器填按钮，\n点击默认**填进输入框**（可多选再改），玩家勾了「直发」才真的发送。\n**桥不写变量**，也别在面板里再做一套平行的选项解析。"
+    opening_messages: []
+    default_opening_message_id: ''
+    agent_selection_hint: 玩家要小手机 / 抽屉面板 / 悬浮球 / 状态栏，或要写卡内前端时读这条。
+    agent_read_strategy: keyword
+    dynamic_mode: standard
+    keywords:
+    - 小手机
+    - 前端
+    - 界面
+    - 面板
+    - 悬浮球
+    - 抽屉
+    - 入口
+    - UI
+    - HUD
+    keyword_scan_depth: 1
+    condition_keywords: []
+    keyword_condition: none
+    keyword_use_regex: false
+    keyword_ignore_case: true
+    keyword_whole_word: false
+    keyword_recursion_depth: 0
+    trigger_mode: agent_tool
+    enabled: true
+    position: ''
+    prompt_position_id: ''
+    insert_role: user
+    order: 17
+    view_order: 0
+    group_view_order: 0
+    tree_view_order: 17
+    created_at: '2026-10-15T18:57:20.561211+08:00'
+    updated_at: '2026-10-15T18:57:20.561211+08:00'
+  - id: cardc34789-entry-9db3821c
+    title: 前端 · 换宿主最容易死在哪
+    icon_id: chat
+    kind: normal
+    group_id: cardc34789-grp-132119a9
+    content: "【前端 · 换宿主最容易死在哪】\n\n这一族坑的共同点是：**不报错，只是什么都不发生**。记四条：\n\n1. **壳与真身不在同一个窗口时，宿主的东西不会自动出现在你那边。**\n   桥没补上，读变量会**静默返回空**，界面上全是 `--`。\n   ⇒ **界面上出现成片的占位符，第一反应不是样式问题，是桥没通。**\n2. ★ **仿真壳永远绿、真机红**：自己搭的仿真环境往往少了「壳 → 中间层 → 真身」那几跳，\n   于是仿真里一切正常。⇒ **界面这一类改动，必须在真机上再走一遍**，\n   仿真通过只能说明语法没错。\n3. **面板画得出 ≠ 桥在**（同一条的另一种说法）：先确认最基础的一次变量读取真的通了，\n   再去调版式。顺序反了会白调一天。\n4. **换宿主时，哪些能搬、哪些不能，要分开标**：\n   「找宿主窗口」「单例 vs 去重」「先卸再挂」「`data-*` 当协议」这些搬到哪都成立；\n   而具体的变量读取接口、宿主菜单挂载点、聊天切换事件，**换个宿主就必须重写**。\n   ⇒ 动手前先把这条对错表列出来，别照抄。\n\n交付前对玩家只说人话：「手机上打开看一眼，面板里的数字是不是真的动」——\n比让他读一百行调试日志有用。"
+    opening_messages: []
+    default_opening_message_id: ''
+    agent_selection_hint: 界面写完了但没反应 / 显示成空 / 变量是 `--` / 只在你自己造的仿真里好使时读这条。
+    agent_read_strategy: keyword
+    dynamic_mode: standard
+    keywords:
+    - 静默失败
+    - 界面空白
+    - 没显示
+    - 变量读不到
+    - 桥
+    - 调试
+    - 验收
+    keyword_scan_depth: 1
+    condition_keywords: []
+    keyword_condition: none
+    keyword_use_regex: false
+    keyword_ignore_case: true
+    keyword_whole_word: false
+    keyword_recursion_depth: 0
+    trigger_mode: agent_tool
+    enabled: true
+    position: ''
+    prompt_position_id: ''
+    insert_role: user
+    order: 18
+    view_order: 0
+    group_view_order: 0
+    tree_view_order: 18
+    created_at: '2026-10-15T18:57:20.641444+08:00'
+    updated_at: '2026-10-15T18:57:20.641444+08:00'
 variables: {}
 regex_rules: []
