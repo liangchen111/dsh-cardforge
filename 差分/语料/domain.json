@@ -1,0 +1,25 @@
+{
+  "说明": "域表（domain）的差分语料：每条都带一个条目片段与它的位置标签。",
+  "条目": [
+    { "where": "a-1", "entry": { "title": "合法值", "trigger_mode": "always", "kind": "normal", "insert_role": "user" } },
+    { "where": "a-2", "entry": { "title": "字段都不在" } },
+    { "where": "a-3", "entry": { "trigger_mode": null, "kind": null } },
+    { "where": "a-4", "entry": { "trigger_mode": 3, "kind": ["normal"] } },
+    { "where": "a-5", "entry": { "keyword_condition": "" } },
+    { "where": "a-6", "entry": { "trigger_mode": "   ", "kind": "" } },
+    { "where": "a-7", "entry": { "agent_read_strategy": "variable_condition" } },
+    { "where": "a-8", "entry": { "dynamic_mode": "ejs_controller" } },
+    { "where": "a-9", "entry": { "dynamic_mode": "single_condition" } },
+    { "where": "a-10", "entry": { "dynamic_mode": "ejs_reading" } },
+    { "where": "a-11", "entry": { "trigger_mode": "by_tool" } },
+    { "where": "a-12", "entry": { "trigger_mode": " always ", "kind": " normal " } },
+    { "where": "a-13", "entry": { "agent_read_condition": "变量甲 > 3" } },
+    { "where": "a-14", "entry": { "agent_read_condition": "" } },
+    { "where": "a-15", "entry": { "trigger_mode": "always", "kind": "bogus", "content_mode": "ejs", "insert_role": "system", "keyword_condition": "all" } },
+    { "where": "a-16", "entry": { "content_mode": "富文本" } },
+    { "where": "a-17", "entry": { "insert_role": "we" } },
+    { "where": "a-18", "entry": { "keyword_condition": "notany" } },
+    { "where": "a-19", "entry": { "trigger_mode": true } },
+    { "where": "a-20", "entry": { "dynamic_mode": " standard " } }
+  ]
+}
