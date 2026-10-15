@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eleckoi-cardforge"
+description = "ElecKoi 制卡工具（forge）：开卡 / 改卡 / 校验 / 卡内界面 / 打包 / 与酒馆互转 / 出文档"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+dependencies = ["PyYAML>=6.0"]
+# 版本号写死：**别用 dynamic/attr** —— 构建时 setuptools 会 import `forge`，
+# 而同目录 `forge.py` 与 `forge/` 同名，它会撞上那个文件并发
+# `ImportError: cannot import name 'bridge' from 'forge'`。
+# 改版时两处一起改：这里 与 `forge/__init__.py:24`（`__version__`）。
+version = "0.28.1"
+keywords = ["eleckoi", "sillytavern", "character-card", "card"]
+classifiers = [
+  "Environment :: Console",
+  "Programming Language :: Python :: 3",
+  "Topic :: Text Processing :: Markup",
+]
+
+[project.scripts]
+forge = "forge.cli:main"
+
+[tool.setuptools]
+# 内核是包 `forge/`；CLI 实体是根目录的 `forge.py`（同名，Python 认包不认模块），
+# 由 `forge/cli.py` 这个薄壳去找它。**请用可编辑安装**：pip install -e .
+packages = ["forge"]

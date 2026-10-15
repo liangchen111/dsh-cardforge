@@ -1,0 +1,3478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style id="cardc73c60-hud-style">
+/* ============================================================================
+ * 演示卡 HUD · 样式
+ *
+ * 规矩一条：所有选择器都带 .hud / .hud- 前缀。
+ * 这段 CSS 会整段注进宿主的消息里，前缀就是它和宿主页面之间的边界 ——
+ * 漏一个裸选择器（比如 body / .message），宿主的界面就会跟着变形。
+ *
+ * 另有一条：**这一页里不写死颜色。** 所有颜色、圆角、字体都从下面那组
+ * `--hud-*` 槽里取，槽的默认值就是「羊皮卷」。
+ * 要换皮肤就跑 `forge theme <主题名> <工程>` —— 它写一份 hud/主题.css，
+ * 只覆盖这组槽，这一页一个字都不用改。这样换皮肤和改机制是两件事，
+ * 改了一处也不会顺手把另一处弄坏。
+ * ========================================================================== */
+
+.hud,
+.hud-ball,
+.hud-ballpanel {
+  /* ---- 文字三层 ---- */
+  --hud-ink: #2f2a22;          /* 正文 */
+  --hud-ink-2: #6b6152;        /* 次级：栏名、小节标题 */
+  --hud-dim: #a2988a;          /* 更淡：说明、空态 */
+
+  /* ---- 底色四层（从最透到最实）---- */
+  --hud-paper: rgba(252, 248, 238, 0.72);   /* 卡片常态 */
+  --hud-paper-solid: rgba(252, 248, 238, 0.9); /* 建卡器：要填字，底子实一点 */
+  --hud-field: rgba(255, 253, 246, 0.9);    /* 输入框 / 扣子 */
+  --hud-panel: rgba(252, 248, 238, 0.97);   /* 悬浮球面板：压在宿主任意背景上 */
+
+  /* ---- 线两层 ---- */
+  --hud-line: rgba(120, 94, 52, 0.28);      /* 常态分隔线 */
+  --hud-line-2: rgba(120, 94, 52, 0.5);     /* 强调：主扣子边、悬浮球边 */
+
+  /* ---- 淡底两块 ---- */
+  --hud-wash: rgba(120, 94, 52, 0.08);      /* 标签 / 注释块 / hover */
+  --hud-wash-2: rgba(120, 94, 52, 0.2);     /* 选中的标签 / 主扣子 */
+
+  /* ---- 强调与警示 ---- */
+  --hud-accent: rgba(120, 94, 52, 0.62);    /* 焦点边 */
+  --hud-danger: #a8442f;                    /* 错误线 */
+  --hud-danger-ink: #7d3324;                /* 错误字 */
+  --hud-danger-wash: rgba(168, 68, 47, 0.09);
+
+  /* ---- 形状 ---- */
+  --hud-shadow: rgba(40, 32, 18, 0.2);
+  --hud-radius: 4px;
+  --hud-radius-s: 3px;
+  --hud-font: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------ 卡片 */
+
+.hud {
+  margin: 10px 0;
+  padding: 12px 14px 13px;
+  border: 1px solid var(--hud-line);
+  border-radius: var(--hud-radius);
+  background: var(--hud-paper);
+  color: var(--hud-ink);
+  font: 13.5px/1.75 var(--hud-font);
+}
+
+.hud * {
+  box-sizing: border-box;
+}
+
+/* ------------------------------------------------------------------ 表头 */
+
+.hud-wrap {
+  box-sizing: border-box;
+  color: var(--hud-ink);
+  font: 13.5px/1.75 var(--hud-font);
+}
+
+.hud-wrap__lead {
+  margin: 0 0 8px;
+  color: var(--hud-ink-2);
+  font-size: 12.5px;
+}
+
+.hud__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hud-line);
+}
+
+.hud__title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.hud__brief {
+  margin-right: auto;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+}
+
+.hud__body {
+  margin-top: 9px;
+}
+
+.hud.is-fold .hud__body {
+  display: none;
+}
+
+.hud__note {
+  margin-top: 9px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: var(--hud-wash);
+  font-size: 12px;
+  line-height: 1.65;
+  border-radius: 0 var(--hud-radius-s) var(--hud-radius-s) 0;
+}
+
+.hud__note.is-error {
+  border-left-color: var(--hud-danger);
+  background: var(--hud-danger-wash);
+  color: var(--hud-danger-ink);
+}
+
+/* ------------------------------------------------------------------ 小节 */
+
+.hud-sec + .hud-sec {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+.hud-sec__h {
+  margin-bottom: 4px;
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+
+.hud-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+.hud-row__k {
+  flex: 0 0 4.6em;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+}
+
+.hud-row__v {
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.hud-sub {
+  margin: 4px 0 4px 4px;
+  padding-left: 9px;
+  border-left: 1px solid var(--hud-line);
+}
+
+.hud-sub--deep {
+  margin-left: 2px;
+  opacity: 0.92;
+}
+
+.hud-sub__t {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+
+.hud-tag {
+  display: inline-block;
+  margin: 1px 4px 1px 0;
+  padding: 1px 6px;
+  border: 1px solid var(--hud-line);
+  border-radius: 2px;
+  background: var(--hud-wash);
+  font-size: 12px;
+}
+
+.hud-tag.is-on {
+  border-color: var(--hud-line-2);
+  background: var(--hud-wash-2);
+}
+
+.hud-dim {
+  color: var(--hud-dim);
+  font-size: 12px;
+}
+
+.hud-empty {
+  padding: 6px 0;
+  color: var(--hud-dim);
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------- 建卡器 */
+
+.hud--create {
+  background: var(--hud-paper-solid);
+}
+
+.hud__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 8px 10px;
+  margin-top: 10px;
+}
+
+.hud-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.hud-field--wide {
+  grid-column: 1 / -1;
+}
+
+.hud-field__l {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+
+.hud-input {
+  width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--hud-line);
+  border-radius: var(--hud-radius-s);
+  background: var(--hud-field);
+  color: var(--hud-ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.hud-input:focus {
+  outline: none;
+  border-color: var(--hud-accent);
+  background: var(--hud-field);
+}
+
+.hud-input--area {
+  resize: vertical;
+  min-height: 58px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.hud__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.hud__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hud-line);
+}
+
+/* ------------------------------------------------------------------ 扣子 */
+
+.hud-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--hud-line);
+  border-radius: var(--hud-radius-s);
+  background: var(--hud-field);
+  color: var(--hud-ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.hud-btn:hover {
+  background: var(--hud-wash);
+}
+
+.hud-btn--main {
+  border-color: var(--hud-line-2);
+  background: var(--hud-wash-2);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* 次要动作压成灰底小字：留着能用，但不跟主扣子抢视线 */
+.hud-btn--quiet {
+  padding: 4px 8px;
+  border-color: var(--hud-line);
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+}
+
+/* ---------------------------------------------------------------- 悬浮球 */
+
+.hud-ball {
+  position: fixed;
+  z-index: 2147483000;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hud-line-2);
+  border-radius: 50%;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font: 700 15px/1 var(--hud-font);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  box-shadow: 0 2px 10px var(--hud-shadow);
+}
+
+.hud-ball:active {
+  cursor: grabbing;
+}
+
+.hud-ballpanel {
+  position: fixed;
+  z-index: 2147482999;
+  width: 258px;
+  max-height: 62vh;
+  overflow: auto;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--hud-line-2);
+  border-radius: var(--hud-radius);
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font: 12.5px/1.7 var(--hud-font);
+  box-shadow: 0 6px 22px var(--hud-shadow);
+}
+
+.hud-ballpanel__t {
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hud-line);
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+}
+
+.hud-ballpanel .hud-sec__h {
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-ball,
+  .hud-ballpanel {
+    transition: none;
+  }
+}
+
+/* ============================================================================
+ * 尺度模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ * ========================================================================== */
+
+.hud-scalehint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  margin-top: 10px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-scalehint__k {
+  color: var(--hud-ink);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.hud-scalehint__v {
+  color: var(--hud-ink-2);
+}
+
+.hud-scalehint__p {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+  opacity: 0.85;
+}
+
+/* ============================================================================
+ * 备份模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ *
+ * 框、扣子、textarea 都用核心那几套类（.hud-input / .hud-btn），
+ * 这里只补这一块自己的演示卡和那行状态提示。
+ * ========================================================================== */
+
+.hud-archive {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+.hud-archive__t {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+
+.hud-archive__hint {
+  margin: 3px 0 6px;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-archive__box {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  white-space: pre;
+  overflow: auto;
+}
+
+.hud-archive__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.hud-archive__note {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.07);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.hud-archive__note.is-error {
+  border-left-color: #a8442f;
+  background: rgba(168, 68, 47, 0.09);
+  color: #7d3324;
+}
+
+/* ============================================================================
+ * 点数池模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ *
+ * 框、扣子、输入框都用核心那几套类（.hud-input / .hud-btn），
+ * 这里只补这一块自己的演示卡：那一行预算、六格输入、两个小标题、一行状态提示。
+ * ========================================================================== */
+
+.hud-pool {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+/* 那一行预算：池子名、剩余、可分配/已用、以及它是怎么算出来的 */
+.hud-pool__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 9px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  border-radius: 0 3px 3px 0;
+}
+
+.hud-pool__k {
+  color: var(--hud-ink);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.hud-pool__n {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+/* 超支：加一道下划线，不另立一个颜色 —— 配色只有那三个槽 */
+.hud-pool__n.is-over {
+  border-bottom: 2px double var(--hud-ink);
+}
+
+.hud-pool__of {
+  color: var(--hud-ink-2);
+}
+
+.hud-pool__eq {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
+.hud-pool__eq b {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+/* 六格：窄屏两列、宽屏三列，别让一格挤成一条缝 */
+.hud-pool__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 7px 9px;
+  margin-top: 9px;
+}
+
+.hud-pool__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.hud-pool__cl {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+
+.hud-pool__in {
+  text-align: center;
+}
+
+/* 职业与永久奖励那一行 */
+.hud-pool__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 9px;
+}
+
+.hud-pool__side {
+  display: flex;
+  flex: 1 1 46%;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+
+.hud-pool__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+/* 临时加成那一块：淡一档，跟上面那份「长在身上的」分得开 */
+.hud-pool__addbox {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hud-line);
+}
+
+.hud-pool__al {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.hud-pool__cell--add .hud-pool__in {
+  background: rgba(120, 94, 52, 0.04);
+}
+
+.hud-pool__note {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.07);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.hud-pool__note.is-error {
+  border-left-color: #a8442f;
+  background: rgba(168, 68, 47, 0.09);
+  color: #7d3324;
+}
+
+/* 面板上那一行：跟别的小结长得一样，只是多两截 */
+.hud-poolhint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-poolhint__n {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+.hud-poolhint__of {
+  color: var(--hud-ink-2);
+}
+
+.hud-poolhint__a {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+}
+
+/* ============================================================================
+ * 代笔模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ *
+ * 扣子与输入框用核心那几套类（.hud-btn / .hud-input），这里只补这一块。
+ * ========================================================================== */
+
+.hud-ai {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+.hud-ai__t {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+
+.hud-ai__lead {
+  margin: 3px 0 7px;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-ai__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.hud-ai__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.hud-ai__l {
+  flex: 0 0 4.6em;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+}
+
+.hud-ai__hint {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+/* 正在等 AI 回话的那颗扣子：按住不放，点不动 */
+.hud-ai__row .is-waiting {
+  border-color: rgba(120, 94, 52, 0.5);
+  background: rgba(120, 94, 52, 0.16);
+  cursor: default;
+}
+
+.hud-ai__req {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+}
+
+.hud-ai__pre {
+  max-height: 168px;
+  margin: 6px 0 0;
+  overflow: auto;
+  color: var(--hud-ink-2);
+  font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hud-ai__note {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.07);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.hud-ai__note.is-error {
+  border-left-color: #a8442f;
+  background: rgba(168, 68, 47, 0.09);
+  color: #7d3324;
+}
+
+</style>
+</head>
+<body>
+<div class="hud-wrap">
+  <p class="hud-wrap__lead">这是一张演示卡卡：界面、变量、构建链都是空的，只把形状立住了。</p>
+  <div data-view="create"></div>
+</div>
+<script>
+/* ============================================================================
+ * 演示卡 HUD —— 一张卡最小但能跑起来的界面层
+ *
+ * 它不含任何世界观内容，做的是四件事：
+ *   ① 把宿主（ElecKoi）的接口包一层，读得到变量、写得回变量；
+ *   ② 把变量树原样渲染成一块面板（你加变量，面板上就多一行，不用改代码）；
+ *   ③ 一间建卡器 —— 把「玩家」那份档案填成表单，封缄即写回变量；
+ *   ④ 一颗常驻悬浮球（可拖拽，点开就是那块面板）；
+ *   ⑤ 一个接线口，给「选着接」的模块（骰子框、尺度说明……见 hud/模块/）。
+ *
+ * 三个视图共用这一份代码，靠页面上的 data-view 认领：
+ *   data-view="create"  → 建卡器（只在开场那一条消息里）
+ *   data-view="card"    → 面板（每轮回复末尾）
+ *
+ * 改内容改 source/*.spec.yaml；改样子改 hud.css；改这里 = 改机制。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------- 配置 */
+
+  var CONFIG = {
+    /* 变量树里那两个顶层对象的键名 */
+    playerObject: '玩家',
+    worldObject: '世界设定',
+    /* 备份模块**过夜**的那个位子：变量树里一个「给机器用的」对象，里面一格文本。
+       它跟玩家档案住在同一套变量系统里，所以也是按会话存的 —— 重启软件、关掉这段
+       对话再回来都还在；新开一段对话是另一局，那里自然是空的（这正是我们要的）。
+       **跨局那一半不在这儿**：备份模块自己再压一份到宿主窗口的 localStorage
+       （按机器存，钥匙由模块的 FORMAT 派生），本局这一格空着时「从存档取回」退到它。
+       模块不写死这两个名字，照这里现读 —— 想把那格叫别的，改这一行就够。
+       没接备份模块时它一直空着，面板上只会显示一行「机器位」。 */
+    archiveObject: '存档',
+    archiveSlot: '角色',
+    /* 玩家侧的两个档位 */
+    scaleKey: '叙事尺度',
+    scaleValues: ['克制', '标准', '放开'],
+    pressureKey: '压力源',
+    /* 建卡器上出现的字段；加一行就多一栏，不用动别处。
+       type: text / number / list（list = 一行一件，写回是数组） */
+    fields: [
+      { key: '姓名', label: '姓名', type: 'text', hint: '写你在这个世界里用的名字' },
+      { key: '性别', label: '性别', type: 'text', hint: '不填也行' },
+      { key: '种族', label: '种族', type: 'text', hint: '你生来是什么' },
+      { key: '等级', label: '等级', type: 'number', min: 1, max: 20, hint: '1 到 20' },
+      { key: '状态', label: '状态', type: 'text', hint: '开场时是什么情形' },
+      { key: '钱币', label: '钱币', type: 'number', min: 0, max: 9999999, hint: '身上的钱' },
+      { key: '背包', label: '背包', type: 'list', hint: '一件一行' }
+    ],
+    /* 写回变量后，替玩家放进输入框里的一句话（只填不送，见 submit） */
+    openingAsk: '我已经写好了自己的角色，请开场。'
+  };
+
+  /* 变量初值 —— 必须与 spec 的 initial_state 一致；
+     这里是运行时兜底：宿主还没初始化时，界面也该画得出东西。
+     「存档」那一格也要在这儿占位：fillState 会把初值里没有的对象原样留着不假，
+     但面板要靠它才画得出「机器位」那一行。 */
+  var DEFAULTS = {
+    世界设定: { 压力源: false, 叙事尺度: '标准' },
+    玩家: { 姓名: '', 性别: '', 种族: '', 等级: 1, 状态: '正常', 钱币: 0, 背包: [] },
+    存档: { 角色: '' }
+  };
+
+  /* ---------------------------------------------------------------- 小工具 */
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+
+  function each(sel, fn, root) {
+    var list = (root || document).querySelectorAll(sel);
+    for (var i = 0; i < list.length; i++) fn(list[i], i);
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function str(v) { return String(v == null ? '' : v).trim(); }
+
+  function num(v, fallback) {
+    var n = typeof v === 'number' ? v : parseFloat(str(v));
+    return isFinite(n) ? n : (fallback == null ? 0 : fallback);
+  }
+
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+
+  function isArr(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+
+  function plain(v) { return v && typeof v === 'object' && !isArr(v) ? v : null; }
+
+  function msgOf(err) { return (err && err.message) ? err.message : String(err); }
+
+  function safeText(node, text) { if (node) node.textContent = text == null ? '' : String(text); }
+
+  /* 把「一行一件」的文本切成数组；空白行丢掉，首尾空格去掉 */
+  function parseList(text) {
+    var lines = String(text == null ? '' : text).split(/\r?\n/);
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var s = str(lines[i]);
+      if (s) out.push(s);
+    }
+    return out;
+  }
+
+  /* 数组 -> 一行一件的文本（写进 textarea 用） */
+  function joinList(arr) {
+    if (!isArr(arr)) return arr == null || arr === '' ? '' : String(arr);
+    var out = [];
+    for (var i = 0; i < arr.length; i++) out.push(String(arr[i] == null ? '' : arr[i]));
+    return out.join('\n');
+  }
+
+  /* ------------------------------------------------------------ ElecKoi 桥 */
+
+  function api() { return (typeof window !== 'undefined' && window.ElecKoi) || null; }
+
+  /* 宿主的运行时是注入进来的，通常要等一两个 tick */
+  function whenReady(cb, tries) {
+    var left = tries == null ? 60 : tries;
+    if (api()) { cb(api()); return; }
+    if (left <= 0) { cb(null); return; }
+    setTimeout(function () { whenReady(cb, left - 1); }, 50);
+  }
+
+  /* 传数组 = 按位置参数调；传对象 = 按请求体调。
+     SDK 里 getState(options) 收对象，setState(state) / input.set(text) 收位置参数。 */
+  function call(method, params) {
+    var e = api();
+    if (!e) return Promise.reject(new Error('ElecKoi 运行时不可用'));
+    var parts = String(method).split('.');
+    var fn = e;
+    for (var i = 0; i < parts.length; i++) fn = fn && fn[parts[i]];
+    if (typeof fn !== 'function') return Promise.reject(new Error('缺少接口：' + method));
+    try {
+      var self = e;
+      for (var j = 0; j < parts.length - 1; j++) self = self[parts[j]];
+      var out = isArr(params) ? fn.apply(self, params) : fn.call(self, params || {});
+      return Promise.resolve(out);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  function readState() {
+    return new Promise(function (resolve) {
+      var e = api();
+      if (!e || !e.variables || typeof e.variables.getState !== 'function') { resolve({}); return; }
+      Promise.resolve(e.variables.getState({})).then(function (state) {
+        resolve(plain(state) || {});
+      }).catch(function () { resolve({}); });
+    });
+  }
+
+  /* 变量树真正住的地方是 stat_data；万一宿主这一版摊平在顶层，就退到顶层同名键。 */
+  function statOf(state) {
+    var stat = plain(state && state.stat_data);
+    return stat || plain(state) || {};
+  }
+
+  function objectOf(state, name) {
+    var stat = statOf(state);
+    var obj = plain(stat[name]);
+    if (!obj) {
+      var flat = plain(state && state[name]);
+      if (flat) obj = flat;
+    }
+    return obj || {};
+  }
+
+  /* 读「存档」那一格 —— 备份模块过夜的地方。
+     没接那个模块、或者这一局还没存过，读到的就是空串。
+     写它不用另开口子：writeObject(CONFIG.archiveObject, ...) 就是那条路，
+     自己拼一份 setState 出来只会多一处会写错的地方。 */
+  function readArchive(state) {
+    return str(objectOf(state, CONFIG.archiveObject)[CONFIG.archiveSlot]);
+  }
+
+  /* 读到的照搬，缺的键用初值补上 —— 界面上就不会出现 undefined */
+  function fillState(stat) {
+    var out = {}, src = plain(stat) || {};
+    Object.keys(src).forEach(function (k) { out[k] = src[k]; });
+    Object.keys(DEFAULTS).forEach(function (k) {
+      var d = plain(DEFAULTS[k]);
+      if (!d) { if (!(k in out)) out[k] = DEFAULTS[k]; return; }
+      var merged = {}, got = plain(out[k]);
+      Object.keys(d).forEach(function (kk) { merged[kk] = d[kk]; });
+      if (got) Object.keys(got).forEach(function (kk) { merged[kk] = got[kk]; });
+      out[k] = merged;
+    });
+    return out;
+  }
+
+  /* 写回一个人物对象里的若干键。
+     顶层与 stat_data 两份都写：读的时候 stat_data 优先，只写顶层会「写了没反应」。
+     写完读回核对，认不出来的值如实说出来，不假装成功。 */
+  function writeObject(objectName, patch, scope) {
+    var scopeName = scope || document;
+    return readState().then(function (state) {
+      var next = {};
+      Object.keys(state || {}).forEach(function (k) { next[k] = state[k]; });
+      var box = {}, src = objectOf(state, objectName);
+      Object.keys(src).forEach(function (k) { box[k] = src[k]; });
+      Object.keys(patch || {}).forEach(function (k) { box[k] = patch[k]; });
+      next[objectName] = box;
+      if (plain(next.stat_data)) {
+        next.stat_data = fillState(next.stat_data);
+        next.stat_data[objectName] = box;
+      }
+      return call('variables.setState', [next]);
+    }).then(function () {
+      return readState();
+    }).then(function (back) {
+      var got = objectOf(back, objectName);
+      var bad = [];
+      Object.keys(patch || {}).forEach(function (k) {
+        if (JSON.stringify(got[k]) !== JSON.stringify(patch[k])) bad.push(k);
+      });
+      if (!bad.length) return '';
+      return '注意：' + bad.join('、') + ' 没落进变量（可能被 Zod 挡回来了）。' +
+        '可以去变量面板手动改。';
+    });
+  }
+
+  /* 档位：只认配置里那三档，别的一律按中间那一档算 —— 不把怪值摆到界面上 */
+  function scaleOf(state) {
+    var v = str(objectOf(state, CONFIG.worldObject)[CONFIG.scaleKey]);
+    return CONFIG.scaleValues.indexOf(v) < 0 ? CONFIG.scaleValues[1] : v;
+  }
+
+  function nextScale(v) {
+    var i = CONFIG.scaleValues.indexOf(str(v));
+    if (i < 0) i = 1;
+    return CONFIG.scaleValues[(i + 1) % CONFIG.scaleValues.length];
+  }
+
+  function pressureOn(state) {
+    var v = objectOf(state, CONFIG.worldObject)[CONFIG.pressureKey];
+    if (typeof v === 'boolean') return v;
+    return str(v) === 'true';
+  }
+
+  /* -------------------------------------------------------------- 渲染小件 */
+
+  function valueHtml(v) {
+    if (isArr(v)) {
+      if (!v.length) return '<span class="hud-dim">空</span>';
+      var out = [];
+      for (var i = 0; i < v.length; i++) out.push('<span class="hud-tag">' + esc(v[i]) + '</span>');
+      return out.join('');
+    }
+    if (typeof v === 'boolean') {
+      return '<span class="hud-tag' + (v ? ' is-on' : '') + '">' + (v ? '开' : '关') + '</span>';
+    }
+    if (v === '' || v == null) return '<span class="hud-dim">—</span>';
+    if (typeof v === 'object') return '<span class="hud-dim">（嵌套对象）</span>';
+    return esc(v);
+  }
+
+  function rowHtml(label, v) {
+    return '<div class="hud-row"><span class="hud-row__k">' + esc(label) +
+      '</span><span class="hud-row__v">' + valueHtml(v) + '</span></div>';
+  }
+
+  /* 一层对象 -> 若干行；值本身是对象就递归成一小节 */
+  function objectRows(obj, depth) {
+    var out = [];
+    Object.keys(obj || {}).forEach(function (k) {
+      var v = obj[k];
+      if (plain(v) && Object.keys(v).length) {
+        out.push('<div class="hud-sub' + (depth ? ' hud-sub--deep' : '') +
+          '"><div class="hud-sub__t">' + esc(k) + '</div>' +
+          objectRows(v, (depth || 0) + 1).join('') + '</div>');
+      } else {
+        out.push(rowHtml(k, v));
+      }
+    });
+    return out;
+  }
+
+  /* 整棵变量树 -> 面板主体。你往 spec 里加变量，这里就多一行，不用改代码。 */
+  function panelHtml(state) {
+    var stat = fillState(statOf(state));
+    var keys = Object.keys(stat);
+    if (!keys.length) return '<div class="hud-empty">还没有变量。</div>';
+    var out = [];
+    for (var i = 0; i < keys.length; i++) {
+      var name = keys[i], obj = stat[name];
+      out.push('<section class="hud-sec">');
+      out.push('<div class="hud-sec__h">' + esc(name) + '</div>');
+      /* 「存档」那一格是机器位：里面装的是一整份备份（几百上千字的一段 JSON），
+         摊在面板上只会把别的都挤没。它是给机器用的，说清有没有就够了 ——
+         要看内容去建卡器那一页，或者去宿主自己的变量面板。 */
+      if (name === CONFIG.archiveObject) {
+        out.push('<div class="hud-dim">' +
+          (readArchive(state) ? '（机器位 · 存着一份备份）' : '（机器位 · 空）') + '</div>');
+        out.push('</section>');
+        continue;
+      }
+      if (plain(obj)) {
+        out.push(objectRows(obj).join('') || '<div class="hud-dim">（空）</div>');
+      } else {
+        out.push(rowHtml(name, obj));
+      }
+      out.push('</section>');
+    }
+    return out.join('') + moduleBlocks('panel', state);
+  }
+
+  /* 一行摘要：谁、几级、身上什么情形。面板折起来时看这一行就够。 */
+  function briefOf(state) {
+    var p = objectOf(state, CONFIG.playerObject);
+    var bits = [];
+    if (str(p['姓名'])) bits.push(str(p['姓名']));
+    if (str(p['种族'])) bits.push(str(p['种族']));
+    if (str(p['等级']) !== '') bits.push('等级 ' + num(p['等级'], 1));
+    if (str(p['状态']) && str(p['状态']) !== '正常') bits.push(str(p['状态']));
+    return bits.length ? bits.join(' · ') : '尚无角色档案';
+  }
+
+  function hasProfile(state) {
+    var p = objectOf(state, CONFIG.playerObject);
+    return !!str(p['姓名']);
+  }
+
+  /* ---------------------------------------------------------------- 视图 */
+
+  function sectionHtml(state) {
+    return '' +
+      '<div class="hud" data-hud>' +
+      '  <div class="hud__head">' +
+      '    <span class="hud__title">状态</span>' +
+      '    <span class="hud__brief" data-brief>' + esc(briefOf(state)) + '</span>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="fold">收起</button>' +
+      '  </div>' +
+      '  <div class="hud__body" data-body>' + panelHtml(state) + '</div>' +
+      '  <div class="hud__note" data-note hidden></div>' +
+      '</div>';
+  }
+
+  function renderCardView(root) {
+    if (!root) return;
+    root.innerHTML = sectionHtml({});
+    bindCard(root);
+    refresh(root);
+  }
+
+  function refresh(root) {
+    return readState().then(function (state) {
+      var box = $('[data-body]', root);
+      if (box) box.innerHTML = panelHtml(state);
+      safeText($('[data-brief]', root), briefOf(state));
+      return state;
+    });
+  }
+
+  function noteIn(root, text, kind) {
+    var n = $('[data-note]', root);
+    if (!n) return;
+    n.hidden = !text;
+    n.className = 'hud__note' + (kind ? ' ' + kind : '');
+    n.textContent = text || '';
+  }
+
+  function bindCard(root) {
+    root.addEventListener('click', function (ev) {
+      var t = ev.target;
+      while (t && t !== root && !t.getAttribute('data-act')) t = t.parentNode;
+      if (!t || t === root) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'fold') {
+        var hud = $('[data-hud]', root);
+        if (!hud) return;
+        var folded = hud.className.indexOf('is-fold') >= 0;
+        hud.className = folded ? 'hud' : 'hud is-fold';
+        t.textContent = folded ? '收起' : '展开';
+      } else if (act === 'refresh') {
+        refresh(root).then(function () { noteIn(root, ''); });
+      }
+    });
+  }
+
+  /* -------------------------------------------------------------- 建卡器 */
+
+  function fieldControl(f, p) {
+    var attrs = ' data-field="' + esc(f.key) + '" data-type="' + esc(f.type) + '"';
+    if (f.type === 'list') {
+      return '<label class="hud-field hud-field--wide"><span class="hud-field__l">' +
+        esc(f.label) + '</span><textarea class="hud-input hud-input--area" rows="3"' + attrs +
+        ' placeholder="' + esc(f.hint || '') + '">' + esc(joinList(p[f.key])) + '</textarea></label>';
+    }
+    var type = f.type === 'number' ? 'number' : 'text';
+    var extra = '';
+    if (f.type === 'number') {
+      if (f.min != null) extra += ' min="' + f.min + '"';
+      if (f.max != null) extra += ' max="' + f.max + '"';
+      extra += ' step="1"';
+    }
+    return '<label class="hud-field"><span class="hud-field__l">' + esc(f.label) +
+      '</span><input class="hud-input" type="' + type + '"' + attrs + extra +
+      ' value="' + esc(p[f.key] == null ? '' : p[f.key]) + '" placeholder="' +
+      esc(f.hint || '') + '"' + '></label>';
+  }
+
+  function createHtml(state) {
+    var p = objectOf(state, CONFIG.playerObject);
+    var on = pressureOn(state);
+    var scale = scaleOf(state);
+    var controls = [];
+    for (var i = 0; i < CONFIG.fields.length; i++) controls.push(fieldControl(CONFIG.fields[i], p));
+    return '' +
+      '<div class="hud hud--create" data-create>' +
+      '  <div class="hud__head">' +
+      '    <span class="hud__title">写一个自己</span>' +
+      '    <span class="hud__brief">填完点「封缄 · 开始」</span>' +
+      '  </div>' +
+      '  <div class="hud__grid">' + controls.join('') + '</div>' +
+      '  <div class="hud__row">' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="scale">叙事尺度：' +
+      esc(scale) + '</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="pressure">时局压力：' +
+      (on ? '开' : '关') + '</button>' +
+      '  </div>' +
+      moduleBlocks('create', state) +
+      '  <div class="hud__foot">' +
+      '    <button type="button" class="hud-btn hud-btn--main" data-act="submit">封缄 · 开始</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="reset">清空</button>' +
+      '  </div>' +
+      '  <div class="hud__note" data-note hidden></div>' +
+      '</div>';
+  }
+
+  function renderCreateView(root) {
+    if (!root) return;
+    /* 只绑一次：监听挂在 root 上，后面的重画换的是 root 里的内容，不动这个监听 */
+    bindCreate(root);
+    root.innerHTML = createHtml({});
+    readState().then(function (state) {
+      /* 读变量是异步的，回来时玩家可能已经动手填了 —— 动过就不覆盖，别把人写的字吃掉 */
+      if (touched(root)) return;
+      root.innerHTML = createHtml(state);
+    });
+  }
+
+  /* 表单里有没有人填过东西 */
+  function touched(root) {
+    var got = readCreateForm(root);
+    var any = false;
+    Object.keys(got).forEach(function (k) {
+      var v = got[k];
+      if (isArr(v) ? v.length > 0 : str(v) !== '') any = true;
+    });
+    return any;
+  }
+
+  function readCreateForm(root) {
+    var out = {};
+    each('[data-field]', function (el) {
+      var key = el.getAttribute('data-field');
+      var type = el.getAttribute('data-type');
+      if (type === 'list') out[key] = parseList(el.value);
+      else if (type === 'number') {
+        var min = el.getAttribute('min'), max = el.getAttribute('max');
+        var v = Math.round(num(el.value, 0));
+        out[key] = clamp(v, num(min, v), num(max, v));
+      } else out[key] = str(el.value);
+    }, root);
+    return out;
+  }
+
+  /* 封缄 = 把表单写回变量。
+     默认走 input.set（只填不送）：把请求放进输入框、由玩家自己按发送，
+     这样不会有人替你把对话视口搬走 —— 建卡器就长在对话的那一楼里。
+
+     写完（成不成都在）之后叫一次模块的 afterSubmit：「备份」要在这一刻
+     把整份草稿与刚写进去的档案一起存进那个过夜的地方。 */
+  function submit(root) {
+    var patch = readCreateForm(root);
+    noteIn(root, '正在封缄…');
+    return writeObject(CONFIG.playerObject, patch, root).then(function (warn) {
+      afterSubmit(root, warn);
+      var e = api();
+      if (e && e.input && typeof e.input.set === 'function') {
+        return call('input.set', [CONFIG.openingAsk]).then(function () {
+          noteIn(root, warn ? warn : '已写入变量，并把开场请求填进了输入框 —— 确认后按发送。',
+            warn ? 'is-error' : 'is-ok');
+        });
+      }
+      noteIn(root, warn ? warn : '已写入变量。', warn ? 'is-error' : 'is-ok');
+    }).catch(function (err) {
+      noteIn(root, '写入失败：' + msgOf(err), 'is-error');
+    });
+  }
+
+  function bindCreate(root) {
+    root.addEventListener('click', function (ev) {
+      var t = ev.target;
+      while (t && t !== root && !t.getAttribute('data-act')) t = t.parentNode;
+      if (!t || t === root) return;
+      var act = t.getAttribute('data-act');
+      if (act === 'submit') { submit(root); return; }
+      if (act === 'reset') {
+        each('[data-field]', function (el) { el.value = ''; }, root);
+        noteIn(root, '已清空（变量没动）。');
+        return;
+      }
+      if (act === 'scale') {
+        var next = nextScale(t.getAttribute('data-scale') || t.textContent.replace(/^.*：/, ''));
+        t.setAttribute('data-scale', next);
+        safeText(t, '叙事尺度：' + next);
+        writeScale(next, root).then(function (r) {
+          noteIn(root, r.warn || ('叙事尺度已拨到「' + r.value +
+            '」—— 这一档是什么意思，本卡不解释，由你的预设决定。'),
+            r.warn ? 'is-error' : 'is-ok');
+        });
+        return;
+      }
+      if (act === 'pressure') {
+        var on = t.textContent.indexOf('开') >= 0;
+        var nextOn = !on;
+        safeText(t, '时局压力：' + (nextOn ? '开' : '关'));
+        writeObject(CONFIG.worldObject, mkPatch(CONFIG.pressureKey, nextOn), root).then(function (warn) {
+          noteIn(root, warn || ('时局压力已拨到「' + (nextOn ? '开' : '关') + '」。'),
+            warn ? 'is-error' : 'is-ok');
+        });
+        return;
+      }
+    });
+  }
+
+  /* 对象字面量里用变量当键名，得这样绕一下（ES5 没有计算属性） */
+  function mkPatch(key, value) {
+    var o = {};
+    o[key] = value;
+    return o;
+  }
+
+  /* 拨一档：册上没有的值一律按中间那一档算，认不出的值不往外写 */
+  function writeScale(v, scope) {
+    var val = str(v);
+    if (CONFIG.scaleValues.indexOf(val) < 0) val = CONFIG.scaleValues[1];
+    return writeObject(CONFIG.worldObject, mkPatch(CONFIG.scaleKey, val), scope)
+      .then(function (warn) { return { value: val, warn: warn }; });
+  }
+
+  /* -------------------------------------------------------------- 悬浮球 */
+
+  var BALL_KEY = 'cardc73c60-hud-ball';
+
+  function loadBallPos() {
+    try {
+      var raw = window.localStorage && window.localStorage.getItem(BALL_KEY);
+      if (!raw) return null;
+      var p = JSON.parse(raw);
+      return (p && typeof p.x === 'number' && typeof p.y === 'number') ? p : null;
+    } catch (e) { return null; }
+  }
+
+  function saveBallPos(x, y) {
+    try {
+      if (window.localStorage) {
+        window.localStorage.setItem(BALL_KEY, JSON.stringify({ x: x, y: y }));
+      }
+    } catch (e) { /* 存不了就算了，位置不记住不影响用 */ }
+  }
+
+  /* 球挂在宿主文档里：跟「这一页渲染哪个视图」无关，只要这一页渲染出了东西就该有球 */
+  function mountBall(holder, targetDoc) {
+    var doc = targetDoc || (holder && holder.ownerDocument) || document;
+    if (!doc || !doc.body) return null;
+    if (doc.querySelector('[data-ball]')) return doc.querySelector('[data-ball]');
+
+    var ball = doc.createElement('div');
+    ball.className = 'hud-ball';
+    ball.setAttribute('data-ball', '');
+    ball.textContent = '状';
+    doc.body.appendChild(ball);
+
+    var panel = doc.createElement('div');
+    panel.className = 'hud-ballpanel';
+    panel.setAttribute('data-ballpanel', '');
+    panel.hidden = true;
+    doc.body.appendChild(panel);
+
+    var pos = loadBallPos() || { x: 18, y: Math.max(18, (doc.defaultView.innerHeight || 700) - 120) };
+    place(ball, pos.x, pos.y);
+
+    function place(el, x, y) {
+      var w = doc.defaultView.innerWidth || 800, h = doc.defaultView.innerHeight || 700;
+      var bx = clamp(x, 4, Math.max(4, w - 52));
+      var by = clamp(y, 4, Math.max(4, h - 52));
+      el.style.left = bx + 'px';
+      el.style.top = by + 'px';
+      el.style.bottom = 'auto';
+      el.style.right = 'auto';
+    }
+
+    var dragging = false, moved = false, sx = 0, sy = 0, ox = 0, oy = 0;
+
+    function down(ev) {
+      var p = pointOf(ev);
+      dragging = true; moved = false;
+      sx = p.x; sy = p.y;
+      var r = ball.getBoundingClientRect();
+      ox = r.left; oy = r.top;
+      ev.preventDefault();
+    }
+
+    function move(ev) {
+      if (!dragging) return;
+      var p = pointOf(ev);
+      var dx = p.x - sx, dy = p.y - sy;
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+      place(ball, ox + dx, oy + dy);
+      if (!panel.hidden) place(panel, ox + dx - 268, oy + dy - 8);
+      ev.preventDefault();
+    }
+
+    function up() {
+      if (!dragging) return;
+      dragging = false;
+      if (moved) {
+        var r = ball.getBoundingClientRect();
+        saveBallPos(r.left, r.top);
+      } else {
+        toggle();
+      }
+    }
+
+    function pointOf(ev) {
+      var t = ev.touches && ev.touches[0] ? ev.touches[0] : ev;
+      return { x: t.clientX, y: t.clientY };
+    }
+
+    function toggle() {
+      panel.hidden = !panel.hidden;
+      if (panel.hidden) return;
+      var r = ball.getBoundingClientRect();
+      panel.innerHTML = '<div class="hud-ballpanel__t">状态</div>' +
+        '<div class="hud-ballpanel__b" data-ball-body>正在读取…</div>';
+      place(panel, r.left - 268, r.top - 8);
+      readState().then(function (state) {
+        var b = panel.querySelector('[data-ball-body]');
+        if (b) b.innerHTML = hasProfile(state) ? panelHtml(state) :
+          '<div class="hud-dim">还没有角色档案。</div>';
+      });
+    }
+
+    ball.addEventListener('mousedown', down);
+    ball.addEventListener('touchstart', down, { passive: false });
+    doc.addEventListener('mousemove', move);
+    doc.addEventListener('touchmove', move, { passive: false });
+    doc.addEventListener('mouseup', up);
+    doc.addEventListener('touchend', up);
+
+    return ball;
+  }
+
+  /* ------------------------------------------------------------ 可选模块
+
+     模块 = 一张卡按需接的能力（骰子框、尺度说明、档案备份、AI 代笔……）。
+     它们的代码不写在上面，而是各占 hud/模块/<名>/<名>.js 一个文件
+     （一个模块一个目录，与 build_hud.py 找的是同一个形状），
+     由 hud/build_hud.py 按 hud.conf.json 的「模块」列表拼进同一页、
+     拼在核心之后。不接就不拼 —— 页面上不会多一个字节。
+
+     模块脚本是**另一段独立代码**：它进不到这个 IIFE 里面来（这里的东西
+     不外露），所以接线走注册表 —— 模块把自己的名字与挂载点交给 useModule()。
+
+     一个模块最多给四样，能给几样给几样，没给的那处就不接：
+
+       · create(state) → 一段 HTML，接在建卡器的档位行之后
+       · panel(state)  → 一段 HTML，接在面板最底下
+       · mount(hud)    → 页面就绪后自己动手（要绑事件、要常驻的走这条；
+                         hud 是下面那份导出，够它读变量、写变量、拿配置）
+       · afterSubmit(hud, root, warn) → 封缄那一笔写落定之后叫一次
+                         （root 是建卡器那一块，warn 是那笔写有没有被挡回来）
+
+     四处调用都包了 try：模块里抛出来的异常只让它自己那一块不出现，
+     面板其余部分照常 —— 一个模块坏了不该把整页拖垮。 */
+  var MODULES = [];
+  var booted = false;
+
+  function useModule(m) {
+    if (!m || typeof m !== 'object' || !str(m.name)) return false;
+    for (var i = 0; i < MODULES.length; i++) {
+      if (MODULES[i].name === m.name) return false;   /* 同一块不认识两遍 */
+    }
+    MODULES.push(m);
+    /* 正常情形下模块脚本比 boot 早（同一页里跟在后面的那一段，boot 还压在
+       DOMContentLoaded 上）。万一晚到，补画一次面板 —— 面板重画是幂等的；
+       建卡器那一份是表单，重画会吃掉已经填进去的字，所以不补它。 */
+    if (booted) each('[data-view="card"]', function (root) { refresh(root); });
+    return true;
+  }
+
+  function moduleBlocks(kind, state) {
+    var out = [];
+    for (var i = 0; i < MODULES.length; i++) {
+      var fn = MODULES[i][kind];
+      if (typeof fn !== 'function') continue;
+      try {
+        var html = fn(state);
+        if (html) out.push(html);
+      } catch (e) { /* 模块自己那块画不出来，就少一块 */ }
+    }
+    return out.join('');
+  }
+
+  /* 封缄写完之后的挂载点（模块可以不给，不给就跳过）。
+     传 root 是让模块还能读到表单里那几栏，warn 是那一笔写有没有被挡回来。
+     **一定要在这一笔落定之后叫**：每一笔写都是「读出整份 → 改一处 → 整份写回」，
+     模块若抢在它前面读一遍再写，就会把刚封缄的档案盖回旧值。 */
+  function afterSubmit(root, warn) {
+    for (var i = 0; i < MODULES.length; i++) {
+      var fn = MODULES[i].afterSubmit;
+      if (typeof fn !== 'function') continue;
+      try { fn(window.CARDC73C60_HUD, root, warn); } catch (e) { /* 一个模块跟不上，不该拦住建卡 */ }
+    }
+  }
+
+  /* ---------------------------------------------------------------- 导出 */
+
+  window.CARDC73C60_HUD = {
+    CONFIG: CONFIG,
+    DEFAULTS: DEFAULTS,
+    esc: esc,
+    str: str,
+    num: num,
+    clamp: clamp,
+    isArr: isArr,
+    plain: plain,
+    msgOf: msgOf,
+    parseList: parseList,
+    joinList: joinList,
+    fillState: fillState,
+    objectOf: objectOf,
+    statOf: statOf,
+    readArchive: readArchive,
+    scaleOf: scaleOf,
+    nextScale: nextScale,
+    pressureOn: pressureOn,
+    valueHtml: valueHtml,
+    panelHtml: panelHtml,
+    objectRows: objectRows,
+    briefOf: briefOf,
+    hasProfile: hasProfile,
+    mkPatch: mkPatch,
+    touched: touched,
+    createHtml: createHtml,
+    readCreateForm: readCreateForm,
+    renderCardView: renderCardView,
+    renderCreateView: renderCreateView,
+    mountBall: mountBall,
+    readState: readState,
+    writeObject: writeObject,
+    whenReady: whenReady,
+    /* 宿主桥本身：有的模块要的不止「读变量 / 写变量」——
+       代笔模块要用 input.set 把请求填进对话输入框、用 messages.list 认回话。
+       桥只此一份，模块照这一份用；各写各的等于把同一件事做两遍。 */
+    api: api,
+    call: call,
+    /* 模块接线口：模块脚本就靠这两个进到这一页里来 */
+    useModule: useModule,
+    modules: function () { return MODULES.slice(); }
+  };
+
+  /* ------------------------------------------------------------ 自动启动 */
+
+  function boot() {
+    booted = true;
+    var createRoot = document.querySelector('[data-view="create"]');
+    if (createRoot) renderCreateView(createRoot);
+    var cardRoot = document.querySelector('[data-view="card"]');
+    if (cardRoot) renderCardView(cardRoot);
+    var holder = cardRoot || createRoot;
+    if (holder) mountBall(holder);
+    for (var i = 0; i < MODULES.length; i++) {
+      if (typeof MODULES[i].mount !== 'function') continue;
+      try { MODULES[i].mount(window.CARDC73C60_HUD); }
+      catch (e) { /* 一个模块挂不上，别的照挂 */ }
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      /* 已经过了 loading 也往后压一格：同一页里跟在后面的模块脚本还没跑，
+         boot 早跑一步，模块就赶不上这一画。 */
+      setTimeout(boot, 0);
+    }
+  }
+})();
+
+/* ============================================================================
+ * 尺度模块 —— 给「叙事尺度」那三档配一句人话
+ *
+ * 条目里那份是写给 AI 的（怎么落笔）；这里这份是写给玩家的（你会看到什么）。
+ * 两处说的是同一件事，措辞不同 —— 而且**都得有一份**：玩家拨档位的时候
+ * 得知道自己在拨什么，不然那三个字就是三个字。
+ *
+ * 这一份是「另一个文件里的一段独立代码」：它读不到 hud.core.js 里的私有名字，
+ * 只能通过 window.CARDC73C60_HUD 那份导出接上去 —— 接线口就是 useModule()。
+ * 不接的时候这个文件根本不在这张卡里（由 hud.conf.json 的「模块」说了算）。
+ *
+ * 自检写在下面 自检() 里，跟着 测试/run_all.py 一起跑：
+ * 三档的措辞是内容，内容也会抄错 —— 抄错了不会报错，只是某一档看着像另一档。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* 三档各是什么意思。改这里就是改这张卡的口味 —— 演示卡不替你定，
+     因为「放开」到哪一步才算放开，是作者的事。 */
+  var NOTE = {
+    克制: '镜头只跟着你走，你不问就不展开；冲突不升级。',
+    标准: '有来有回 —— 该起波澜就起，但每件事都有来处。',
+    放开: '世界自己会动：势力、仇家、时局会找上门；允许大场面与不可逆的后果。'
+  };
+
+  /* 档位 -> 那一句话。认不出的值退回「标准」那一句 ——
+     跟界面上那颗扣子同一个规矩：不把认不出的东西摆到人眼前。 */
+  function noteOf(v) {
+    return NOTE[v] || NOTE.标准;
+  }
+
+  function blockHtml(hud, state) {
+    var v = hud.scaleOf(state);
+    var on = hud.pressureOn(state);
+    return '' +
+      '<div class="hud-scalehint">' +
+      '  <span class="hud-scalehint__k">' + hud.esc(v) + '</span>' +
+      '  <span class="hud-scalehint__v">' + hud.esc(noteOf(v)) + '</span>' +
+      '  <span class="hud-scalehint__p">时局压力：' + (on ? '开' : '关') + '</span>' +
+      '</div>';
+  }
+
+  function register() {
+    var hud = window.CARDC73C60_HUD;
+    if (!hud || typeof hud.useModule !== 'function') return;
+    hud.useModule({
+      name: '尺度',
+      /* 建卡器：拨档位的那一行底下，把话说明白 */
+      create: function (state) { return blockHtml(hud, state); },
+      /* 面板：每轮都看得到这一档是什么意思 */
+      panel: function (state) { return blockHtml(hud, state); },
+      自检: function () {
+        return [
+          ['三档都有一句人话',
+            !!noteOf('克制') && !!noteOf('标准') && !!noteOf('放开')],
+          ['三档的说法各不相同（不是同一句抄了三遍）',
+            noteOf('克制') !== noteOf('标准') && noteOf('标准') !== noteOf('放开')],
+          ['认不出的档位退回「标准」那一句', noteOf('乱写的') === NOTE.标准],
+          ['空值与非字符串也退回「标准」那一句',
+            noteOf('') === NOTE.标准 && noteOf(null) === NOTE.标准 &&
+            noteOf(undefined) === NOTE.标准]
+        ];
+      }
+    });
+  }
+
+  register();
+})();
+
+/* ============================================================================
+ * 备份模块 —— 把「玩家」那份档案导出成一段文本，再原样读回来
+ *
+ * 解决的是这一件事：界面填的东西只住在变量里。换台机器、重开一局、想把某个
+ * 角色单独存着 —— 一条路都没有。这一段给那条路。
+ *
+ * 导出的文本里带两样，缺一样就不算备份：
+ *   · 变量里那份**已经封缄的**档案 —— 封缄之后唯一的真相；
+ *   · 建卡器界面上**正在填的**那份草稿 —— 还没封缄的活。
+ * 只带前者，填了一半的草稿白填；只带后者，封缄过的角色读回来是空界面。
+ *
+ * **这一份有三个落脚处，各管一段路，别混为一谈**：
+ *   · 界面上那一格 textarea —— 草稿纸。活在当前这一页里，关掉或重启软件就空了；
+ *   · 变量树里那个「给机器用的」对象（CONFIG.archiveObject，默认是 存档 › 角色）——
+ *     这一局的**过夜那一份**。它跟玩家档案住同一套变量系统，所以按会话存：重启软件、
+ *     关掉这段对话再回来都在；新开一段对话是另一局，那里自然是空的。
+ *   · 宿主窗口的 localStorage —— **跨局的永久档**，钥匙由 FORMAT 派生（见 SLOT_KEY）。
+ *     localStorage 按「源」存，而卡片每一楼都跑在同一个源里，所以同一台机器的任何
+ *     一局都读得到它，关软件、开新对话都不丢。变量办不到的那一半 ——「日后再开一局
+ *     把捏好的角色读回来」—— 就压在它身上。
+ * 所以导出会同时写三处；**封缄也会顺手写一份**（核心在那一笔落定后叫
+ * afterSubmit，这时读到的档案才是封缄之后的）；「从存档取回」先读变量，
+ * 变量空着（新一局本来就是空的）再退到永久档；「从上面那格读回」只读那一格。
+ *
+ * 写进变量的是**紧凑 JSON**：给人看的那份摆在界面上（缩进好读），这一份要跟着
+ * 每一次请求进上下文 —— 同一份东西，缩进一加就从 864 字涨到 1444 字。
+ *
+ * **这一份不写死任何字段名。** 建卡器上有哪几栏、档案住在哪个变量下、存档那一格
+ * 叫什么，都从 hud.CONFIG 现读（fields / playerObject / archiveObject / archiveSlot）
+ * —— 你把演示卡改成什么样，它就备份什么样；某栏的上下限改了，读回来时的夹取也跟着改。
+ *
+ * 界面只接在建卡器那一页（create），不接面板：面板每轮回复都重画一遍，
+ * 放进去的 textarea 下一轮就空了。想在面板上「随时能存」是另一件事 ——
+ * 面板看不见表单，能存的只有变量里那份档案，而那一份本来就在变量里。
+ *
+ * 这一份是「另一个文件里的一段独立代码」：读不到 hud.core.js 里的私有名字，
+ * 只能通过 window.CARDC73C60_HUD 那份导出接上去，接线口是 useModule()。
+ *
+ * 自检写在下面 自检() 里，跟着 测试/run_all.py 一起跑 —— 测的是「认与收」那
+ * 一半（不碰 DOM 的那些函数）：存档认错、栏位夹不住、多出来的键被丢掉、
+ * 空档案把变量清空、存档位读错一格，这几样都不会报错，只会安静地把玩家的档案弄坏。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* 存档的标记。换名时 cardc73c60 会跟着变成这张卡的 id 前缀 ——
+     认存档只认这一个记号：别家的、手改坏了的一律如实说读不出来，
+     绝不「尽力解析」（猜着填进界面，比不填更坏）。 */
+  var FORMAT = 'cardc73c60.card-archive';
+  var VERSION = 1;
+
+  var ACT_OUT = 'archive-out';
+  var ACT_LOAD = 'archive-load';
+  var ACT_IN = 'archive-in';
+  var BUSY = 'data-archive-busy';
+
+  /* ------------------------------------------------ 认与收（不碰 DOM 的那一半） */
+
+  /* 这一段读得出来吗。只认自家格式。 */
+  function parse(hud, text) {
+    var s = hud.str(text);
+    if (!s) {
+      return { ok: false,
+        msg: '上面那格是空的 —— 先点「导出到上面那格」，把那一段抄走，要还原时再粘回来。' };
+    }
+    var box = null;
+    try { box = JSON.parse(s); } catch (e) { box = null; }
+    if (!hud.plain(box)) {
+      return { ok: false,
+        msg: '这段读不出来：它不是 JSON。要的是点「导出」写进那格的那一整段（从 { 到 }）。' };
+    }
+    if (hud.str(box.format) !== FORMAT) {
+      return { ok: false,
+        msg: '这段不是本卡的存档 —— 认不出「' + FORMAT + '」这个标记（读到的 format 是「' +
+          (hud.str(box.format) || '空') + '」）。' };
+    }
+    return { ok: true, data: box, msg: '' };
+  }
+
+  /* 一块对象里到底有没有东西。用它代替「有没有名字」——
+     名字是某张卡自己的栏位，模块不该知道；空串、空数组、空的嵌套对象都算没有。 */
+  function hasAny(hud, obj) {
+    var keys = Object.keys(hud.plain(obj) || {});
+    for (var i = 0; i < keys.length; i++) {
+      var v = obj[keys[i]];
+      if (hud.plain(v)) { if (hasAny(hud, v)) return true; continue; }
+      if (hud.isArr(v) ? v.length > 0 : hud.str(v) !== '') return true;
+    }
+    return false;
+  }
+
+  /* 「一行一件」的栏：是数组就逐项去空白；单写一个字符串也认（手改过的存档常见），
+     按行切开。行里放不下换行（界面上就是拿换行拼的），所以这么切不丢东西。 */
+  function listOf(hud, v) {
+    if (hud.isArr(v)) {
+      var out = [];
+      for (var i = 0; i < v.length; i++) {
+        var s = hud.str(v[i]);
+        if (s) out.push(s);
+      }
+      return out;
+    }
+    if (v == null || v === '') return [];
+    return hud.parseList(String(v));
+  }
+
+  /* 把一份（可能被手改过的）档案收成界面与变量都认得的形状：
+     照 CONFIG.fields 逐栏对类型与上下限 —— 手改出来的「等级 999」不该进变量。
+     然后**先原样摊开**：档案里多出来的键一个不丢（变量树常常比建卡器长，
+     来回一趟丢东西是备份最容易犯的错）。代价是宿主 schema 若不认多出来的键，
+     那次写入会被整条挡回来 —— 那种时候写回那一步会如实报出来，不装着成功。 */
+  function norm(hud, src) {
+    var raw = hud.plain(src) || {};
+    var out = {};
+    Object.keys(raw).forEach(function (k) { out[k] = raw[k]; });
+    var F = hud.CONFIG.fields || [];
+    for (var i = 0; i < F.length; i++) {
+      var f = F[i], v = raw[f.key];
+      if (f.type === 'list') {
+        out[f.key] = listOf(hud, v);
+      } else if (f.type === 'number') {
+        var n = Math.round(hud.num(v, f.min != null ? f.min : 0));
+        out[f.key] = hud.clamp(n, f.min != null ? f.min : n, f.max != null ? f.max : n);
+      } else {
+        out[f.key] = hud.str(v);
+      }
+    }
+    return out;
+  }
+
+  /* 打包。draft 为假表示这一页没有建卡器（那就只带变量里那份档案）。 */
+  function pack(hud, state, draft) {
+    var p = hud.objectOf(state, hud.CONFIG.playerObject);
+    var sealed = hasAny(hud, p);
+    return {
+      format: FORMAT,
+      version: VERSION,
+      存于: new Date().toISOString(),
+      草稿: draft || null,
+      档案: sealed ? norm(hud, p) : null
+    };
+  }
+
+  /* ------------------------------------------------------------------ 存档位
+
+     「存档」那一格是过夜的地方。读法归核心（它知道变量住 stat_data 还是摊在
+     顶层），模块只管用；写法则直接用核心的 writeObject —— 自己拼一份 setState
+     出来，等于把「整份读出、改一处、整份写回」这件事在这里重做一遍，
+     多一处会写错的地方。 */
+
+  function slotName(hud) {
+    return hud.str(hud.CONFIG.archiveObject) && hud.str(hud.CONFIG.archiveSlot);
+  }
+
+  /* 这一局存着的那一份（空串 = 还没有）。 */
+  function savedOf(hud, state) {
+    if (typeof hud.readArchive === 'function') return hud.readArchive(state);
+    if (!slotName(hud)) return '';
+    /* 老核心没这个助手：照 CONFIG 自己读一遍，别让整块功能因此瞎掉 */
+    return hud.str(hud.objectOf(state, hud.CONFIG.archiveObject)[hud.CONFIG.archiveSlot]);
+  }
+
+  /* ------------------------------------------------------------ 永久档（跨局）
+
+     变量那一格按会话存，新一局天然是空的 —— 干净开局要的正是这个，可它同时意味着
+     「捏好的角色、日后再开一局也读回来」在变量里办不到。那一半只有压在宿主窗口的
+     localStorage 上：按「源」存、落盘，所以同一台机器的任何一局都读得到。
+
+     宿主不给写（关掉了站点存储之类）就当作没这一步 —— 这里一律不抛，只把
+     「没写成」当一句话带上去；上面那格文本与剪贴板照旧是最后一道保险。 */
+
+  /* 永久档那把钥匙。从 FORMAT 派生，而 FORMAT 会被 cardc73c60 换成这张卡的名字，
+     所以两张卡各存各的，谁也不盖谁。 */
+  var SLOT_KEY = FORMAT + '::perm';
+
+  function permStore() {
+    try {
+      var w = (typeof window !== 'undefined' && window) || null;
+      return (w && w.localStorage) || null;
+    } catch (e) { return null; }
+  }
+
+  /* 写一份进永久档。写后读回来对一眼 —— 宿主可能只是「假装」写成功。
+     不记名字：模块这一头不写死任何字段名（见文件头），所以只记时间与长度，
+     界面上那一句自己会说是谁。 */
+  function permWrite(text) {
+    var ls = permStore();
+    if (!ls) return false;
+    try {
+      var s = String(text == null ? '' : text);
+      if (!s) return false;
+      ls.setItem(SLOT_KEY, JSON.stringify({ v: VERSION, at: new Date().toISOString(), text: s }));
+      return !!ls.getItem(SLOT_KEY);
+    } catch (e) { return false; }
+  }
+
+  /* 读永久档。没存过、那段坏了、宿主不给读 —— 一律当没有：
+     它是锦上添花的那一条，不该把「从存档取回」整条路带塌。 */
+  function permRead() {
+    var ls = permStore();
+    if (!ls) return null;
+    try {
+      var raw = ls.getItem(SLOT_KEY);
+      if (!raw) return null;
+      var box = JSON.parse(raw);
+      if (!box || typeof box !== 'object' || !String(box.text || '')) return null;
+      return box;
+    } catch (e) { return null; }
+  }
+
+  /* 永久档那句话里要写「什么时候、多大一份」。摊成人看得懂的本地时间。 */
+  function permBrief(box) {
+    var d = new Date(String((box || {}).at || ''));
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var at = isNaN(d.getTime()) ? ''
+      : d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+        ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    return (at ? at + ' 存 · ' : '') + String((box || {}).text || '').length + ' 字';
+  }
+
+  /* 永久档那一行。这一局的变量空着（新一局本来就空）时，它就是唯一的来路 ——
+     不说一声，人只会以为白捏了一遍。 */
+  function permText(box) {
+    return box
+      ? '这台机器的永久档里留着一份（' + permBrief(box) + '）—— 另开一局新对话也能按「从存档取回」填回来。'
+      : '这台机器的永久档里没有东西。（宿主若不给卡片写站点存储，跨局就只剩上面那格文本一条路。）';
+  }
+
+  /* 把一份备份写进那一格。写的是紧凑 JSON（理由见文件头）。
+     失败一律**不往下抛** —— 备份还有那格文本与剪贴板两条路，如实说一句就够，
+     不该让一次变量写不成把整个导出打断。返回空串 = 顺利。
+
+     顺手也压一份永久档：写三处的那三处里，只有它跨得过「另开一局」。
+     两处互不依赖 —— 哪一处没成就说哪一处，不因一处坏了把另一处也丢掉。 */
+  function store(hud, scope, data) {
+    var tight = JSON.stringify(data);
+    var perm = permWrite(tight);
+    var permBad = perm ? '' : '（永久档没写成 —— 这台机器不让卡片写站点存储，' +
+      '往后另开一局取回就只剩上面那格文本这条路。）';
+    if (!slotName(hud)) {
+      return Promise.resolve('（这张卡的 CONFIG 里没写「存档」那个位子，' +
+        '这一份只有抄走的才留得住。）' + permBad);
+    }
+    var patch = hud.mkPatch(hud.CONFIG.archiveSlot, tight);
+    return hud.writeObject(hud.CONFIG.archiveObject, patch, scope).then(function (warn) {
+      return (warn ? '（没能写进「存档」变量：' + warn + '）' : '') + permBad;
+    }, function (err) {
+      return '（没能写进「存档」变量：' + hud.msgOf(err) + '）' + permBad;
+    });
+  }
+
+  /* 「这一局存着没有」那一行。导出 / 取回之后就地把字换掉，不用等下一次重画 ——
+     建卡器不是每轮都重画的，等重画等于让这句话一直是旧的。 */
+  function keptText(n) {
+    return n
+      ? '这一局存着一份备份（' + n + ' 字）—— 按「从存档取回」就能把表单填回来，重启也在。'
+      : '这一局还没有存档：按「导出」会存一份，封缄时也会顺手存一份。';
+  }
+
+  /* 那一行写两件事：这一局存着没有，以及这台机器的永久档里有没有。
+     两处都要说 —— 只看前者的话，新一局里那一行永远说「还没有存档」，
+     而人刚在这一局按过封缄，看着就像备份丢了。 */
+  function keptIn(scope, n) {
+    var el = scope.querySelector('[data-archive-kept]');
+    if (el) el.textContent = keptText(n) + ' ' + permText(permRead());
+  }
+
+  /* ------------------------------------------------------------ 界面那一块 */
+
+  function blockHtml(hud, state) {
+    var sealed = hud.hasProfile(state);
+    var line = sealed
+      ? '变量里现在这份档案：' + hud.briefOf(state)
+      : '变量里还没有封缄过的档案 —— 先把上面填好、点「封缄 · 开始」，导出时才会带上它。';
+    return '' +
+      '<div class="hud-archive" data-archive>' +
+      '  <div class="hud-archive__t">档案备份</div>' +
+      '  <div class="hud-archive__hint">想把某个角色单独留着、换台机器、另开一局再玩 —— ' +
+      '导出这一份：变量里过夜，这台机器的永久档里跨局，那格文本可以抄走带到别处。' +
+      hud.esc(line) + '</div>' +
+      '  <div class="hud-archive__hint" data-archive-kept>' +
+      hud.esc(keptText(savedOf(hud, state).length) + ' ' + permText(permRead())) + '</div>' +
+      '  <textarea class="hud-input hud-input--area hud-archive__box" rows="4" ' +
+      'data-archive-box spellcheck="false" ' +
+      'placeholder="点「导出」把这一份写进这格 —— 同时抄进剪贴板、并写进这一局的' +
+      '「存档」变量与这台机器的永久档。要还原就按「从存档取回」（另开一局也读得回来）；' +
+      '换了机器，才需要把那段文本粘回这一格再点「从上面那格读回」。">' +
+      '</textarea>' +
+      '  <div class="hud-archive__row">' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="' + ACT_OUT + '">' +
+      '导出到上面那格</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="' + ACT_LOAD + '">' +
+      '从存档取回</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="' + ACT_IN + '">' +
+      '从上面那格读回</button>' +
+      '  </div>' +
+      '  <div class="hud-archive__note" data-archive-note hidden></div>' +
+      '</div>';
+  }
+
+  function noteIn(scope, text, kind) {
+    var n = scope.querySelector('[data-archive-note]');
+    if (!n) return;
+    n.hidden = !text;
+    n.className = 'hud-archive__note' + (kind ? ' ' + kind : '');
+    n.textContent = text || '';
+  }
+
+  /* 从被点的那个扣子往上找，找到这一块所在的建卡器根 ——
+     读表单、写状态提示都在这根里做，不碰页面别处。 */
+  function createRootOf(node) {
+    var t = node;
+    while (t && t.getAttribute && !t.getAttribute('data-create')) t = t.parentNode;
+    return (t && t.getAttribute) ? t : null;
+  }
+
+  /* 抄进剪贴板。宿主不让写就当作没这一步 —— 文字已经在格子里全选着，
+     Ctrl+C 一样管用，不必为它报错。 */
+  function copyText(text) {
+    try {
+      if (window.navigator && window.navigator.clipboard &&
+          typeof window.navigator.clipboard.writeText === 'function') {
+        return window.navigator.clipboard.writeText(text);
+      }
+    } catch (e) { /* 落到下面 */ }
+    return Promise.reject(new Error('这一版不让脚本写剪贴板'));
+  }
+
+  function exportOut(hud, scope) {
+    var box = scope.querySelector('[data-archive-box]');
+    var root = createRootOf(scope);
+    noteIn(scope, '正在读变量…');
+    return hud.readState().then(function (state) {
+      var draft = root ? hud.readCreateForm(root) : null;
+      var data = pack(hud, state, draft);
+      var text = JSON.stringify(data, null, 2);   /* 给人看、抄走的那一份 */
+      var tight = JSON.stringify(data);           /* 过夜的那一份，不带缩进 */
+      if (box) {
+        box.value = text;
+        if (box.select) box.select();     /* 顺手全选：接着 Ctrl+C 就行 */
+      }
+      var what = data.档案
+        ? '：带着变量里那份档案，也带着界面这一份草稿'
+        : (draft ? '：只带界面这一份草稿 —— 变量里还没有封缄过的档案，读回时只填界面、不动变量'
+                 : '：只带变量里那份档案');
+      var head = '已把这一份写成文本放在上面那格（' + text.length + ' 字）' + what +
+        '，并存进了这一局的「存档」变量（' + tight.length + ' 字）与这台机器的永久档 —— ' +
+        '关掉软件、另开一局新对话回来，按「从存档取回」都填得回来。';
+      /* 存变量与抄剪贴板互不依赖：一个不成不该带走另一个，所以两边分开收尾 */
+      return store(hud, scope, data).then(function (kept) {
+        keptIn(scope, tight.length);
+        var tail = kept ? ' ' + kept : '';
+        return copyText(text).then(function () {
+          noteIn(scope, head + '那段也顺手抄进剪贴板了，存到别处多一份保险。' + tail,
+            kept ? 'is-error' : 'is-ok');
+        }).catch(function () {
+          noteIn(scope, head + '这一版不让脚本写剪贴板 —— 那格已经全选，按 Ctrl+C 抄走存好。' + tail,
+            kept ? 'is-error' : 'is-ok');
+        });
+      });
+    }).catch(function (err) {
+      noteIn(scope, '导出失败：' + hud.msgOf(err), 'is-error');
+    });
+  }
+
+  /* 从「存档」那一格里把表单填回来 —— 重启软件、关掉对话再回来，靠的就是这一颗。
+     先读这一局那一格；本局还没有（新一局本来就是空的）就退到这台机器的永久档 ——
+     「新对话干净开局」与「捏好的角色日后再开一局也读回来」这两半，就在这一处接上。
+     只填界面，**不覆盖已经封缄的那份档案**：那一份是会给剧情改的（升级、花钱、
+     拿东西），照旧备份盖回去等于把玩家的进展抹了。
+     要连档案一起盖，那是「从上面那格读回」的活 —— 得人看着那段文字自己按。 */
+  function loadSaved(hud, scope) {
+    var root = createRootOf(scope);
+    noteIn(scope, '正在读变量…');
+    return hud.readState().then(function (state) {
+      var saved = savedOf(hud, state);
+      var from = '这一局的存档';
+      if (!saved) {
+        var perm = permRead();
+        if (!perm) {
+          noteIn(scope, '这一局还没有存档，这台机器的永久档里也是空的 —— ' +
+            '按「导出」会存一份，封缄时也会顺手存一份。', 'is-error');
+          return;
+        }
+        saved = perm.text;
+        from = '这台机器的永久档（' + permBrief(perm) + '）';
+      }
+      var got = parse(hud, saved);
+      if (!got.ok) { noteIn(scope, '存档里那段读不出来：' + got.msg, 'is-error'); return; }
+      var data = got.data;
+      var draft = hud.plain(data.草稿);
+      var prof = hud.plain(data.档案);
+      if (prof && !hasAny(hud, prof)) prof = null;
+      var box = scope.querySelector('[data-archive-box]');
+      if (box) box.value = JSON.stringify(data, null, 2);   /* 顺手摆出来，好核 */
+      keptIn(scope, saved.length);
+      var n = root ? fillForm(hud, root, draft || prof) : 0;
+      var odd = (hud.num(data.version, VERSION) !== VERSION)
+        ? '（这段是 v' + hud.num(data.version, 0) + ' 的格式，我按认得的栏填的，回头核一眼。）' : '';
+      noteIn(scope, '已照' + from + '把表单填回 ' + n + ' 栏' +
+        (prof ? '（存档里那份档案没动：它在变量里本来就一直在）。' : '。') + odd, 'is-ok');
+    }).catch(function (err) {
+      noteIn(scope, '取回存档失败：' + hud.msgOf(err), 'is-error');
+    });
+  }
+
+  /* 把读回来的草稿摊进表单。表单是这一页唯一的「正在填的」地方，
+     所以导入必须落在它上面 —— 变量写回去了但界面没动，人会以为没成功。 */
+  function fillForm(hud, root, src) {
+    var n = 0;
+    var list = root.querySelectorAll('[data-field]');
+    for (var i = 0; i < list.length; i++) {
+      var el = list[i];
+      var key = el.getAttribute('data-field');
+      var type = el.getAttribute('data-type');
+      if (!key || !src || src[key] === undefined) continue;
+      el.value = (type === 'list') ? hud.joinList(src[key])
+        : (src[key] == null ? '' : String(src[key]));
+      n++;
+    }
+    return n;
+  }
+
+  function importIn(hud, scope) {
+    var box = scope.querySelector('[data-archive-box]');
+    var got = parse(hud, box ? box.value : '');
+    if (!got.ok) { noteIn(scope, got.msg, 'is-error'); return; }
+
+    var data = got.data;
+    var odd = (hud.num(data.version, VERSION) !== VERSION)
+      ? '（这段是 v' + hud.num(data.version, 0) + ' 的格式，我按认得的栏填的，回头核一眼。）' : '';
+    var draft = hud.plain(data.草稿);
+    var prof = hud.plain(data.档案);
+    /* 有「档案」这个键、里面却什么都没有（手改坏的、或者是别处拼出来的）：
+       当它没有 —— 拿一份空档案去写变量，等于把玩家现在的档案抹成初值。 */
+    if (prof && !hasAny(hud, prof)) prof = null;
+
+    var root = createRootOf(scope);
+    var n = 0;
+    if (root) n = fillForm(hud, root, draft || prof);
+
+    /* 粘进来这份顺手也存回变量：往后重启回来，按「从存档取回」就能再填一遍。
+       存的是刚粘进去的那段（紧凑地重写一遍），不是表单的实时快照 ——
+       想把眼下这份存起来，按「导出」。 */
+    var tight = JSON.stringify(data);
+
+    /* 这段里没带封缄过的档案：界面填好、存档换上就行，玩家那份档案一根手指都不碰 */
+    if (!prof) {
+      noteIn(scope, '已读回：界面这一份填好了（' + n + ' 栏），正在存进「存档」…');
+      store(hud, scope, data).then(function (kept) {
+        keptIn(scope, tight.length);
+        noteIn(scope, '已读回：界面这一份填好了（' + n + ' 栏），也存回了「存档」变量。' +
+          '这段没带封缄过的档案，变量里那份档案没动 —— 填好之后按「封缄 · 开始」就写进去了。' +
+          odd + (kept ? ' ' + kept : ''), kept ? 'is-error' : 'is-ok');
+      });
+      return;
+    }
+    noteIn(scope, '已读回：界面填好了，正在把这份档案写回变量…');
+    hud.writeObject(hud.CONFIG.playerObject, norm(hud, prof), scope).then(function (warn) {
+      /* 两笔变量写必须一前一后：每一笔都是「读出整份 → 改一处 → 整份写回」，
+         并行跑的话，后写的那一笔带着自己先前读到的旧状态，会把前一笔盖掉。 */
+      return store(hud, scope, data).then(function (kept) {
+        keptIn(scope, tight.length);
+        var tail = (warn ? ' ' + warn : '') + (kept ? ' ' + kept : '');
+        noteIn(scope, '已读回：界面填好了，变量里那份档案也写回去了 —— 面板与悬浮球照它显示，' +
+          '这一份也存回了「存档」变量。' + odd + tail, (warn || kept) ? 'is-error' : 'is-ok');
+      });
+    }).catch(function (err) {
+      noteIn(scope, '界面已经填好了，可那份档案没写进变量：' + hud.msgOf(err) +
+        '。界面上的值都还在，按「封缄 · 开始」可以再写一次。' + odd, 'is-error');
+    });
+  }
+
+  /* 一下一下点不重复跑：读变量是异步的，手快的人容易点两遍。 */
+  function once(hud, scope, fn) {
+    var block = scope.querySelector('[data-archive]');
+    if (block && block.getAttribute(BUSY)) return;
+    if (block) block.setAttribute(BUSY, '1');
+    var done = function () { if (block) block.removeAttribute(BUSY); };
+    var r;
+    try {
+      r = fn();
+    } catch (e) {
+      done();
+      noteIn(scope, '这一下没走通：' + hud.msgOf(e), 'is-error');
+      return;
+    }
+    if (r && typeof r.then === 'function') r.then(done, done);
+    else done();
+  }
+
+  /* 自检里用：CONFIG.fields 里有没有这一种栏。找不到就跳过那条断言 ——
+     某张卡把栏改成别的样子时，自检不该跟着崩。 */
+  function fieldOf(hud, type) {
+    var F = hud.CONFIG.fields || [];
+    for (var i = 0; i < F.length; i++) {
+      if (F[i].type === type) return F[i];
+    }
+    return null;
+  }
+
+  /* ------------------------------------------------------------------ 接线 */
+
+  function register() {
+    var hud = window.CARDC73C60_HUD;
+    if (!hud || typeof hud.useModule !== 'function') return;
+
+    hud.useModule({
+      name: '备份',
+      /* 建卡器：档位那一行底下、表单与「封缄」之间 */
+      create: function (state) { return blockHtml(hud, state); },
+      /* 要从整页收点击：扣子长在核心画出来的建卡器里，核心不认得这两个动作。
+         挂在 document 上只认自家那一块（先往上找到 [data-create]，再看块在不在）。 */
+      mount: function (h) {
+        var use = h || hud;
+        document.addEventListener('click', function (ev) {
+          var t = ev.target;
+          while (t && t.getAttribute && !t.getAttribute('data-act')) t = t.parentNode;
+          if (!t || !t.getAttribute) return;
+          var act = t.getAttribute('data-act');
+          if (act !== ACT_OUT && act !== ACT_LOAD && act !== ACT_IN) return;
+          var scope = createRootOf(t);
+          if (!scope || !scope.querySelector('[data-archive]')) return;
+          ev.preventDefault();
+          once(use, scope, function () {
+            if (act === ACT_OUT) return exportOut(use, scope);
+            if (act === ACT_LOAD) return loadSaved(use, scope);
+            return importIn(use, scope);
+          });
+        });
+      },
+      /* 封缄那一笔写落定之后叫一次。核心写完调这一处，模块不自己掐时机：
+         这一刻 readState 读到的已经是封缄之后的那一份，所以「档案」带得上。
+         自己抢在封缄前面做会把刚写进去的档案盖回旧值 —— 每一笔写都是
+         「读出整份 → 改一处 → 整份写回」。 */
+      afterSubmit: function (h, root) {
+        var use = h || hud;
+        var scope = createRootOf(root) || root;
+        if (!scope || typeof scope.querySelector !== 'function') return;
+        if (!scope.querySelector('[data-archive]')) return;
+        return once(use, scope, function () {
+          return use.readState().then(function (state) {
+            var data = pack(use, state, use.readCreateForm(scope));
+            var n = JSON.stringify(data).length;
+            return store(use, scope, data).then(function (kept) {
+              keptIn(scope, n);
+              noteIn(scope, '封缄的同一口气里，也把这一份存进了这一局的「存档」' +
+                '与这台机器的永久档 —— 重启回来、或者干脆另开一局新对话，' +
+                '按「从存档取回」都能把表单填回来。' +
+                (kept ? ' ' + kept : ''), kept ? 'is-error' : 'is-ok');
+            });
+          });
+        });
+      },
+      自检: function () {
+        var good = JSON.stringify({ format: FORMAT, version: VERSION, 草稿: null, 档案: null });
+        var numF = fieldOf(hud, 'number');
+        var listF = fieldOf(hud, 'list');
+        var big = {}, many = {};
+        if (numF) big[numF.key] = 99999999;
+        if (listF) many[listF.key] = '甲\n\n　乙　';
+        var keep = { 没见过的键: { 深: 1 }, 另一个: '留着' };
+        return [
+          ['空着的一格读不出来', !parse(hud, '').ok],
+          ['不是 JSON 的一段读不出来', !parse(hud, '{这不是 JSON').ok],
+          ['别家的存档读不出来（format 对不上）', !parse(hud,
+            JSON.stringify({ format: '别人的卡.card-archive' })).ok],
+          ['数组不是存档（JSON 里能读出来的不止对象）', !parse(hud, '[]').ok],
+          ['自家格式的存档读得出来', parse(hud, good).ok],
+          ['认下来的存档带着草稿与档案两块', '草稿' in parse(hud, good).data &&
+            '档案' in parse(hud, good).data],
+          ['空对象不算「有一份档案」', !hasAny(hud, {})],
+          ['一栏都没填的档案也不算', !hasAny(hud, { a: '', b: [], c: {} })],
+          ['填过的档案就算', hasAny(hud, { a: '甲' }) && hasAny(hud, { a: [1] }) &&
+            hasAny(hud, { 深: { 再深: '乙' } })],
+          ['数字栏被夹进上下限', !numF || numF.max == null || norm(hud, big)[numF.key] <= numF.max],
+          ['多行栏：单写一个字符串也认，空白项不留',
+            !listF || norm(hud, many)[listF.key].join('|') === '甲|乙'],
+          ['档案里多出来的键一个不丢（变量树比建卡器长是常态）',
+            !!norm(hud, keep)['没见过的键'] && norm(hud, keep)['另一个'] === '留着'],
+
+          /* 存档位这一组：读错一格（读成玩家档案、或者读成空）不会报错，
+             只会让「取回」把人的表单填成别的东西 —— 所以把落点钉住。 */
+          ['存档位：CONFIG 里那两个名字都写了',
+            !!hud.str(hud.CONFIG.archiveObject) && !!hud.str(hud.CONFIG.archiveSlot)],
+          ['存档位：读的是 CONFIG 指的那一格（没写死在模块里）', (function () {
+            var box = {}, slot = {};
+            slot[hud.CONFIG.archiveSlot] = '一段存档';
+            box[hud.CONFIG.archiveObject] = slot;
+            return savedOf(hud, { stat_data: box }) === '一段存档';
+          })()],
+          ['存档位：这一局没存过的时候读出来是空串（不是 undefined）',
+            savedOf(hud, { stat_data: {} }) === '' && savedOf(hud, {}) === ''],
+          ['核心的初值里有那个机器位（面板按初值的对象列表画，少了它空局时不出现那一行）',
+            !!(hud.DEFAULTS && hud.DEFAULTS[hud.CONFIG.archiveObject])],
+          ['「这一局存着没有」那句话两种情形都说得出',
+            keptText(0).indexOf('还没有存档') >= 0 && keptText(120).indexOf('120 字') >= 0],
+
+          /* 永久档那一组。它跨局，所以坏了最难发现：本局那份变量还在，界面看着
+             一切正常，只有「另开一局把角色读回来」这一件事安静地没了。
+             这几条自己写自己读，不碰谁的真存档（宿主桩里那份 localStorage 是
+             内存里的，写完就散，跑测试不会伤到任何人的角色）。 */
+          ['永久档：钥匙从 FORMAT 派生（两张卡各存各的，不会互相盖掉）',
+            SLOT_KEY.indexOf(FORMAT) === 0 && SLOT_KEY !== FORMAT],
+          ['永久档：写进去读得回来，文字一模一样', (function () {
+            if (!permStore()) return true;                 /* 宿主没给存储，没得测 */
+            var t = JSON.stringify({ format: FORMAT, 探针: '甲' });
+            permWrite(t);
+            var back = permRead();
+            return !!back && back.text === t;
+          })()],
+          ['永久档：空的一串不写（写了等于把玩家留着的那份清成空的）',
+            !permStore() || permWrite('') === false],
+          ['永久档：坏掉的那段当没有，不是抛出来', (function () {
+            var ls = permStore();
+            if (!ls) return true;
+            var keep = ls.getItem(SLOT_KEY);
+            ls.setItem(SLOT_KEY, '{这不是 JSON');
+            var bad = permRead();
+            if (keep === null) ls.removeItem(SLOT_KEY); else ls.setItem(SLOT_KEY, keep);
+            return bad === null;
+          })()],
+          ['永久档：那一行两种情形都说得出（有 / 没有）',
+            permText(null).indexOf('没有东西') >= 0 &&
+            permText({ at: '2026-09-26T02:41:00.000Z', text: '甲乙丙' }).indexOf('3 字') >= 0]
+        ];
+      }
+    });
+  }
+
+  register();
+})();
+
+/* ============================================================================
+ * 点数池模块 —— 给「六维 + 一笔预算」这套建卡数值配一套界面与算法
+ *
+ * 解决的是这一件事：建卡时那六个数字（力量、敏捷……）不是随手填的，它们花的是
+ * 一笔预算 —— 可分配点 = 等级 × 每级点数 ＋ 永久奖励。人一边填一边得知道还剩
+ * 几点，填完还得对得上；不然封缄之后面板上那个「剩余」当场就是负的。
+ *
+ * 这一份给四样：
+ *   · 一行实时的「可分配 / 已用 / 剩余」，跟着你敲数字走；
+ *   · 六格数字输入（写回的就是变量里那六项，走核心那条表单路，不另开一条）；
+ *   · 一颗「交给命运」：把剩下的点按职业倾向一次撒开（没填职业就均摊）；
+ *   · 六格「临时加成」＋ 一颗写回：加成是六个数的一个对象，**不进池子**。
+ *
+ * **默认值与卡无关，全都能换。** 六维叫什么、每级几点、职业那一栏叫什么、职业
+ * 偏爱哪两项 —— 都在下面那几张表里。卡想换掉它们，在自己的 hud.core.js 的
+ * CONFIG 里加一个 pool 块就行，一个字都不用改这里：
+ *
+ *     pool: {
+ *       stats: ['筋骨', '灵巧', '根骨', '悟性', '神识', '气度'],
+ *       per: 4,                     // 每级几点
+ *       base: 1,                    // 每项从几起步
+ *       level: '等级',               // 哪一栏是等级（算池子用）
+ *       bonus: '永久奖励',           // 哪一栏并入池子
+ *       add: '加成',                 // 临时加成写在哪个对象上
+ *       job: '职业',                 // 哪一栏是职业（只用来决定撒点倾向）
+ *       jobs: ['剑修', '丹修'],        // 下拉里那几项
+ *       favor: { 剑修: ['筋骨', '灵巧'] }   // 职业 -> 偏爱哪两项
+ *     }
+ *
+ * **这一份不写死任何卡名，也不读别的卡的东西。** 池子怎么算、撒得对不对，
+ * 全在下面的 自检() 里跟着 测试/run_all.py 一起跑 —— 这几样错了都不报错，
+ * 只会安静地把玩家的数值算歪：
+ *   · 等级认不出来（空、乱写、0）时按 1 级算，不能让池子变成 NaN 或负数；
+ *   · 「已用」只算**高于起点**的那部分，低于起点的项不倒扣；
+ *   · 撒出去的点数总和正好等于要撒的点数（不超支也不剩）；
+ *   · 加成只认六维那几个键，界面上多出来的东西一个都不写回。
+ *
+ * 接不接由 hud.conf.json 的「模块」说了算：不接，这个文件根本不在这张卡里。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------- 默认值 */
+
+  var DEFAULT_STATS = ['力量', '敏捷', '体质', '智力', '感知', '魅力'];
+
+  var DEFAULT_JOBS = ['游侠', '剑士', '斥候', '咒术师', '学者',
+                      '神父', '医士', '商人', '铁匠', '矿工'];
+
+  /* 职业偏爱哪两项。认不出的职业 = 没有偏爱 = 六项均摊 —— 宁可均摊，
+     也不要替玩家的职业瞎猜一条路。 */
+  var DEFAULT_FAVOR = {
+    游侠: ['敏捷', '感知'],
+    剑士: ['力量', '体质'],
+    斥候: ['敏捷', '感知'],
+    咒术师: ['智力', '感知'],
+    学者: ['智力', '感知'],
+    神父: ['魅力', '感知'],
+    医士: ['智力', '感知'],
+    商人: ['魅力', '智力'],
+    铁匠: ['力量', '体质'],
+    矿工: ['力量', '体质']
+  };
+
+  /* 池子这一套的全部参数，一处读齐。卡没给就全用默认。 */
+  function defOf(hud) {
+    var cfg = hud.plain(hud.CONFIG && hud.CONFIG.pool) || {};
+    var stats = hud.isArr(cfg.stats) ? cfg.stats : [];
+    var jobs = hud.isArr(cfg.jobs) ? cfg.jobs : [];
+    return {
+      per: hud.num(cfg.per, 5),
+      base: Math.max(0, Math.round(hud.num(cfg.base, 1))),
+      level: hud.str(cfg.level) || '等级',
+      bonus: hud.str(cfg.bonus) || '永久奖励',
+      add: hud.str(cfg.add) || '加成',
+      job: hud.str(cfg.job) || '职业',
+      stats: stats.length ? [].slice.call(stats) : DEFAULT_STATS,
+      jobs: jobs.length ? [].slice.call(jobs) : DEFAULT_JOBS,
+      favor: hud.plain(cfg.favor) || DEFAULT_FAVOR
+    };
+  }
+
+  /* 一个键一个值的对象（ES5 没有计算属性，只能这样绕一下）。 */
+  function oneK(key, value) {
+    var o = {};
+    o[key] = value;
+    return o;
+  }
+
+  function setText(node, text) {
+    if (node) node.textContent = text == null ? '' : String(text);
+  }
+
+  /* 这一层只吃数字，不认 hud —— 认不出的值一律退回第二个参数，
+     免得一个乱值（空串、'abc'、undefined）顺着算下去变成 NaN。 */
+  function toNum(v, fallback) {
+    var n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).trim());
+    return isFinite(n) ? n : (fallback == null ? 0 : fallback);
+  }
+
+  /* ------------------------------------------------- 池子（不碰 DOM 的那一半） */
+
+  /* 池子大小：等级 × 每级点数 ＋ 永久奖励。
+     等级认不出来（空、乱写、0 或负数）时按 1 级算 —— 池子宁可算小，
+     也不能因为一个乱值算出 NaN 或负数，那样整页都跟着垮。 */
+  function poolOf(def, level, bonus) {
+    var lv = Math.round(toNum(level, 1));
+    if (!(lv >= 1)) lv = 1;
+    return Math.round(lv * def.per + toNum(bonus, 0));
+  }
+
+  /* 六维收成一份干净的数：缺的补起点，低于起点的抬回起点。 */
+  function statsOf(hud, def, src) {
+    var raw = hud.plain(src) || {};
+    var out = {};
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      var v = Math.round(toNum(raw[k], def.base));
+      out[k] = v < def.base ? def.base : v;
+    }
+    return out;
+  }
+
+  /* 已用点：六项**高于起点**的那部分之和。
+     低于起点的项不倒扣 —— 少给的那个数不是「省下来的点数」，
+     扣回去只会让「剩余」莫名其妙地变多。 */
+  function spentOf(def, stats) {
+    var s = 0;
+    for (var i = 0; i < def.stats.length; i++) {
+      var v = Math.round(toNum(stats && stats[def.stats[i]], def.base));
+      if (v > def.base) s += v - def.base;
+    }
+    return s;
+  }
+
+  /* 撒点权重：六项各 1（保底，谁都有份），被职业偏爱的各再 +2。
+     于是「偏爱 : 不偏爱 = 3 : 1」；认不出的职业就是全 1，也就是均摊。 */
+  function weightsOf(hud, def, job) {
+    var favor = hud.plain(def.favor) || {};
+    var hit = favor[hud.str(job)];
+    var fav = hud.isArr(hit) ? hit : [];
+    var w = [];
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i], extra = 0;
+      for (var j = 0; j < fav.length; j++) {
+        if (hud.str(fav[j]) === k) extra = 2;
+      }
+      w.push(1 + extra);
+    }
+    return w;
+  }
+
+  /* 把 total 点按权重分给六项：最大余数法 —— 先按比例取整，
+     剩下的点给小数部分最大的那几项（并列时靠前的先拿）。
+     总和**正好**等于 total，不超支也不剩 —— 这条在自检里钉死。 */
+  function spread(total, weights) {
+    var n = weights.length, out = [], frac = [], i;
+    var left = Math.round(toNum(total, 0));
+    var sum = 0;
+    for (i = 0; i < n; i++) sum += toNum(weights[i], 0);
+    if (!(left > 0) || !(sum > 0)) {
+      for (i = 0; i < n; i++) out.push(0);
+      return out;
+    }
+    var given = 0;
+    for (i = 0; i < n; i++) {
+      var ideal = left * toNum(weights[i], 0) / sum;
+      var fl = Math.floor(ideal);
+      out.push(fl);
+      given += fl;
+      frac.push(ideal - fl);
+    }
+    var rest = left - given;
+    while (rest > 0) {
+      var best = -1;
+      for (i = 0; i < n; i++) {
+        if (frac[i] >= 0 && (best < 0 || frac[i] > frac[best])) best = i;
+      }
+      if (best < 0) break;
+      out[best] += 1;
+      frac[best] = -1;          /* 一项这一轮只多拿一次 */
+      rest -= 1;
+    }
+    return out;
+  }
+
+  /* 把 pool 这笔池子按职业倾向一次撒到 stats 上，返回新的六维。
+     池子已经超支时一点不撒（不往回削玩家填的数，只如实报出来）。 */
+  function spendPool(hud, def, stats, job, pool) {
+    var cur = statsOf(hud, def, stats);
+    var add = spread(toNum(pool, 0) - spentOf(def, cur), weightsOf(hud, def, job));
+    var out = {};
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      out[k] = cur[k] + toNum(add[i], 0);
+    }
+    return out;
+  }
+
+  /* 临时加成：只认六维那几个键，界面上多出来的框一个都不写回变量；小数取整。 */
+  function addsOf(hud, def, obj) {
+    var raw = hud.plain(obj) || {};
+    var out = {};
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      out[k] = Math.round(toNum(raw[k], 0));
+    }
+    return out;
+  }
+
+  /* 加成摊成一行人话：「力量+2 敏捷-1」。零的不写，免得一屏都是 +0。 */
+  function addListOf(def, adds) {
+    var bits = [];
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      var v = Math.round(toNum(adds && adds[k], 0));
+      if (v) bits.push(k + (v > 0 ? '+' : '') + v);
+    }
+    return bits.join(' ');
+  }
+
+  /* ------------------------------------------------------------ 界面那一块 */
+
+  function statCell(hud, def, key, value) {
+    return '<label class="hud-pool__cell">' +
+      '<span class="hud-pool__cl">' + hud.esc(key) + '</span>' +
+      '<input class="hud-input hud-pool__in" type="number" data-field="' + hud.esc(key) +
+      '" data-type="number" min="' + def.base + '" step="1" value="' +
+      hud.esc(value) + '"></label>';
+  }
+
+  /* 加成那几格用 data-add，不是 data-field：它写的是**一个对象**，
+     核心那条表单路只认「一个键一个值」，硬塞进去只会写坏。 */
+  function addCell(hud, key, value) {
+    return '<label class="hud-pool__cell hud-pool__cell--add">' +
+      '<span class="hud-pool__cl">' + hud.esc(key) + '</span>' +
+      '<input class="hud-input hud-pool__in" type="number" data-add="' + hud.esc(key) +
+      '" step="1" value="' + hud.esc(value) + '"></label>';
+  }
+
+  function jobSelect(hud, def, job) {
+    var cur = hud.str(job);
+    var out = '<select class="hud-input" data-field="' + hud.esc(def.job) +
+      '" data-type="text"><option value=""' + (cur ? '' : ' selected') +
+      '>（不定）</option>';
+    for (var i = 0; i < def.jobs.length; i++) {
+      var j = hud.str(def.jobs[i]);
+      out += '<option value="' + hud.esc(j) + '"' + (j === cur ? ' selected' : '') +
+        '>' + hud.esc(j) + '</option>';
+    }
+    return out + '</select>';
+  }
+
+  function barHtml(hud, def, max, used, level, bonus) {
+    var left = max - used;
+    return '<div class="hud-pool__bar">' +
+      '<span class="hud-pool__k">点数池</span>' +
+      '<span class="hud-pool__n' + (left < 0 ? ' is-over' : '') + '" data-pool-left>' +
+      (left < 0 ? '超支 ' + (-left) : '剩余 ' + left) + '</span>' +
+      '<span class="hud-pool__of">可分配 <b data-pool-max>' + max +
+      '</b>　已用 <b data-pool-used>' + used + '</b></span>' +
+      '<span class="hud-pool__eq">＝ 等级 <b data-pool-lv>' + level + '</b> × ' +
+      def.per + ' ＋ ' + hud.esc(def.bonus) + ' <b data-pool-bonus>' + bonus + '</b></span>' +
+      '</div>';
+  }
+
+  function createBlock(hud, state) {
+    var def = defOf(hud);
+    var p = hud.objectOf(state, hud.CONFIG.playerObject);
+    var level = Math.max(1, Math.round(toNum(p[def.level], 1)));
+    var bonus = Math.round(toNum(p[def.bonus], 0));
+    var max = poolOf(def, level, bonus);
+    var stats = statsOf(hud, def, p);
+    var adds = addsOf(hud, def, p[def.add]);
+    var head = [], tail = [];
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      head.push(statCell(hud, def, k, stats[k]));
+      tail.push(addCell(hud, k, adds[k]));
+    }
+    return '' +
+      '<div class="hud-pool" data-pool>' +
+      barHtml(hud, def, max, spentOf(def, stats), level, bonus) +
+      '  <div class="hud-pool__grid">' + head.join('') + '</div>' +
+      '  <div class="hud-pool__row">' +
+      '    <label class="hud-pool__side"><span class="hud-pool__cl">' + hud.esc(def.job) +
+      '</span>' + jobSelect(hud, def, p[def.job]) + '</label>' +
+      '    <label class="hud-pool__side"><span class="hud-pool__cl">' + hud.esc(def.bonus) +
+      '</span><input class="hud-input hud-pool__in" type="number" data-field="' +
+      hud.esc(def.bonus) + '" data-type="number" min="0" step="1" value="' +
+      bonus + '"></label>' +
+      '  </div>' +
+      '  <div class="hud-pool__acts">' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="pool-fate"' +
+      ' title="按职业倾向，把剩下的点数一次撒到那六项上">交给命运</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="pool-write"' +
+      ' title="把下面那六格临时加成写进变量（不进点数池）">加成写回</button>' +
+      '  </div>' +
+      '  <div class="hud-pool__addbox">' +
+      '    <div class="hud-pool__al">临时加成 · 不进池子，只影响判定，事过即还</div>' +
+      '    <div class="hud-pool__grid">' + tail.join('') + '</div>' +
+      '  </div>' +
+      '  <div class="hud-pool__note" data-pool-note hidden></div>' +
+      '</div>';
+  }
+
+  /* 面板上那一行：已有角色时才画。没角色的卡不该多一行「剩余 5」，
+     那会让人以为这一局已经开工了。 */
+  function panelBlock(hud, state) {
+    if (!hud.hasProfile(state)) return '';
+    var def = defOf(hud);
+    var p = hud.objectOf(state, hud.CONFIG.playerObject);
+    var max = poolOf(def, p[def.level], p[def.bonus]);
+    var used = spentOf(def, statsOf(hud, def, p));
+    var left = max - used;
+    var adds = addListOf(def, addsOf(hud, def, p[def.add]));
+    return '' +
+      '<div class="hud-poolhint">' +
+      '<span class="hud-poolhint__n">点数池 ' + (left < 0 ? '超支 ' + (-left) : '剩余 ' + left) +
+      '</span>' +
+      '<span class="hud-poolhint__of">可分配 ' + max + ' · 已用 ' + used + '</span>' +
+      (adds ? '<span class="hud-poolhint__a">' + hud.esc(def.add) + ' ' +
+        hud.esc(adds) + '</span>' : '') +
+      '</div>';
+  }
+
+  function noteIn(pool, text, kind) {
+    var n = pool.querySelector('[data-pool-note]');
+    if (!n) return;
+    n.hidden = !text;
+    n.className = 'hud-pool__note' + (kind ? ' ' + kind : '');
+    n.textContent = text || '';
+  }
+
+  /* 从被点的那个扣子往上找，找到带着某个标记的那一层 ——
+     读表单、写状态提示都收在这一块里做，不碰页面别处。 */
+  function upTo(node, attr) {
+    var t = node;
+    while (t && t.getAttribute && !t.getAttribute(attr)) t = t.parentNode;
+    return (t && t.getAttribute) ? t : null;
+  }
+
+  function fieldEl(create, key) {
+    var list = create.querySelectorAll('[data-field]');
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].getAttribute('data-field') === key) return list[i];
+    }
+    return null;
+  }
+
+  /* 表单里现在这一份：池子多大、花了多少。读的是**界面**上的数，
+     不是变量里的 —— 人正敲着，看到的必须是敲进去的。 */
+  function readBar(hud, def, create) {
+    var got = hud.readCreateForm(create);
+    var level = Math.max(1, Math.round(toNum(got[def.level], 1)));
+    var bonus = Math.round(toNum(got[def.bonus], 0));
+    var stats = {};
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      var v = Math.round(toNum(got[k], def.base));
+      stats[k] = v < def.base ? def.base : v;
+    }
+    var max = poolOf(def, level, bonus);
+    return { level: level, bonus: bonus, stats: stats, max: max,
+             used: spentOf(def, stats), job: hud.str(got[def.job]) };
+  }
+
+  function paint(pool, it) {
+    var left = it.max - it.used;
+    var n = pool.querySelector('[data-pool-left]');
+    setText(n, left < 0 ? '超支 ' + (-left) : '剩余 ' + left);
+    if (n) n.className = 'hud-pool__n' + (left < 0 ? ' is-over' : '');
+    setText(pool.querySelector('[data-pool-max]'), it.max);
+    setText(pool.querySelector('[data-pool-used]'), it.used);
+    setText(pool.querySelector('[data-pool-lv]'), it.level);
+    setText(pool.querySelector('[data-pool-bonus]'), it.bonus);
+  }
+
+  /* 交给命运：按职业倾向把剩下的点一次撒开。
+     撒的是界面那六格 —— 撒完还能手调，封缄时以界面上的数为准。 */
+  function doFate(hud, create, pool) {
+    var def = defOf(hud);
+    var it = readBar(hud, def, create);
+    var left = it.max - it.used;
+    if (left <= 0) {
+      noteIn(pool, left === 0
+        ? '点数已经花完了 —— 想重撒，先把某一项调低一点，或者把等级加上去，再点这颗扣子。'
+        : '点数已经超支 ' + (-left) + ' —— 先把六维削回池子里，再点这颗扣子。');
+      return;
+    }
+    var out = spendPool(hud, def, it.stats, it.job, it.max);
+    var bits = [];
+    for (var i = 0; i < def.stats.length; i++) {
+      var k = def.stats[i];
+      var el = fieldEl(create, k);
+      if (el) el.value = out[k];
+      bits.push(k + ' ' + out[k]);
+    }
+    paint(pool, readBar(hud, def, create));
+    noteIn(pool, '已按' + (it.job ? '「' + it.job + '」的倾向' : '不偏（职业那栏空着）') +
+      '把 ' + left + ' 点撒开：' + bits.join(' · ') +
+      '。还能手调 —— 封缄时以界面上的数为准。', 'is-ok');
+  }
+
+  /* 加成写回：那六个数住在变量里的**一个对象**上，表单那条路送不进去，
+     所以这里自己走一次写变量。只在玩家点这颗扣子时写 ——
+     跟着「封缄」一起写，会和核心那一次互相踩（两次读到的状态不一样）。 */
+  function doWriteAdds(hud, pool) {
+    var def = defOf(hud);
+    var inputs = pool.querySelectorAll('[data-add]');
+    var raw = {};
+    for (var i = 0; i < inputs.length; i++) {
+      var k = inputs[i].getAttribute('data-add');
+      if (k) raw[k] = inputs[i].value;
+    }
+    var adds = addsOf(hud, def, raw);
+    noteIn(pool, '正在把临时加成写进变量…');
+    return hud.writeObject(hud.CONFIG.playerObject, oneK(def.add, adds), pool)
+      .then(function (warn) {
+        noteIn(pool, warn ? warn
+          : '临时加成已写进「' + def.add + '」：' + (addListOf(def, adds) || '六项都是 0') +
+            '。它不进点数池 —— 属性是长在身上的，加成是事过即还的。',
+          warn ? 'is-error' : 'is-ok');
+      })
+      .catch(function (err) {
+        noteIn(pool, '加成没写进变量：' + hud.msgOf(err), 'is-error');
+      });
+  }
+
+  /* ------------------------------------------------------------------ 接线 */
+
+  function register() {
+    var hud = window.CARDC73C60_HUD;
+    if (!hud || typeof hud.useModule !== 'function') return;
+
+    hud.useModule({
+      name: '点数池',
+      /* 建卡器：档位那一行底下、表单与「封缄」之间 */
+      create: function (state) { return createBlock(hud, state); },
+      /* 面板：已有角色时多一行「剩余 / 加成」 */
+      panel: function (state) { return panelBlock(hud, state); },
+      mount: function (h) {
+        var use = h || hud;
+        /* 一边敲一边算：六格数字、职业、永久奖励、等级，动哪个都重算那一行。
+           input 管打字，change 管下拉与上下箭头 —— 两个都收。 */
+        var live = function (ev) {
+          var create = upTo(ev.target, 'data-create');
+          if (!create) return;
+          var pool = create.querySelector('[data-pool]');
+          if (!pool) return;
+          paint(pool, readBar(use, defOf(use), create));
+        };
+        document.addEventListener('input', live);
+        document.addEventListener('change', live);
+        document.addEventListener('click', function (ev) {
+          var t = ev.target;
+          while (t && t.getAttribute && !t.getAttribute('data-act')) t = t.parentNode;
+          if (!t || !t.getAttribute) return;
+          var act = t.getAttribute('data-act');
+          /* 核心的「清空」把表单全抹空 —— 那一行得跟着重算，
+             不然它停在上一秒的剩余上，人以为没清掉。 */
+          if (act === 'reset') {
+            var root = upTo(t, 'data-create');
+            var box = root && root.querySelector('[data-pool]');
+            if (box) {
+              setTimeout(function () { paint(box, readBar(use, defOf(use), root)); }, 0);
+            }
+            return;
+          }
+          if (act !== 'pool-fate' && act !== 'pool-write') return;
+          var pool = upTo(t, 'data-pool');
+          var create = upTo(t, 'data-create');
+          if (!pool || !create) return;
+          ev.preventDefault();
+          if (act === 'pool-fate') doFate(use, create, pool);
+          else doWriteAdds(use, pool);
+        });
+      },
+      自检: function () {
+        var def = defOf(hud);
+        var n = def.stats.length;
+        var i, k;
+
+        /* 一份全在起点的六维，与它的一个变体（第一项 +3） */
+        var full = {}, one = {};
+        for (i = 0; i < n; i++) {
+          full[def.stats[i]] = def.base;
+          one[def.stats[i]] = def.base;
+        }
+        one[def.stats[0]] = def.base + 3;
+
+        /* 均摊 vs 有倾向：给同样的 10 点，看撒出来的样子 */
+        var even = spread(10, weightsOf(hud, def, '这个职业不存在'));
+        var bias = spread(10, weightsOf(hud, def, hud.str(def.jobs[0])));
+
+        /* 偏爱的那几格 / 不偏爱的其余几格 */
+        var hit = (hud.plain(def.favor) || {})[hud.str(def.jobs[0])];
+        var fav = hud.isArr(hit) ? hit.map(hud.str) : [];
+        var atFav = [], atOther = [];
+        for (i = 0; i < n; i++) {
+          if (fav.indexOf(def.stats[i]) >= 0) atFav.push(i); else atOther.push(i);
+        }
+        var pick = function (a, idx) {
+          var s = 0;
+          for (var j = 0; j < idx.length; j++) s += a[idx[j]];
+          return s;
+        };
+        var sum = function (a) {
+          var s = 0;
+          for (var j = 0; j < a.length; j++) s += a[j];
+          return s;
+        };
+        var hi = function (a) { return Math.max.apply(null, a); };
+        var lo = function (a) { return Math.min.apply(null, a); };
+
+        /* 池子已经超支：一件都不该被削回来 */
+        var fat = {};
+        for (i = 0; i < n; i++) fat[def.stats[i]] = def.base + 5;
+        var fatSpent = spentOf(def, fat);
+        var stayed = spendPool(hud, def, fat, '', fatSpent - 4);
+
+        var pool5 = poolOf(def, 5, 0);
+        var fated = spendPool(hud, def, full, '', pool5);
+        var stray = addsOf(hud, def, oneK('这个键不存在', 9));
+
+        /* 面板那两条断言得先有一份「有角色」的变量：hasProfile 只看有没有名字 */
+        var withName = oneK('姓名', '甲');
+        var withAdds = oneK('姓名', '甲');
+        withAdds[def.add] = oneK(def.stats[0], 3);
+
+        return [
+          ['池子大小 = 等级 × 每级点数 ＋ 永久奖励',
+            poolOf(def, 5, 0) === 5 * def.per && poolOf(def, 3, 7) === 3 * def.per + 7],
+          ['等级认不出来时按 1 级算（不吐 NaN、不吐负数）',
+            poolOf(def, '乱写', 0) === def.per && poolOf(def, 0, 0) === def.per &&
+            poolOf(def, null, 0) === def.per && poolOf(def, -9, 0) === def.per &&
+            !isNaN(poolOf(def, undefined, 0))],
+          ['六项都在起点时一点没花', spentOf(def, full) === 0],
+          ['已用点 = 六项高于起点的部分之和', spentOf(def, one) === 3],
+          ['低于起点的项不倒扣（剩余不会莫名其妙变多）',
+            spentOf(def, oneK(def.stats[0], def.base - 5)) === 0 && spentOf(def, {}) === 0],
+          ['撒出去的点数总和正好等于给的点数',
+            sum(even) === 10 && sum(bias) === 10 && sum(spread(0, [1, 1, 1])) === 0],
+          ['没得撒的时候一点不撒（不往回削，也不炸）',
+            sum(spread(-3, [1, 1])) === 0 && sum(spread(2, [0, 0])) === 0],
+          ['不偏时六项差距不超过 1', hi(even) - lo(even) <= 1],
+          ['有倾向时偏爱的那两项拿得更多、其余跟着少',
+            !atFav.length ||
+            (pick(bias, atFav) > pick(even, atFav) &&
+             hi(atOther.map(function (x) { return bias[x]; })) <=
+             hi(atOther.map(function (x) { return even[x]; })))],
+          ['「交给命运」把剩余一次花完：撒完正好等于池子大小',
+            spentOf(def, fated) === pool5],
+          ['池子已经超支时，交给命运一点不撒（不削玩家填的数）',
+            spentOf(def, stayed) === fatSpent],
+          ['加成只认六维那几个键，界面上多出来的框一个都不写回',
+            Object.keys(stray).length === n && stray['这个键不存在'] === undefined &&
+            stray[def.stats[0]] === 0],
+          ['加成取整：小数四舍五入，乱写当 0',
+            addsOf(hud, def, oneK(def.stats[0], 2.6))[def.stats[0]] === 3 &&
+            addsOf(hud, def, oneK(def.stats[0], '乱写'))[def.stats[0]] === 0],
+          ['加成列成一行时零的不写',
+            addListOf(def, oneK(def.stats[0], 0)) === '' &&
+            addListOf(def, oneK(def.stats[0], 2)).indexOf(def.stats[0]) === 0],
+          ['没有角色的卡：面板那一块不画（不给空卡添一行）',
+            panelBlock(hud, {}) === ''],
+          ['有角色时画得出「剩余」那一行',
+            panelBlock(hud, { stat_data: oneK(hud.CONFIG.playerObject,
+              withName) }).indexOf('剩余') >= 0],
+          ['加成会出现在面板那一行上（带着那一栏的名字）',
+            panelBlock(hud, { stat_data: oneK(hud.CONFIG.playerObject,
+              withAdds) }).indexOf(def.add) >= 0]
+        ];
+      }
+    });
+  }
+
+  register();
+})();
+
+/* ============================================================================
+ * 代笔模块 —— 把一栏「交给 AI 起一版」，再把 AI 回的那一块搬进栏里
+ *
+ * 卡里没有第二条通道能让 AI 把文字交回界面：它能写的地方只有对话。
+ * 所以这一套走的是对话那条路，规矩定死在两处：
+ *   · 请求：一段带记号（AI_REQ_MARK）的正文，末尾写明「只回【代笔 · 栏位名】这一块」；
+ *   · 回话：AI 照那一块回，界面从**最后一条**消息里切出【代笔 · 栏位名】，
+ *     塞回对应的那一栏 —— 搬进去之后照样能手改。
+ *
+ * **这一份也不写死栏位名。** 建卡器有哪几栏（hud.CONFIG.fields），这里就摆几对
+ * 「AI 代笔 / 取回」扣子；栏的类型决定请求里怎么写、回话怎么切：
+ *   · 一行文本 → 压成一行，剥掉引号与「一行：」那种壳，掐到 TEXT_CAP；
+ *   · 数字     → 只认一个数，按那一栏的上下限夹住（表单是同一套上下限）；
+ *   · 一行一件 → 按行 / 顿号 / 逗号切开，剥编号与圆点，去重，掐到 LIST_CAP。
+ * 哪一栏不想让 AI 碰，把它的 key 写进下面的 SKIP —— 别的一字不用改。
+ *
+ * 回话怎么认（三道闸，缺一条就会把旧回复或自己的请求搬进栏里）：
+ *   1. 不是空的；2. 不是我们自己发出去的那份请求；3. 跟按下去那一刻的末条不一样。
+ * 认下来之后自动搬 —— 每 2.5 秒看一眼宿主最后一条消息；宿主肯转发
+ * agent.run.finished 事件时就更快，不转也照样兜得住。
+ *
+ * 送出去有两条路，只看宿主的接口通哪条：
+ *   · input.set  → 只填进对话输入框，由玩家自己按发送（**默认**，不会把人从建卡器卷走）；
+ *   · chat.send  → 直接发。要玩家自己拨开关换成这条。
+ * 两条都不通时界面如实说：把请求整段复制给 AI，回完点「取回」。
+ *
+ * 自检写在下面 自检() 里，测的是「切与认」那一半：块切错、清单切不干净、
+ * 自家人发出去的请求被当成回复 —— 这三样都不报错，只会安静地把栏填坏。
+ * ========================================================================== */
+(function () {
+  'use strict';
+
+  /* 我们自己发出去的请求里必带这一句。末条消息里若是它，说明 AI 还没回 ——
+     没有这个记号，「取回」会把我们自己写的那份格式模板当成回复搬进栏里。 */
+  var MARK = '（这是建卡器发来的代笔请求';
+
+  var TEXT_CAP = 60;        /* 一行文本的栏：最多留这么长 */
+  var LIST_CAP = 8;         /* 「一行一件」的栏：最多留这么多条 */
+  var POLL_MS = 2500;       /* 等回话时多久看一眼最后一条消息 */
+  var WAIT_SENT_MS = 120000;  /* 请求已经发出去了：两分钟没回就松开扣子 */
+  var WAIT_HOLD_MS = 600000;  /* 只填进输入框：给玩家十分钟按发送 */
+
+  /* 哪几栏不让 AI 碰（写 hud.CONFIG.fields 里的 key）。
+     默认一个都不跳 —— 「等级」「钱币」这种数字栏也给得：请求里只要一个数字，
+     回话照样按上下限夹住，玩家不满意自己改就是了。 */
+  var SKIP = [];
+
+  /* ------------------------------------------------- 切与认（不碰 DOM 的那一半） */
+
+  /* 从一段文本里切出所有【代笔 · 栏位名】块。一次问了好几栏就切出好几块 ——
+     「取回全部」靠它一次搬完。 */
+  function parseBlocks(text) {
+    var s = String(text == null ? '' : text);
+    var re = /【代笔\s*·\s*([^】\n]{1,12})】/g;
+    var m, marks = [], out = {};
+    while ((m = re.exec(s)) !== null) {
+      marks.push({ label: m[1].replace(/\s+/g, ''), head: m.index, end: m.index + m[0].length });
+    }
+    for (var i = 0; i < marks.length; i++) {
+      var stop = marks[i + 1] ? marks[i + 1].head : s.length;
+      out[marks[i].label] = s.slice(marks[i].end, stop);
+    }
+    return out;
+  }
+
+  /* 这条回复能不能收。三条一起判：不是空的、不是我们自己那份请求、
+     也不是「按下扣子那一刻就已经摊在那儿」的那一条 ——
+     少了最后一条，重复点同一栏会把上一轮的旧回复再搬一遍，看着像成了，其实没有。 */
+  function acceptable(text, base) {
+    var s = String(text == null ? '' : text).trim();
+    if (!s) return false;
+    if (s.indexOf(MARK) >= 0) return false;
+    if (base && s === String(base).trim()) return false;
+    return true;
+  }
+
+  /* 「一行一件」的栏：按行、顿号、逗号、分号、斜线切开，剥掉行首的编号与圆点，
+     去重去空，掐掉超长项，最后按 cap 截断。AI 爱写成「1. 追踪」或「· 弓术」，
+     那两种壳都在这里剥掉。 */
+  function splitList(hud, raw, cap) {
+    var parts = String(raw == null ? '' : raw).split(/[\n\r；;、，,\/／|]+/);
+    var out = [], seen = {};
+    for (var i = 0; i < parts.length; i++) {
+      var v = parts[i]
+        .replace(/^[\s\-–—·•*・\d.．、)）(（【】[\]]+/, '')
+        .replace(/[\s。.！!]+$/, '')
+        .trim();
+      if (!v || v.length > 24) continue;
+      if (seen[v]) continue;
+      seen[v] = 1;
+      out.push(v);
+      if (out.length >= Math.max(1, hud.num(cap, 1))) break;
+    }
+    return out;
+  }
+
+  /* 单行栏：压成一行的空格，剥掉 AI 爱加的引号、书名号与「一行：」这类壳。 */
+  function oneLine(raw, cap) {
+    var s = String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim();
+    s = s.replace(/^[「『"'“‘]+/, '').replace(/[」』"'”’]+$/, '');
+    s = s.replace(/^[（(【\[]?\s*(一行|答案|结果|不超过\s*\d+\s*字)\s*[:：]?\s*/, '');
+    s = s.replace(/[，,、；;。]+$/, '').trim();
+    if (cap && s.length > cap) s = s.slice(0, cap);
+    return s;
+  }
+
+  function pickText(m) {
+    return String((m && (m.content || m.text || m.message)) || '');
+  }
+
+  /* 末条可读的正文。空消息（宿主偶尔留白）跳过。 */
+  function lastSay(list) {
+    if (!list || !list.length) return '';
+    for (var i = list.length - 1; i >= 0; i--) {
+      var s = pickText(list[i]).trim();
+      if (s) return s;
+    }
+    return '';
+  }
+
+  /* 这一版宿主该怎么把请求送出去。两条路都通时看玩家拨的开关：
+     拨到「直接发」就走 chat.send，否则只填进输入框。
+     只通一条就走那一条；都不通返回空串，界面如实说，让玩家自己复制。 */
+  function sendMode(caps, direct) {
+    var canChat = !!(caps && caps.chat);
+    var canInput = !!(caps && caps.input);
+    if (!canChat && !canInput) return '';
+    if (!canInput) return 'chat';
+    if (!canChat) return 'input';
+    return direct ? 'chat' : 'input';
+  }
+
+  /* 建卡器上要摆代笔扣子的那几栏，从 CONFIG.fields 现读。 */
+  function slots(hud) {
+    var out = [], F = hud.CONFIG.fields || [];
+    for (var i = 0; i < F.length; i++) {
+      var f = F[i];
+      if (SKIP.indexOf(f.key) >= 0) continue;
+      out.push({
+        key: f.key, label: f.label || f.key, kind: f.type,
+        min: f.min, max: f.max, tip: f.hint || ''
+      });
+    }
+    return out;
+  }
+
+  /* 按栏位名（或者栏位 key —— AI 偶尔照 key 写）找那一栏 */
+  function slotOf(hud, name) {
+    var all = slots(hud), s = String(name == null ? '' : name).trim();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].label === s || all[i].key === s) return all[i];
+    }
+    return null;
+  }
+
+  /* 写进请求里的那句「要什么」。谁定的？这一栏的类型定的 —— 不另外维护一张表。 */
+  function wantOf(s) {
+    if (s.kind === 'list') return '3 – 6 条，一条一行';
+    if (s.kind === 'number') {
+      var lo = (s.min == null) ? '' : String(s.min);
+      var hi = (s.max == null) ? '' : String(s.max);
+      var range = (lo || hi) ? '（' + (lo || '不限') + ' – ' + (hi || '不限') + '）' : '';
+      return '只回一个数字' + range;
+    }
+    return '一行，不超过 40 字';
+  }
+
+  function tipOf(s) {
+    if (s.tip) return s.tip;
+    if (s.kind === 'list') return '只写条目本身，不写解释、不给数值';
+    if (s.kind === 'number') return '只回数字，不要任何说明';
+    return '照这一栏的名字写，写看得见的东西，不要写成一段故事';
+  }
+
+  /* ------------------------------------------------------------ 界面那一块 */
+
+  function barHtml(hud, s) {
+    return '<div class="hud-ai__row">' +
+      '<span class="hud-ai__l">' + hud.esc(s.label) + '</span>' +
+      '<button type="button" class="hud-btn hud-btn--quiet" data-act="ai" data-slot="' +
+      hud.esc(s.key) + '">AI 代笔</button>' +
+      '<button type="button" class="hud-btn hud-btn--quiet" data-act="ai-take" data-slot="' +
+      hud.esc(s.key) + '">取回</button>' +
+      '<span class="hud-ai__hint">' + hud.esc(wantOf(s)) + '</span>' +
+      '</div>';
+  }
+
+  function blockHtml(hud, state) {
+    var all = slots(hud), rows = [];
+    for (var i = 0; i < all.length; i++) rows.push(barHtml(hud, all[i]));
+    return '' +
+      '<div class="hud-ai" data-ai>' +
+      '  <div class="hud-ai__t">AI 代笔</div>' +
+      '  <div class="hud-ai__lead">让它先给一版，你再改 —— 取回来的内容跟手打进去的没有两样。' +
+      '点某一栏的「AI 代笔」，请求会填进对话输入框（或直接发出去），AI 回完自动搬进那一栏。' +
+      '</div>' +
+      '  <div class="hud-ai__top">' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="ai-direct">' +
+      '代笔：只填不送</button>' +
+      '    <button type="button" class="hud-btn hud-btn--quiet" data-act="ai-all">取回全部</button>' +
+      '  </div>' +
+      '  <div class="hud-ai__rows">' + rows.join('') + '</div>' +
+      '  <div class="hud-ai__out" data-ai-out hidden></div>' +
+      '  <div class="hud-ai__note" data-ai-note hidden></div>' +
+      '</div>';
+  }
+
+  function noteIn(root, text, kind) {
+    var n = root.querySelector('[data-ai-note]');
+    if (!n) return;
+    n.hidden = !text;
+    n.className = 'hud-ai__note' + (kind ? ' ' + kind : '');
+    n.textContent = text || '';
+  }
+
+  /* 请求摊在这儿：宿主不给代发、也填不了输入框时，玩家能自己整段复制走。 */
+  function outIn(root, html) {
+    var box = root.querySelector('[data-ai-out]');
+    if (!box) return;
+    box.hidden = !html;
+    box.innerHTML = html || '';
+  }
+
+  function createRootOf(node) {
+    var t = node;
+    while (t && t.getAttribute && !t.getAttribute('data-create')) t = t.parentNode;
+    return (t && t.getAttribute) ? t : null;
+  }
+
+  /* 每一处建卡器各自记一份状态（等待中的栏、基线末条、定时器、开关）——
+     挂在根元素上，页面里有两处建卡器也不会互相串。 */
+  function stOf(root) {
+    if (!root.__hudAi) {
+      root.__hudAi = { waiting: {}, base: {}, timers: {}, poll: null,
+        direct: false, lastReq: '', evBound: false };
+    }
+    return root.__hudAi;
+  }
+
+  function btnOf(root, act, key) {
+    var list = root.querySelectorAll('[data-act="' + act + '"]');
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].getAttribute('data-slot') === key) return list[i];
+    }
+    return null;
+  }
+
+  /* 这一栏现在写着什么 —— 有内容就润色，空着就现写 */
+  function valueOf(hud, root, s) {
+    var got = hud.readCreateForm(root)[s.key];
+    if (s.kind === 'list') return hud.isArr(got) ? got.join('、') : hud.str(got);
+    return hud.str(got);
+  }
+
+  /* 给 AI 的上下文：他已经填了什么。填得越全，代笔出来的越像这个人。 */
+  function contextOf(hud, root) {
+    var form = hud.readCreateForm(root), bits = [], all = slots(hud);
+    for (var i = 0; i < all.length; i++) {
+      var s = all[i], v = form[s.key];
+      var text = hud.isArr(v) ? v.join('、') : hud.str(v);
+      if (!text) continue;
+      if (s.kind === 'number' && s.min != null && hud.num(text, s.min) === s.min) continue;  /* 没动过的下限值不算填过 */
+      bits.push(s.label + ' ' + text);
+    }
+    return bits.length ? bits.join('；') : '（还什么都没填）';
+  }
+
+  /* -------------------------------------------------- 「生成中…」与自动取回 */
+
+  function pendingKeys(st) {
+    var out = [];
+    Object.keys(st.waiting).forEach(function (k) { if (st.waiting[k]) out.push(k); });
+    return out;
+  }
+
+  /* 按下去这一刻，末条是什么。存着用来认「后来这条才是新回的」。 */
+  function snapshot(hud, st, key) {
+    st.base[key] = '';
+    var e = hud.api();
+    if (!e || !e.messages || typeof e.messages.list !== 'function') return Promise.resolve();
+    return Promise.resolve().then(function () { return e.messages.list(); })
+      .then(function (list) { st.base[key] = lastSay(list); })
+      .catch(function () { /* 读不到就当没有基线：MARK 那道闸还在 */ });
+  }
+
+  function waitOn(hud, root, st, key, hold) {
+    st.waiting[key] = hold ? 'hold' : 'sent';
+    var btn = btnOf(root, 'ai', key);
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('is-waiting');
+      if (hold) btn.classList.add('is-hold');
+      btn.textContent = hold ? '待发送' : '生成中…';
+    }
+    if (st.timers[key]) clearTimeout(st.timers[key]);
+    st.timers[key] = setTimeout(function () {
+      delete st.timers[key];
+      waitOff(hud, root, st, key);
+      noteIn(root, hold
+        ? '代笔请求还压在对话输入框里没发出去（等了十分钟），先把扣子松开。'
+        : '等了两分钟还没等到 AI 的回复。它要是后来回了，点那一栏的「取回」照样能搬进来。',
+        'is-error');
+    }, hold ? WAIT_HOLD_MS : WAIT_SENT_MS);
+    bindRunEvents(hud, root, st);
+    pollStart(hud, root, st);
+  }
+
+  function waitOff(hud, root, st, key) {
+    if (st.timers[key]) { clearTimeout(st.timers[key]); delete st.timers[key]; }
+    if (!st.waiting[key]) return;
+    delete st.waiting[key];
+    var btn = btnOf(root, 'ai', key);
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('is-waiting');
+      btn.classList.remove('is-hold');
+      btn.textContent = 'AI 代笔';
+    }
+    if (!pendingKeys(st).length) pollStop(st);
+  }
+
+  /* 封缄、重置这类「这一页要翻篇」的动作，把还按着的扣子都松开 */
+  function waitClear(hud, root, st) {
+    pendingKeys(st).forEach(function (k) { waitOff(hud, root, st, k); });
+    pollStop(st);
+  }
+
+  function pollStart(hud, root, st) {
+    if (st.poll) return;
+    st.poll = setInterval(function () { pollTick(hud, root, st); }, POLL_MS);
+    pollTick(hud, root, st);
+  }
+
+  function pollStop(st) {
+    if (st.poll) { clearInterval(st.poll); st.poll = null; }
+  }
+
+  function pollTick(hud, root, st) {
+    if (!pendingKeys(st).length) { pollStop(st); return; }
+    var e = hud.api();
+    if (!e || !e.messages || typeof e.messages.list !== 'function') return;
+    Promise.resolve().then(function () { return e.messages.list(); })
+      .then(function (list) { absorb(hud, root, st, lastSay(list)); })
+      .catch(function () { /* 这一跳读不到就等下一跳；真没回还有超时兜底 */ });
+  }
+
+  /* 宿主肯在 AI 跑完一条时往卡里转事件，这条最快；不转也不碍事，轮询兜得住 */
+  function bindRunEvents(hud, root, st) {
+    if (st.evBound) return;
+    var e = hud.api();
+    if (!e || !e.events || typeof e.events.on !== 'function') return;
+    st.evBound = true;
+    try {
+      e.events.on('agent.run.finished', function (p) {
+        if (!pendingKeys(st).length) return;
+        var t = p && p.message ? pickText(p.message) : '';
+        if (t && absorb(hud, root, st, t)) return;
+        pollTick(hud, root, st);
+      });
+    } catch (err) { st.evBound = false; }
+  }
+
+  /* 把一块代笔塞回它该去的那一栏，返回一句能直接摊给玩家看的话。 */
+  function applyBlock(hud, root, s, raw) {
+    var el = root.querySelector('[data-field="' + s.key + '"]');
+    if (s.kind === 'list') {
+      var items = splitList(hud, raw, LIST_CAP);
+      if (!items.length) return '「' + s.label + '」那一块没解析出东西。';
+      if (el) el.value = items.join('\n');
+      return '「' + s.label + '」已取回 ' + items.length + ' 条：' + items.join('、') +
+        '。不满意就改，或者再点一次「AI 代笔」。';
+    }
+    if (s.kind === 'number') {
+      var got = oneLine(raw, 12), n = hud.num(got, NaN);
+      if (!isFinite(n)) return '「' + s.label + '」那一块里没读出数字。';
+      var lo = (s.min == null) ? n : s.min, hi = (s.max == null) ? n : s.max;
+      var v = Math.round(hud.clamp(n, lo, hi));
+      if (el) el.value = String(v);
+      return '「' + s.label + '」已取回：' + v + (v !== Math.round(n) ? '（原样回的是 ' + Math.round(n) +
+        '，按这一栏的范围夹住了）' : '') + '。';
+    }
+    var val = oneLine(raw, TEXT_CAP);
+    if (!val) return '「' + s.label + '」那一块是空的。';
+    if (el) el.value = val;
+    return '「' + s.label + '」已取回：' + val;
+  }
+
+  /* 从一段回复里把还在等的栏位搬进栏。搬动了就返回 true。
+     搬不动的（这一条里没写那一块）留在等待里 —— 下一次回复还有机会。 */
+  function absorb(hud, root, st, text) {
+    var labels = pendingKeys(st).filter(function (key) {
+      return acceptable(text, st.base[key]);
+    });
+    if (!labels.length) return false;
+    var blocks = parseBlocks(text), got = [], miss = [];
+    labels.forEach(function (key) {
+      var s = slotOf(hud, key);
+      if (!s) return;
+      if (blocks[s.label] == null && blocks[s.key] == null) { miss.push(s.label); return; }
+      got.push(applyBlock(hud, root, s, blocks[s.label] != null ? blocks[s.label] : blocks[s.key]));
+      waitOff(hud, root, st, key);
+    });
+    if (!got.length) return false;
+    noteIn(root, 'AI 回完了 —— ' + got.join(' ') +
+      (miss.length ? '这条里没写的：' + miss.join('、') + '（想再要一版就再点一次「AI 代笔」）。' : ''),
+      'is-ok');
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ 动作 */
+
+  function request(hud, root, st, key) {
+    var s = slotOf(hud, key);
+    if (!s) return;
+    var cur = valueOf(hud, root, s);
+    var text = MARK + '。现在是建卡阶段，不用写正文剧情，只回这一块。）\n' +
+      '【代笔 · ' + s.label + '】\n' +
+      '要求：' + wantOf(s) + '。' + tipOf(s) + '。\n' +
+      (cur
+        ? '他已经写了：' + cur + '\n（请在这份内容上润色 —— 保留他的意思与关键信息，不要另起炉灶。）'
+        : '他还没写。\n（请替他想一版。）') + '\n' +
+      '当前档案：' + contextOf(hud, root) + '\n' +
+      '只回下面这一块，别的都不要写：\n' +
+      '【代笔 · ' + s.label + '】\n（内容）';
+
+    var e = hud.api();
+    var caps = {
+      input: !!(e && e.input && typeof e.input.set === 'function'),
+      chat: !!(e && e.chat && typeof e.chat.send === 'function')
+    };
+    var mode = sendMode(caps, st.direct);
+    st.lastReq = text;
+    outIn(root, '<div class="hud-ai__req"><b>代笔请求</b>' +
+      '<span class="hud-ai__hint">' + (mode === 'chat'
+        ? '直接发出去；AI 回完自动搬进这一栏'
+        : (mode === 'input' ? '会填进对话输入框 —— 你按发送；AI 回完自动搬进这一栏'
+                            : '这一版宿主既不能代发、也填不了输入框 —— 把下面这段自己复制给 AI')) +
+      '</span><button type="button" class="hud-btn hud-btn--quiet" data-act="ai-copy">' +
+      '复制这段</button><pre class="hud-ai__pre">' + hud.esc(text) + '</pre></div>');
+
+    if (!mode) {
+      noteIn(root, '这一版宿主既不能代发、也填不了输入框 —— 把下面那段自己复制给 AI，回完再点「取回」。');
+      return;
+    }
+
+    /* 先记下按下去这一刻的末条，再送 —— 顺序反了，AI 还没回时上一轮那条带
+       【代笔】的回复会被当成新回复搬一遍。 */
+    var shot = snapshot(hud, st, key);
+
+    if (mode === 'input') {
+      shot.then(function () { return hud.call('input.set', [text]); }).then(function () {
+        waitOn(hud, root, st, key, true);
+        noteIn(root, '请求已填进对话输入框 —— 你按发送；AI 回完自动搬进「' + s.label + '」。' +
+          '（这样不会把你从建卡器那边卷走。）');
+      }).catch(function (err) {
+        waitOff(hud, root, st, key);
+        if (!caps.chat) {
+          noteIn(root, '填不进输入框（' + hud.msgOf(err) + '）—— 下面那段自己复制给 AI，回完点「取回」。',
+            'is-error');
+          return;
+        }
+        /* 输入框这条道不通（比如对话没在前台），退回直接发：总比什么都不做强 */
+        hud.call('chat.send', [text]).then(function () {
+          waitOn(hud, root, st, key, false);
+          noteIn(root, '输入框这条路不通（' + hud.msgOf(err) + '），改成直接发 —— AI 回完自动搬进「' +
+            s.label + '」。');
+        }).catch(function (err2) {
+          noteIn(root, '代笔请求没发出去：' + hud.msgOf(err2) + '。下面那段自己复制给 AI。', 'is-error');
+        });
+      });
+      return;
+    }
+
+    shot.then(function () { return hud.call('chat.send', [text]); }).then(function () {
+      waitOn(hud, root, st, key, false);
+      noteIn(root, '代笔请求已发出 —— AI 回完自动搬进「' + s.label + '」。');
+    }).catch(function (err) {
+      waitOff(hud, root, st, key);
+      noteIn(root, '代笔请求没发出去：' + hud.msgOf(err) + '。下面那段可以自己复制给 AI。', 'is-error');
+    });
+  }
+
+  /* 取回前的三道门：桥读不读得到消息、末条是不是还停在我们自己的请求上、
+     末条有没有内容。三道都过了才把正文交给 fn。 */
+  function withLastSay(hud, root, fn) {
+    var e = hud.api();
+    if (!e || !e.messages || typeof e.messages.list !== 'function') {
+      noteIn(root, '这一版宿主读不到消息，取不回代笔 —— 把 AI 那一段直接复制粘进栏里也一样。',
+        'is-error');
+      return;
+    }
+    Promise.resolve().then(function () {
+      return e.messages.list();
+    }).then(function (list) {
+      var text = lastSay(list);
+      if (!text) { noteIn(root, '读不到 AI 的回复（末条是空的）。', 'is-error'); return; }
+      if (text.indexOf(MARK) >= 0) {
+        noteIn(root, '末条还是我们自己发出去的请求 —— AI 那边还没回，等一下再点「取回」。', 'is-error');
+        return;
+      }
+      fn(text);
+    }).catch(function (err) { noteIn(root, '取回失败：' + hud.msgOf(err), 'is-error'); });
+  }
+
+  function take(hud, root, st, key) {
+    var s = slotOf(hud, key);
+    if (!s) return;
+    withLastSay(hud, root, function (text) {
+      var blocks = parseBlocks(text);
+      if (blocks[s.label] == null && blocks[s.key] == null) {
+        noteIn(root, 'AI 这条回复里没有【代笔 · ' + s.label + '】那一块 —— 要么它换了个栏位名，' +
+          '要么这一栏它没写。也可以把它那段直接复制粘进来。', 'is-error');
+        return;
+      }
+      noteIn(root, applyBlock(hud, root, s, blocks[s.label] != null ? blocks[s.label] : blocks[s.key]));
+      waitOff(hud, root, st, key);   /* 手动取回来了，那颗「生成中…」也该松开 */
+    });
+  }
+
+  function takeAll(hud, root, st) {
+    withLastSay(hud, root, function (text) {
+      var blocks = parseBlocks(text), done = [], miss = [];
+      slots(hud).forEach(function (s) {
+        if (blocks[s.label] == null && blocks[s.key] == null) { miss.push(s.label); return; }
+        applyBlock(hud, root, s, blocks[s.label] != null ? blocks[s.label] : blocks[s.key]);
+        waitOff(hud, root, st, s.key);
+        done.push(s.label);
+      });
+      if (!done.length) {
+        noteIn(root, '这条回复里一块【代笔 · 〈栏位名〉】都没有 —— 看看它是不是没照格式回。', 'is-error');
+        return;
+      }
+      noteIn(root, '已取回：' + done.join('、') + '。' +
+        (miss.length ? '这条里没写的：' + miss.join('、') + '。' : ''), 'is-ok');
+    });
+  }
+
+  /* 把最近那份请求抄到剪贴板 —— 宿主不让写剪贴板时如实说，让人自己框选 */
+  function copyReq(hud, root, st) {
+    if (!st.lastReq) {
+      noteIn(root, '还没有请求可抄 —— 先点某一栏的「AI 代笔」。', 'is-error');
+      return;
+    }
+    var noWay = '这一版不让脚本写剪贴板 —— 把下面那段用鼠标框住，按 Ctrl+C。';
+    try {
+      if (window.navigator && window.navigator.clipboard &&
+          typeof window.navigator.clipboard.writeText === 'function') {
+        window.navigator.clipboard.writeText(st.lastReq).then(function () {
+          noteIn(root, '已抄走 —— 粘进对话输入框就行。', 'is-ok');
+        }).catch(function () { noteIn(root, noWay, 'is-error'); });
+        return;
+      }
+    } catch (err) { /* 落到下面 */ }
+    noteIn(root, noWay, 'is-error');
+  }
+
+  /* 默认「只填不送」：一按发送宿主就把对话卷到最底下，而建卡器长在开场那一条里，
+     人得自己爬回来。想省这次回车的人，把开关拨到「直接发」。 */
+  function directToggle(hud, root, st, btn) {
+    st.direct = !st.direct;
+    if (btn) btn.textContent = '代笔：' + (st.direct ? '直接发' : '只填不送');
+    noteIn(root, st.direct
+      ? '代笔请求会直接发出去 —— 发完对话可能被卷到最底下（建卡器在开场那一条里，翻回去就有）。'
+      : '代笔请求只填进对话输入框，你自己按发送 —— 这样不会把你从建卡器那边卷走。');
+  }
+
+  /* ------------------------------------------------------------------ 接线 */
+
+  function register() {
+    var hud = window.CARDC73C60_HUD;
+    if (!hud || typeof hud.useModule !== 'function') return;
+
+    hud.useModule({
+      name: '代笔',
+      /* 建卡器：「封缄」那一排之前，摆一份每栏一对的扣子 */
+      create: function (state) { return blockHtml(hud, state); },
+      /* 扣子长在核心画出来的建卡器里，核心不认得这几个动作 —— 自己从 document 上收。
+         只认自家那一块（先往上找到 [data-create]，再看块在不在）。 */
+      mount: function (h) {
+        var use = h || hud;
+        document.addEventListener('click', function (ev) {
+          var t = ev.target;
+          while (t && t.getAttribute && !t.getAttribute('data-act')) t = t.parentNode;
+          if (!t || !t.getAttribute) return;
+          var act = t.getAttribute('data-act');
+          if (act !== 'ai' && act !== 'ai-take' && act !== 'ai-all' &&
+              act !== 'ai-direct' && act !== 'ai-copy') return;
+          var root = createRootOf(t);
+          if (!root || !root.querySelector('[data-ai]')) return;
+          ev.preventDefault();
+          var st = stOf(root);
+          if (act === 'ai') { request(use, root, st, t.getAttribute('data-slot')); return; }
+          if (act === 'ai-take') { take(use, root, st, t.getAttribute('data-slot')); return; }
+          if (act === 'ai-all') { takeAll(use, root, st); return; }
+          if (act === 'ai-direct') { directToggle(use, root, st, t); return; }
+          copyReq(use, root, st);
+        });
+      },
+      自检: function () {
+        var two = '【代笔 · 姓名】\n甲\n【代笔 · 背包】\n短剑、干粮\n';
+        var got = parseBlocks(two);
+        var caps = { input: true, chat: true };
+        var first = slotOf(hud, ((hud.CONFIG.fields || [])[0] || {}).key) || {};
+        function many(c, n) { return new Array(n + 1).join(c); }
+        return [
+          ['切得出两块代笔（一次问两栏就回两块）',
+            got['姓名'] !== undefined && got['背包'] !== undefined],
+          ['第一块只到第二块的标题为止', String(got['姓名']).indexOf('背包') < 0],
+          ['标题里的空格被去掉（【代笔 · 姓 名】也认）',
+            parseBlocks('【代笔 · 姓 名】\n甲').hasOwnProperty('姓名')],
+          ['没有块时给空对象，不是 null', Object.keys(parseBlocks('随便写点什么')).length === 0],
+          ['空回复不收', !acceptable('', '')],
+          ['我们自己发出去的请求不收', !acceptable(MARK + '。只回这一块。）', '')],
+          ['与按下去那一刻一模一样的回复不收（重复点同一栏不会搬旧回复）',
+            !acceptable('同一段正文', '同一段正文')],
+          ['与那一刻不同的才是新回复', acceptable('新的一段正文', '旧的一段正文')],
+          ['清单：编号与圆点都剥掉',
+            splitList(hud, '1. 追踪\n· 弓术\n- 识途', 8).join('|') === '追踪|弓术|识途'],
+          ['清单：顿号逗号也当分隔，重复项只留一个',
+            splitList(hud, '追踪、弓术，追踪', 8).join('|') === '追踪|弓术'],
+          ['清单：超长的一条（超过 24 字）不进来',
+            splitList(hud, '短剑\n' + many('长', 30), 8).length === 1],
+          ['清单：按上限截断', splitList(hud, '甲\n乙\n丙', 2).length === 2],
+          ['单行：剥引号与「一行：」的壳', oneLine('「一行：甲某」', 60) === '甲某'],
+          ['单行：压成一行、掐到上限',
+            oneLine('甲\n\n乙', 60) === '甲 乙' && oneLine(many('甲', 80), 10).length === 10],
+          ['末条：空消息跳过，取的是最后一条有字的',
+            lastSay([{ content: '甲' }, { content: '  ' }, { content: '乙' }]) === '乙'],
+          ['两条路都通时按开关走', sendMode(caps, true) === 'chat' && sendMode(caps, false) === 'input'],
+          ['只通一条就走那一条',
+            sendMode({ input: true }, true) === 'input' && sendMode({ chat: true }, false) === 'chat'],
+          ['都不通就不发（界面如实说，让玩家自己复制）', sendMode({}, true) === ''],
+          ['建卡器上每一栏都有一对扣子（SKIP 是空的时候）',
+            slots(hud).length === (hud.CONFIG.fields || []).length],
+          ['按栏位名或 key 都找得到那一栏', !!first.key &&
+            slotOf(hud, first.label).key === first.key && slotOf(hud, first.key).key === first.key],
+          ['三种栏都写得出「要什么」', !!wantOf({ kind: 'text' }) && !!wantOf({ kind: 'list' }) &&
+            wantOf({ kind: 'number', min: 1, max: 20 }).indexOf('1') >= 0],
+          ['「要什么」认的是栏的类型，不是谁的名字',
+            wantOf({ kind: 'list' }).indexOf('条') >= 0 && wantOf({ kind: 'text' }).indexOf('行') >= 0]
+        ];
+      }
+    });
+  }
+
+  register();
+})();
+
+</script>
+</body>
+</html>

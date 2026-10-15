@@ -1,0 +1,34 @@
+{
+  "name": "eleckoi-cardforge",
+  "version": "0.28.1",
+  "description": "ElecKoi 制卡工具（forge）：教 AI 做卡的命令行工具，外加一个让 ElecKoi 里的 AI 直接跑它的宿主插件。",
+  "license": "MIT",
+  "type": "module",
+  "main": "插件/制卡工坊/index.js",
+  "exports": {
+    ".": "./插件/制卡工坊/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./插件/制卡工坊/locale/*.json"
+  },
+  "files": [
+    "forge.py",
+    "forge/",
+    "assets/",
+    "samples/",
+    "向导/",
+    "插件/",
+    "tests/",
+    "门禁.py",
+    "文档/使用说明.md",
+    "cordis.patch.yml",
+    "pyproject.toml",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

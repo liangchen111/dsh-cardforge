@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "制卡工坊",
+    "description": "给会话里的 AI 一个 cardforge 工具，直接跑本机制卡工具 forge.py（宿主执行，不受命令行沙箱限制）。"
+  }
+}

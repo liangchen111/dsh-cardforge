@@ -1,0 +1,147 @@
+{
+  "_说明": "这张卡接过哪些模块、每个模块并进来了什么 —— 由 `forge add` / `forge drop` 维护。**别手改**：撤模块全靠它，改坏了就撤不干净。",
+  "格式": 1,
+  "模块": {
+    "骰子": {
+      "id": "dice",
+      "版本": "1.0.0",
+      "接于": "2026-10-08T14:58:09.626828+08:00",
+      "条目": {
+        "替换": [
+          {
+            "id": "cardc73c60-rule-check",
+            "title": "规则 · 骰子与判定",
+            "原": {
+              "id": "cardc73c60-rule-check",
+              "title": "规则 · 判定",
+              "icon_id": "",
+              "kind": "normal",
+              "group_id": "grp-cardc73c60-rules",
+              "content": "【演示卡 · 判定】 这里写「一件事成不成」由什么决定。演示卡里只留一句话：能靠常识定的事不要掷骰， 掷骰只在结果真的两说时才用，且掷完要在正文里落一个可读的结果。 这段是占位，换成你自己那套。",
+              "opening_messages": [],
+              "default_opening_message_id": "",
+              "agent_selection_hint": "需要判断一件事成不成、要不要掷骰时读我。",
+              "agent_read_strategy": "keyword",
+              "dynamic_mode": "standard",
+              "keywords": [
+                "判定",
+                "掷骰",
+                "检定"
+              ],
+              "keyword_scan_depth": 1,
+              "condition_keywords": [],
+              "keyword_condition": "none",
+              "keyword_use_regex": false,
+              "keyword_ignore_case": true,
+              "keyword_whole_word": false,
+              "keyword_recursion_depth": 0,
+              "trigger_mode": "agent_tool",
+              "enabled": true,
+              "position": "",
+              "prompt_position_id": "",
+              "insert_role": "system",
+              "order": 2,
+              "view_order": 0,
+              "group_view_order": 0,
+              "tree_view_order": 0,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            "并入后": "084b3a05e9cd"
+          }
+        ],
+        "新增": []
+      },
+      "正则": [
+        "regex-cardc73c60-dice-1",
+        "regex-cardc73c60-dice-2",
+        "regex-cardc73c60-dice-3",
+        "regex-cardc73c60-dice-4",
+        "regex-cardc73c60-dice-5",
+        "regex-cardc73c60-dice-6",
+        "regex-cardc73c60-dice-7"
+      ],
+      "界面": []
+    },
+    "尺度": {
+      "id": "scale",
+      "版本": "1.0.0",
+      "接于": "2026-10-08T14:58:09.629307+08:00",
+      "条目": {
+        "替换": [],
+        "新增": [
+          {
+            "id": "cardc73c60-mod-scale",
+            "title": "核心 · 叙事尺度",
+            "指纹": "b29bbabc7018"
+          }
+        ]
+      },
+      "正则": [],
+      "界面": [
+        "hud/模块/尺度/尺度.js",
+        "hud/模块/尺度/尺度.css"
+      ]
+    },
+    "备份": {
+      "id": "backup",
+      "版本": "1.0.0",
+      "接于": "2026-10-08T14:58:09.634875+08:00",
+      "条目": {
+        "替换": [],
+        "新增": [
+          {
+            "id": "cardc73c60-mod-backup",
+            "title": "规则 · 档案备份",
+            "指纹": "86a9dc4c9fb0"
+          }
+        ]
+      },
+      "正则": [],
+      "界面": [
+        "hud/模块/备份/备份.js",
+        "hud/模块/备份/备份.css"
+      ]
+    },
+    "点数池": {
+      "id": "pool",
+      "版本": "1.0.0",
+      "接于": "2026-10-08T14:58:09.640034+08:00",
+      "条目": {
+        "替换": [],
+        "新增": [
+          {
+            "id": "cardc73c60-mod-pool",
+            "title": "规则 · 点数池",
+            "指纹": "4e53830f483d"
+          }
+        ]
+      },
+      "正则": [],
+      "界面": [
+        "hud/模块/点数池/点数池.js",
+        "hud/模块/点数池/点数池.css"
+      ]
+    },
+    "代笔": {
+      "id": "ai",
+      "版本": "1.0.0",
+      "接于": "2026-10-08T14:58:09.645036+08:00",
+      "条目": {
+        "替换": [],
+        "新增": [
+          {
+            "id": "cardc73c60-mod-ai",
+            "title": "规则 · AI 代笔",
+            "指纹": "357811b2a148"
+          }
+        ]
+      },
+      "正则": [],
+      "界面": [
+        "hud/模块/代笔/代笔.js",
+        "hud/模块/代笔/代笔.css"
+      ]
+    }
+  }
+}

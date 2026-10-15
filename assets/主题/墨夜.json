@@ -1,0 +1,29 @@
+{
+  "名": "墨夜",
+  "一句话": "深底浅字 —— 客户端是暗色界面、或者夜里读长文时用这一套。",
+  "变量": {
+    "--hud-ink": "#e6dccb",
+    "--hud-ink-2": "#a89c85",
+    "--hud-dim": "#726a5b",
+    "--hud-paper": "rgba(30, 28, 24, 0.78)",
+    "--hud-paper-solid": "rgba(30, 28, 24, 0.92)",
+    "--hud-field": "rgba(48, 44, 38, 0.92)",
+    "--hud-panel": "rgba(26, 24, 21, 0.97)",
+    "--hud-line": "rgba(200, 178, 120, 0.22)",
+    "--hud-line-2": "rgba(200, 178, 120, 0.46)",
+    "--hud-wash": "rgba(200, 178, 120, 0.1)",
+    "--hud-wash-2": "rgba(200, 178, 120, 0.2)",
+    "--hud-accent": "rgba(200, 178, 120, 0.65)",
+    "--hud-danger": "#d4795f",
+    "--hud-danger-ink": "#e8a48d",
+    "--hud-danger-wash": "rgba(212, 121, 95, 0.14)",
+    "--hud-shadow": "rgba(0, 0, 0, 0.5)",
+    "--hud-radius": "4px",
+    "--hud-radius-s": "3px"
+  },
+  "预览": {
+    "底": "#0b0a08",
+    "字": "#a89c85",
+    "强调": "#d3b877"
+  }
+}

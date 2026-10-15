@@ -1,0 +1,36 @@
+{
+  "卡名": "演示卡",
+  "id_prefix": "cardc73c60",
+  "style_id": "cardc73c60-hud-style",
+  "global": "CARDC73C60_HUD",
+  "开场白": {
+    "条目": "fixed-opening-assistant",
+    "正文": "欢迎来到这张演示卡卡。\n\n在故事开始之前，请先写下你的名字。\n\n​​​"
+  },
+  "模块": [
+    "尺度",
+    "备份",
+    "点数池",
+    "代笔"
+  ],
+  "正则": [
+    {
+      "name": "建卡界面 · 羊皮卷",
+      "pattern": "/\\u200B{3}/",
+      "view": "view_create.html",
+      "order": 10
+    },
+    {
+      "name": "面板 · 羊皮卷",
+      "pattern": "〔面板〕",
+      "view": "view_card.html",
+      "order": 20
+    }
+  ],
+  "校验": {
+    "page_max": 400000,
+    "must_contain": [
+      "data-view="
+    ]
+  }
+}
