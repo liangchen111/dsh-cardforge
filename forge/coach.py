@@ -519,6 +519,10 @@ python forge.py check <工程目录>       # 整目录：批量模式，只报�
 # 6. 出成品（交付给 ElecKoi 的就是这个）
 python forge.py build <spec> 成品/我的卡.card.json
 
+# 6b. 两张「拿去导入」的皮（都只是加法，不动卡里任何内容）
+python forge.py png    成品/我的卡.card.json     # → 成品/我的卡.card.png：带图的卡，手机端就认这条
+python forge.py preset 成品/我的卡.card.json --png  # → 成品/我的卡.preset.{json,png}：创作预设（导入时分类选「创作预设」）
+
 # 7. 交付（顺手出人读手册与给 AI 的索引；不给 -o 就落在 <工程>/文档/ 下）
 python forge.py manual <spec>
 python forge.py index  <spec>
@@ -673,6 +677,8 @@ python forge.py opener <工程 或 spec> --补齐             # 标记少了，�
 |---|---|---|
 | `source/<名>.spec.yaml` | **唯一真相**，卡的全部内容 | 能改内容，别改结构；条目优先用 `--改`；**卡名用 `forge.py name` 改**（手改 spec 会跟界面配置脱节） |
 | `成品/<名>.card.json` | 派生物，交付给 ElecKoi 的就是它 | **不能改**，下次构建就没了 |
+| `成品/<名>.card.png` | 带图的卡（`png` 出）——**手机端导入只认这条**，JSON 在手机上导不进 | **不能改**，重出覆盖 |
+| `成品/<名>.preset.json` / `.preset.png` | 创作预设（`preset` 出）：**卡怎么做出来的经验**，导入时分类必须选「创作预设」 | **不能改**，重出覆盖 |
 | `hud/` | 界面层（面板 / 悬浮球 / 建卡器） | 能改，改完必须 `hud --写回` |
 | `hud/hud.conf.json` | **开场白的源头**、模块名单、id 前缀 | 能改，改完 `hud --写回` |
 | `模块账本.json` | 接过哪些机制、并进来了什么 | **别手改**，撤模块全靠它 |
@@ -690,6 +696,8 @@ python forge.py opener <工程 或 spec> --补齐             # 标记少了，�
 4. 接了界面的卡：`hud --写回` 跑过，且 `check` 不再报界面守则的问题
    （含开场白那两条 `HUD-OPENER-MARK` / `HUD-OPENER-DRIFT`）。
 5. 交付时同时给：**成品卡**（导入用）+ **手册**（人读）+ **索引**（AI 读）。
+   用户要在**手机上**导入，就得给 `png` 出的 `成品/<名>.card.png`（JSON 在手机上导不进）；
+   想让「这张卡是怎么做出来的」也留一份给 AI，再给 `preset` 出的预设。
 6. 用户如果要的是「一张卡」，不要说「你可以自己填一下 X」——填完再交。
 7. 分清**成品卡**和**工程分发包**（两个都在，别混）：
    - `成品/<名>.card.json` —— 交付物，**导入 ElecKoi 用的就是它**（`build` 出）。
@@ -700,6 +708,11 @@ python forge.py opener <工程 或 spec> --补齐             # 标记少了，�
 
 给用户的话里只说三件事：**卡做好了在哪、怎么导入、下一步可以改什么**。
 不要甩字段名和命令清单，用户不需要。
+
+**「怎么导入」分两种**：电脑上给 `成品/<名>.card.json`（或直接给分发包）；
+**手机上必须给 `成品/<名>.card.png`** —— 手机端只认带图的卡，`.json` 它读不进去，
+而且它不会告诉你为什么，只会说「图片里没有 ElecKoi 角色卡数据」。预设同理：
+`成品/<名>.preset.png` 走「预设管理器 → 导入预设」，分类**必须选「创作预设」**。
 """
 
 规程示例 = """## 八、完整走一遍（照这个顺序抄）
@@ -961,12 +974,64 @@ def _空卡():
     return d
 
 
+def _认回身份(spec, 旧):
+    """把上一版 spec 里同一条目／分组的 id 与时间戳认回来。
+
+    动机（2026-10-15 实测）：`coach` 每次重生成都发新 uuid 与新时间戳 ⇒ 连跑两次
+    产物字节不同；用户导过上一版再导新版，卡内 id 全变（ElecKoi 侧按 id 记的状态
+    可能对不上）。**内容是新的，身份该是旧的。**
+    配对键用「条目标题 / 分组名」：这两样是给人看的、也是规程里写死的东西；
+    真新增的条目没有旧主，照旧用新 id。
+    """
+    新 = M.yload(spec)
+    旧库 = (旧 or {}).get("library") or {}
+    旧目, 旧组 = {}, {}
+    for e in (旧库.get("entries") or []):
+        if isinstance(e, dict) and e.get("title"):
+            旧目.setdefault(str(e["title"]), e)
+    for g in (旧库.get("groups") or []):
+        if isinstance(g, dict) and g.get("name"):
+            旧组.setdefault(str(g["name"]), g)
+
+    新库 = 新.get("library") or {}
+    组旧id = {}
+    for g in (新库.get("groups") or []):
+        老 = 旧组.get(str(g.get("name")))
+        if not 老:
+            continue
+        组旧id[str(g.get("id"))] = 老.get("id")
+        g["id"] = 老.get("id") or g.get("id")
+        g["created_at"] = 老.get("created_at") or g.get("created_at")
+        g["updated_at"] = 老.get("updated_at") or g.get("updated_at")
+    认回 = 0
+    for e in (新库.get("entries") or []):
+        老 = 旧目.get(str(e.get("title")))
+        if 老:
+            e["id"] = 老.get("id") or e.get("id")
+            e["created_at"] = 老.get("created_at") or e.get("created_at")
+            e["updated_at"] = 老.get("updated_at") or e.get("updated_at")
+            认回 += 1
+        gid = str(e.get("group_id") or "")
+        if gid in 组旧id:
+            e["group_id"] = 组旧id[gid]
+    M.ydump(新, spec)
+    return 认回
+
+
 def _出卡(到, out=print):
     工程 = os.path.join(到, 卡名)
     spec = os.path.join(工程, "source", "%s.spec.yaml" % 卡名)
     卡路径 = os.path.join(工程, "成品", "%s.card.json" % 卡名)
     os.makedirs(os.path.dirname(spec), exist_ok=True)
     os.makedirs(os.path.dirname(卡路径), exist_ok=True)
+
+    # 重生成前先记下上一版的 id 与时间戳 —— 否则这一行写下去，旧身份就没了。
+    旧 = None
+    if os.path.exists(spec):
+        try:
+            旧 = M.yload(spec)
+        except Exception:
+            旧 = None
 
     M.ydump(_空卡(), spec)
     安静 = lambda *a, **k: None                     # noqa: E731  写内容时的过程日志不外泄
@@ -988,6 +1053,9 @@ def _出卡(到, out=print):
         C.add_entry(spec, 标题, 分组=组, 模板=档位, 正文=正文,
                     关键词=关键词, 提示=提示, out=安静)
 
+    if 旧 is not None:
+        认回 = _认回身份(spec, 旧)
+        out("  认回上一版身份 %d 条（id 与时间戳照旧，正文是新写的）" % 认回)
     pack.build(spec, 卡路径)
     # 顺手把手册与索引也出齐 —— 只重出卡、不管 文档/，那儿就会留着上一版的旧索引。
     for 建 in (manual.build_manual, manual.build_index):

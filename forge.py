@@ -20,6 +20,12 @@
     python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）
     python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格
     python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡
+    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]
+                                                出「可以当图片导入」的卡（.card.png）
+                                                不加 --图 就现画一张渐变封面
+    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]
+                                                把卡里的设定搬成一份 ElecKoi「创作预设」
+                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）
     python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）
     python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引
     python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡
@@ -68,7 +74,8 @@ sys.path.insert(0, HERE)
 
 from forge import (bridge, coach as COACH, content as CONTENT, domain, draft as DRAFT,  # noqa: E402
                    export, hud as HUD, manual, model as M, mods, opener as OPENER, pack,
-                   sandbox as SB, scaffold, theme as THEME, validate)
+                   png as PNG, preset as PRESET, sandbox as SB, scaffold,
+                   theme as THEME, validate)
 
 HELP = __doc__
 
@@ -597,6 +604,85 @@ def cmd_to_tavern(argv):
             pack.build(src, tmp)
             src = tmp
         export.to_tavern(src, out_path, keep_raw=keep_raw)
+    except Exception as exc:
+        print("!! %s" % exc)
+        return 1
+    finally:
+        SB.cleanup(tmp)
+    return 0
+
+
+def cmd_png(argv):
+    if not argv:
+        print("用法：python forge.py png <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]")
+        print()
+        print("  出一条**可以当图片导入**的卡：把成品卡嵌进 PNG 的 tEXt 块 `eleckoi-card`")
+        print("  （= base64(gzip(卡 JSON))）—— 手机与客户端「导入角色」选图片走的就是这条路，")
+        print("  只给 .card.json 对方是导不进去的。")
+        print("  另外还写 `chara` 块（酒馆 V2 外壳，完整卡在 extensions.eleckoi.source_card）")
+        print("  与一段 iTXt 摘要；像素一个字节不动，同一份卡跑两次得到同一个 PNG。")
+        print("  --图 不给就现画一张渐变封面（本工具不依赖 Pillow）。")
+        return 2
+    src = argv[0]
+    out_path = _opt(argv, ("-o", "--out")) or PNG.default_out(src)
+    cover = _opt(argv, ("--图", "--cover"))
+    tmp = None
+    try:
+        if M.is_yaml(src):
+            tmp = M.temp_json()
+            pack.build(src, tmp)
+            src = tmp
+        res = PNG.write(src, out_path, cover)
+        PNG.verify(res["png"])
+    except Exception as exc:
+        print("!! %s" % exc)
+        return 1
+    finally:
+        SB.cleanup(tmp)
+    return 0
+
+
+def cmd_preset(argv):
+    if not argv:
+        print("用法：python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]")
+        print()
+        print("  把卡里那套设定搬成一份 ElecKoi **创作预设**（`eleckoi.agent-preset` v2）——")
+        print("  在客户端「预设管理器 → 导入预设」选它、分类选「创作预设」，AI 就带着这套")
+        print("  设定与规程干活。角色卡是「一次对话演一个人」，创作预设是「一次对话配一套做法」。")
+        print("  条目按客户端白名单逐条核（kind / position / agent_read_strategy …），")
+        print("  角色扮演机件（隐藏工具时间线、历史压缩）留在卡里不搬过来。")
+        print("  可选项：--名 <预设名> · --作者 <署名> · --说明 <文字或 .md 文件>")
+        print("          --工具组 a,b（默认 builtin:creator）· --版本名 <名>")
+        print("          --留引擎条目（默认丢掉那两类机件）· --png [出.png] 一并出图片版")
+        return 2
+    src = argv[0]
+    out_path = _opt(argv, ("-o", "--out")) or PRESET.default_out(src)
+    name = _opt(argv, ("--名", "--name"))
+    author = _opt(argv, ("--作者", "--author")) or ""
+    instructions = _opt(argv, ("--说明", "--instructions"))
+    if instructions and os.path.isfile(instructions):
+        instructions = open(instructions, "r", encoding="utf-8").read().strip()
+    version_name = _opt(argv, ("--版本名", "--version-name")) or ""
+    groups = _opt(argv, ("--工具组", "--groups"))
+    groups = [g.strip() for g in groups.split(",") if g.strip()] if groups else None
+    drop_engine = not ("--留引擎条目" in argv or "--keep-engine" in argv)
+
+    tmp = None
+    try:
+        if M.is_yaml(src):
+            tmp = M.temp_json()
+            pack.build(src, tmp)
+            src = tmp
+        got = PRESET.build(src, out_path, name=name, author=author,
+                           instructions=instructions, tool_groups=groups,
+                           version_name=version_name, drop_engine=drop_engine)
+        PRESET.verify(got["json"])
+        if "--png" in argv:
+            idx = argv.index("--png")
+            png_out = None
+            if idx + 1 < len(argv) and not argv[idx + 1].startswith("-"):
+                png_out = argv[idx + 1]
+            PRESET.build_png(got["json"], png_out)
     except Exception as exc:
         print("!! %s" % exc)
         return 1
@@ -1801,7 +1887,12 @@ def cmd_selftest(argv):
         for c in sorted(COMMANDS):
             r = subprocess.run([sys.executable, os.path.join(HERE, "forge.py"),
                                 c, "--help"],
-                               cwd=探, capture_output=True, text=True, timeout=120)
+                               cwd=探, capture_output=True, text=True, timeout=120,
+                               # ★ 必须点名 utf-8：子进程的输出被 forge.py 钉成 UTF-8，
+                               # 而中文 Windows 的默认解码是 GBK ⇒ 读线程当场
+                               # `UnicodeDecodeError: 'gbk' codec can't decode byte …`，
+                               # 34 号项必红（而且报的是线程异常，看着像环境问题）。
+                               encoding="utf-8", errors="replace")
             文 = (r.stdout or "") + (r.stderr or "")
             if not r.returncode == 0 or not (
                     c in 自文档 or ("forge.py %s" % c) in 文):
@@ -2896,6 +2987,7 @@ COMMANDS = {
     "unpack": cmd_unpack, "build": cmd_build, "check": cmd_check,
     "hud": cmd_hud, "bundle": cmd_bundle, "import": cmd_import,
     "analyze": cmd_analyze, "to-eleckoi": cmd_to_eleckoi, "to-tavern": cmd_to_tavern,
+    "png": cmd_png, "preset": cmd_preset,
     "manual": cmd_manual, "index": cmd_index, "coach": cmd_coach, "guide": cmd_guide,
     "make": cmd_make,
     "mods": cmd_mods, "add": cmd_add, "drop": cmd_drop,

@@ -22,3 +22,18 @@
 """
 
 __version__ = "0.27.0"
+
+# 内核里的提示语是中文 + ✔ / ✘ 这类符号，而 Windows 控制台默认是 GBK：
+# 不换编码就会 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2714'`。
+# `forge.py` 自己会 reconfigure，但**当库用**（测试、别的脚本 `from forge import png`）
+# 就不会走那里 —— 所以在这里兜一次。失败（比如 stdout 被换成不支持 reconfigure 的对象）
+# 不算错，静默跳过。
+import sys as _sys                                   # noqa: E402
+
+for _流 in (_sys.stdout, _sys.stderr):
+    try:
+        _流.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+del _流, _sys
+

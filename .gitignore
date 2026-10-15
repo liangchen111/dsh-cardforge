@@ -5,6 +5,9 @@ __pycache__/
 node_modules/
 .venv/
 *.log
+build/
+dist/
+*.egg-info/
 
 # 临时/一次性
 .workbuddy/_沙箱实测/node_modules/

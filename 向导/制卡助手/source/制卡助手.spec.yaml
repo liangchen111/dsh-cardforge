@@ -24,20 +24,20 @@ library:
   created_at: '2026-01-01T00:00:00+08:00'
   updated_at: '2026-01-01T00:00:00+08:00'
   groups:
-  - id: cardc34789-grp-b77ea2c9
+  - id: cardc34789-grp-3a872055
     name: 做法
     parent_id: ''
     order: 1
     tree_view_order: 1
-    created_at: '2026-10-08T20:08:12.972386+08:00'
-    updated_at: '2026-10-08T20:08:12.972427+08:00'
-  - id: cardc34789-grp-0b2d31e0
+    created_at: '2026-10-15T18:52:59.148501+08:00'
+    updated_at: '2026-10-15T18:52:59.148536+08:00'
+  - id: cardc34789-grp-9e1627c9
     name: 设计
     parent_id: ''
     order: 2
     tree_view_order: 2
-    created_at: '2026-10-08T20:08:13.035989+08:00'
-    updated_at: '2026-10-08T20:08:13.036009+08:00'
+    created_at: '2026-10-15T18:52:59.159995+08:00'
+    updated_at: '2026-10-15T18:52:59.160015+08:00'
   entries:
   - id: fixed-opening-assistant
     title: AI角色开场白
@@ -87,7 +87,7 @@ library:
     tree_view_order: 0
     created_at: '2026-01-01T00:00:00+08:00'
     updated_at: '2026-01-01T00:00:00+08:00'
-  - id: cardc34789-entry-7b2c5060
+  - id: cardc34789-entry-8910e4f9
     title: 你是制卡师
     icon_id: chat
     kind: normal
@@ -115,9 +115,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 2
-    created_at: '2026-10-08T20:08:13.084178+08:00'
-    updated_at: '2026-10-08T20:08:13.084178+08:00'
-  - id: cardc34789-entry-802416c7
+    created_at: '2026-10-15T18:52:59.171861+08:00'
+    updated_at: '2026-10-15T18:52:59.171861+08:00'
+  - id: cardc34789-entry-09688068
     title: 访谈 · 一层一层问
     icon_id: chat
     kind: normal
@@ -170,9 +170,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 3
-    created_at: '2026-10-08T20:08:13.133203+08:00'
-    updated_at: '2026-10-08T20:08:13.133203+08:00'
-  - id: cardc34789-entry-998522e2
+    created_at: '2026-10-15T18:52:59.188153+08:00'
+    updated_at: '2026-10-15T18:52:59.188153+08:00'
+  - id: cardc34789-entry-39c6756f
     title: 交付 · 你输出什么
     icon_id: chat
     kind: normal
@@ -200,9 +200,9 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 4
-    created_at: '2026-10-08T20:08:13.186072+08:00'
-    updated_at: '2026-10-08T20:08:13.186072+08:00'
-  - id: cardc34789-entry-9a75082c
+    created_at: '2026-10-15T18:52:59.207455+08:00'
+    updated_at: '2026-10-15T18:52:59.207455+08:00'
+  - id: cardc34789-entry-946421c7
     title: 红线 · 会被静默吃掉的写法
     icon_id: chat
     kind: normal
@@ -230,13 +230,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 5
-    created_at: '2026-10-08T20:08:13.242995+08:00'
-    updated_at: '2026-10-08T20:08:13.242995+08:00'
-  - id: cardc34789-entry-18fc79c4
+    created_at: '2026-10-15T18:52:59.231622+08:00'
+    updated_at: '2026-10-15T18:52:59.231622+08:00'
+  - id: cardc34789-entry-d0c39130
     title: 机制 · 一张卡由什么构成
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-b77ea2c9
+    group_id: cardc34789-grp-3a872055
     content: '【一张 ElecKoi 卡由什么构成】
 
 
@@ -299,13 +299,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 6
-    created_at: '2026-10-08T20:08:13.303816+08:00'
-    updated_at: '2026-10-08T20:08:13.303816+08:00'
-  - id: cardc34789-entry-e1cdbfa7
+    created_at: '2026-10-15T18:52:59.259506+08:00'
+    updated_at: '2026-10-15T18:52:59.259506+08:00'
+  - id: cardc34789-entry-1630b7ea
     title: 机制 · 条目触发方式怎么选
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-b77ea2c9
+    group_id: cardc34789-grp-3a872055
     content: '【条目触发方式怎么选】
 
 
@@ -368,13 +368,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 7
-    created_at: '2026-10-08T20:08:13.370057+08:00'
-    updated_at: '2026-10-08T20:08:13.370057+08:00'
-  - id: cardc34789-entry-889ec227
+    created_at: '2026-10-15T18:52:59.290463+08:00'
+    updated_at: '2026-10-15T18:52:59.290463+08:00'
+  - id: cardc34789-entry-dcc51eb6
     title: 预算 · 每句话都在跟聊天记录抢位置
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-b77ea2c9
+    group_id: cardc34789-grp-3a872055
     content: '【预算 · 每句话都在跟聊天记录抢位置】
 
 
@@ -437,13 +437,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 8
-    created_at: '2026-10-08T20:08:13.437170+08:00'
-    updated_at: '2026-10-08T20:08:13.437170+08:00'
-  - id: cardc34789-entry-940859ff
+    created_at: '2026-10-15T18:52:59.326587+08:00'
+    updated_at: '2026-10-15T18:52:59.326587+08:00'
+  - id: cardc34789-entry-ff6593c9
     title: 世界 · 世界观设计清单
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-0b2d31e0
+    group_id: cardc34789-grp-9e1627c9
     content: '【世界观设计清单】
 
 
@@ -501,13 +501,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 9
-    created_at: '2026-10-08T20:08:13.508971+08:00'
-    updated_at: '2026-10-08T20:08:13.508971+08:00'
-  - id: cardc34789-entry-de7bef47
+    created_at: '2026-10-15T18:52:59.366205+08:00'
+    updated_at: '2026-10-15T18:52:59.366205+08:00'
+  - id: cardc34789-entry-d27bc92b
     title: 故事 · 主线、冲突与节奏
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-0b2d31e0
+    group_id: cardc34789-grp-9e1627c9
     content: '【故事线设计】
 
 
@@ -560,13 +560,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 10
-    created_at: '2026-10-08T20:08:13.587064+08:00'
-    updated_at: '2026-10-08T20:08:13.587064+08:00'
-  - id: cardc34789-entry-c60c5ef4
+    created_at: '2026-10-15T18:52:59.408992+08:00'
+    updated_at: '2026-10-15T18:52:59.408992+08:00'
+  - id: cardc34789-entry-a56be80f
     title: 角色 · 角色条目拆分法
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-0b2d31e0
+    group_id: cardc34789-grp-9e1627c9
     content: '【把角色落成条目】
 
 
@@ -638,13 +638,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 11
-    created_at: '2026-10-08T20:08:13.667120+08:00'
-    updated_at: '2026-10-08T20:08:13.667120+08:00'
-  - id: cardc34789-entry-d3ea24af
+    created_at: '2026-10-15T18:52:59.457595+08:00'
+    updated_at: '2026-10-15T18:52:59.457595+08:00'
+  - id: cardc34789-entry-531b1137
     title: 写法 · 怎么把角色写活
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-0b2d31e0
+    group_id: cardc34789-grp-9e1627c9
     content: '【写法 · 怎么把角色写活】
 
 
@@ -731,13 +731,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 12
-    created_at: '2026-10-08T20:08:13.750066+08:00'
-    updated_at: '2026-10-08T20:08:13.750066+08:00'
-  - id: cardc34789-entry-e71676e5
+    created_at: '2026-10-15T18:52:59.510707+08:00'
+    updated_at: '2026-10-15T18:52:59.510707+08:00'
+  - id: cardc34789-entry-6cae7b2d
     title: 变量 · 什么时候需要变量
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-b77ea2c9
+    group_id: cardc34789-grp-3a872055
     content: '【什么时候需要变量】
 
 
@@ -835,13 +835,13 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 13
-    created_at: '2026-10-08T20:08:13.836938+08:00'
-    updated_at: '2026-10-08T20:08:13.836938+08:00'
-  - id: cardc34789-entry-b767a3c1
+    created_at: '2026-10-15T18:52:59.566875+08:00'
+    updated_at: '2026-10-15T18:52:59.566875+08:00'
+  - id: cardc34789-entry-a75aebd5
     title: 界面 · 卡内界面要不要做
     icon_id: chat
     kind: normal
-    group_id: cardc34789-grp-b77ea2c9
+    group_id: cardc34789-grp-3a872055
     content: '【卡内界面要不要做】
 
 
@@ -898,7 +898,7 @@ library:
     view_order: 0
     group_view_order: 0
     tree_view_order: 14
-    created_at: '2026-10-08T20:08:13.929076+08:00'
-    updated_at: '2026-10-08T20:08:13.929076+08:00'
+    created_at: '2026-10-15T18:52:59.629214+08:00'
+    updated_at: '2026-10-15T18:52:59.629214+08:00'
 variables: {}
 regex_rules: []
