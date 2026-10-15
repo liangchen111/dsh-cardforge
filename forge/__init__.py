@@ -26,7 +26,7 @@
     cli       薄壳：找到仓库根，把 `forge.py` 当脚本跑起来（`python -m forge` / `pip` 入口）
 """
 
-__version__ = "0.28.3"
+__version__ = "0.28.4"
 
 # 内核里的提示语是中文 + ✔ / ✘ 这类符号，而 Windows 控制台默认是 GBK：
 # 不换编码就会 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2714'`。
