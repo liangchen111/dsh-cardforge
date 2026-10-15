@@ -235,8 +235,8 @@ Python 侧那几个分支会真读出来 ⇒ 两条路此刻**注定不同**。�
 
 | 模块 | 产出 | 差分结果 |
 |---|---|---|
-| `content`（2,013 行 · 本工程最大的一块） | `forgejs/lib/content.mjs` | ✔ 逐字节一致 **94,122 字节**（30+ 步顺序操作 ＋ 整棵工程树） |
-| `sandbox`（165 行 · content 的依赖） | `forgejs/lib/sandbox.mjs` | ✔ 逐字节一致 **5,397 字节**（模式关／模式开各跑一遍） |
+| `content`（2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行） | `forgejs/lib/content.mjs` | ✔ 逐字节一致 **94,122 字节**（30+ 步顺序操作 ＋ 整棵工程树） |
+| `sandbox`（165 行） | `forgejs/lib/sandbox.mjs` | ✔ 逐字节一致 **5,397 字节**（模式关／模式开各跑一遍） |
 
 - **两份语料都不是「调几个函数」那种**：
   - `差分/语料/content.json`：把 `assets/骨架` 整份拷进临时目录，**顺序**跑 30+ 个操作
@@ -290,10 +290,31 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**下一轮**：按计划 §四 的批次顺序走 —— **`draft`（649 行）** → `coach`（853） →
-`scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export`/`opener` → 辅助 →
-命令层（33 条命令，名字一个不改）。`content` 已经吃掉最肥的一块（2,013 行），
-接下来这几块都只有它的一半左右，可以一块一轮。
+**下一轮**：按计划 §四 的批次顺序走 —— **`draft`（815 行）** → `coach`（1,353） →
+`scaffold`（600）／`theme`（592）／`mods`（682）／`hud`（693） → `png`／`preset`／`dist`／
+`bundle`／`export`／`opener`／`bridge`／`manual`／`plan`／`guard`／`lint` → 命令层
+（33 条命令，名字一个不改）。`content`（2,158 行）已经吃掉最肥的一块。
+
+**行数以 Python 实测为准**（2026-10-16 用 `pathlib` 数的，`forge/` 合计 **13,134 行**）：
+
+| 模块 | Python 行数 | 模块 | Python 行数 |
+|---|---|---|---|
+| `content` | 2,158 | `preset` | 500 |
+| `coach` | 1,353 | `zod` | 456 |
+| `validate` | 833 | `export` | 396 |
+| `draft` | 815 | `png` | 384 |
+| `bridge` | 707 | `dist` | 373 |
+| `hud` | 693 | `opener` | 325 |
+| `mods` | 682 | `pack` | 297 |
+| `scaffold` | 600 | `lint` | 293 |
+| `theme` | 592 | `plan` | 262 |
+| `manual` | 556 | `model` | 234 |
+| `domain` | 181 · `sandbox` 165 · `bundle` 119 · `guard` 71 · `__init__` 44 · `cli` 37 · `__main__` 8 | | |
+
+> ⚠️ **别用 PowerShell 的 `(Get-Content 文件).Count` 数行数** —— 它按 GBK 读 UTF-8，
+> `draft.py` 被数成 649 行（实际 815）。要行数就用 Python `read_bytes().count(b"\n")`。
+> 本轮文档里所有「XXX 行」都是这么重新数过的。
+
 
 **已知还欠着的两处**（content 里那两个 import 的兄弟模块还没搬）：
 

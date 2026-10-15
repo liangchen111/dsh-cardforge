@@ -43,11 +43,14 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. 按计划 §四 的批次顺序走：**`draft`(649)** → `coach`(853) →
-   `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export`/`opener` → 辅助 →
-   命令层（33 条命令，名字一个不改）。`content`（2,013 行）已经吃掉最肥的一块，剩下这几块一块一轮。
+1. 按计划 §四 的批次顺序走：**`draft`(815)** → `coach`(1,353) →
+   `scaffold`(600)/`theme`(592)/`mods`(682)/`hud`(693) → `png`/`preset`/`dist`/`bundle`/`export`/`opener`/`bridge`/`manual`/`plan`/`guard`/`lint` → 辅助 →
+   命令层（33 条命令，名字一个不改）。`content`（2,158 行）已经吃掉最肥的一块。
+   **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
+   `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 2. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 要等 `opener.mjs`；
    需要写 YAML 的调用点都得把 `M.ydump` 改成 `M.jdump`。
+   `draft.py` 还 import 了 `scaffold`（`scaffold.new_card`）与 `opener`（`OPENER.改正文`）。
 
 
 ## 七条纪律（差分台已经证明有用）

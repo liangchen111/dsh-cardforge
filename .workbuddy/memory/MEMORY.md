@@ -127,8 +127,10 @@
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
 - **进度：8/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
-  YAML 子集读取器 · `sandbox` · **`content`（2,013 行 · 本工程最大的一块）**。
-  下一块按计划 §四 走 **`draft`（649 行）**。
+  YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）**。
+  下一块按计划 §四 走 **`draft`（815 行）**，它还要 `scaffold`（600）与 `opener`（325）。
+  **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
+  PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 - **两个环境地雷**：**`cpSync(..., {recursive:true})` 会把 Node 进程打崩**（本机 v24.14.0，
   退出码 `0xC0000409`，一行输出都不给）—— 递归拷目录自己用 `readdirSync + copyFileSync + utimesSync` 写；
   **`JSON.stringify` 会把 `undefined` 的键整个丢掉** —— Python 的 `None` 在 JS 侧有 `null`/`undefined`

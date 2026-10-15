@@ -28,6 +28,23 @@ try {
   C = null
 }
 
+// scaffold 同理：它要 import 的兄弟模块比 content 还多（hud / mods / bridge / pack / dist /
+// opener），用动态导入，它没落地也不牵连别的模块。
+let SC = null
+try {
+  SC = await import('../forgejs/lib/scaffold.mjs')
+} catch (e) {
+  SC = null
+}
+
+// opener 同理：它 import 的兄弟最少，但同样不该因为自己没落地就牵连别人。
+let O = null
+try {
+  O = await import('../forgejs/lib/opener.mjs')
+} catch (e) {
+  O = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -266,7 +283,10 @@ function 走树(根) {
     for (const f of files) {
       const p = join(base, f)
       const rel = relative(根, p).split('\\').join('/')
-      if (rel.startsWith('.forge/回收站/') && f.endsWith('.json')) {
+      // 回收站记录的名字与内容里都带随机量（时间戳 + uuid），只能按**位次**比结构。
+      // 注意**嵌套的**也算（语料把多个夹具工程并排放进一个拷出来的根里，
+      // rel 就成了 `甲界面/.forge/回收站/…`）—— 与 `出黄金.py` 的 `_树` 一字不差地对齐。
+      if (f.endsWith('.json') && (rel.startsWith('.forge/回收站/') || rel.includes('/.forge/回收站/'))) {
         第几条 += 1
         let 记录
         try {
@@ -364,6 +384,84 @@ function 算_content(料) {
 
 算式.content = 算_content
 
+// ------------------------------------------------------------------ scaffold
+//
+// 架构跟算_content 一样（喂进去 → 逐步记 stdout／返回值／异常消息 → 最后比整棵树），
+// 两处不同：
+//   ① 工作目录**建在工具根底下**，不能用系统 temp —— `scaffold._rel` 是 os.path.relpath
+//      包了层 `except: return target`，Windows 上跨盘符 relpath 会抛、被吞掉后原样返回绝对
+//      路径；Node 的 `path.relative` 不抛、会算出一串 `../../`。同盘才比得到同一条分支。
+//   ② Python 侧那几支「一进门就要 opener」的调用（灌内容／_规整开场／看卡名／改卡名）在
+//      JS 里是明确抛错，语料里刻意不碰它们，免得比成「真错」。
+function 算_scaffold(料) {
+  if (!SC) throw new Error('forgejs/lib/scaffold.mjs 没导入成功，先把它落地再跑 scaffold')
+  const 工作 = mkdtempSync(join(根, '_tmp_scaffold-'))
+  const 出 = {
+    常量: {
+      SRC_NAME: SC.SRC_NAME,
+      SRC_SLUG: SC.SRC_SLUG,
+      SKELETON: SC.SKELETON,
+      TEXT_EXT: [...SC.TEXT_EXT].sort(),
+      SKIP_DIRS: [...SC.SKIP_DIRS].sort(),
+      SKIP_FILES: [...SC.SKIP_FILES].sort(),
+    },
+    开工说明: SC.PROJECT_README,
+    步: [],
+  }
+  const 原沙箱 = SB.enabled()
+  // ★ 沙箱开关是**进程级**状态，而算_sandbox（按字母序排在 scaffold 前面）跑完会把它留在
+  //   「开」上 —— 它自己的黄金里 `enabled: true` 就是照实记的，两边都不还原。
+  //   本函数必须与调用顺序无关：单独 `比一比.mjs scaffold` 与整套 `跑.py` 得出一模一样的结果。
+  //   少了这一行，整套跑（沙箱还开着）会跟「关」着生成的黄金差一处（实测：改名 1 个 → 0 个）。
+  SB.enable(false)
+  try {
+    mkdirSync(join(工作, '工作区'))
+    mkdirSync(join(工作, '空卡'))
+    mkdirSync(join(工作, '空目录'))
+    mkdirSync(join(工作, '非空卡'))
+    writeFileSync(join(工作, '非空卡', '里面.txt'), '占位\n', 'utf8')
+    writeFileSync(join(工作, '非目录'), '我是个文件\n', 'utf8')
+    mkdirSync(join(工作, '双spec', 'source'), { recursive: true })
+    for (const 名 of ['a', 'b']) {
+      copyFileSync(join(根, 'assets', '骨架', 'source', '骨架.spec.yaml'),
+        join(工作, '双spec', 'source', `${名}.spec.yaml`))
+    }
+
+    for (const 步 of 料.操作) {
+      if (步.开关) SB.enable(步.开关[0])
+      const 参数 = (步.参数 ?? []).map((a) => (typeof a === 'string'
+        ? a.split('@根@').join(根).split('@工作@').join(工作)
+        : a))
+      const rec = { 调用: 步.调用, 参数 }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        const 回 = SC[步.调用](...参数)
+        rec.回 = 动(回 ?? null)
+        rec.错 = null
+      } catch (e) {
+        rec.回 = null
+        rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.步.push(rec)
+    }
+    出.树 = 走树(工作)
+  } finally {
+    // 沙箱开关是模块级状态，语料里翻过就必须翻回来，不然会漏到后面的用例上
+    SB.enable(原沙箱)
+    rmSync(工作, { recursive: true, force: true })
+  }
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(出, 对)
+}
+
+算式.scaffold = 算_scaffold
+
 function 算_sandbox(料) {
   const 工作 = mkdtempSync(join(tmpdir(), 'sandbox-'))
   const 跑一遍 = (标签, 开关) => {
@@ -408,6 +506,57 @@ function 算_sandbox(料) {
 }
 
 算式.sandbox = 算_sandbox
+
+// ------------------------------------------------------------------ opener
+//
+// 跟算_content 同一个架构（拷夹具 → 逐步记 stdout／返回值／异常消息 → 最后比整棵树）。
+// 只有两点不同：
+//   ① opener 的入口**有时是工程目录、有时是 spec 文件**，没有 content 那种固定的
+//      「规格」首位参数 ⇒ 参数全写在语料里，`@根@` 照样替换成临时工程根。
+//   ② 界面档的「写回 spec」支路要 hud.mjs 的 HUD.build（forgejs 还没搬）⇒ 语料刻意避开
+//      那条支路（界面档的改正文只传 写回=false；写回() 只碰内容档／无开场白／标记数≠3／
+//      找不到工程这四种**先 return 或先抛**的分支）。理由见 opener.mjs 头部的「移植记号」。
+function 算_opener(料) {
+  if (!O) throw new Error('forgejs/lib/opener.mjs 没导入成功，先把它落地再跑 opener')
+  const 源 = join(根, 料.工程)
+  // ★ 工作目录**建在工具根底下**，不用系统 temp：Windows 的 temp 路径可能是 8.3 短名
+  //   （`C:\Users\ADMINI~1\...`），而 Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+  //   Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出两个写法，
+  //   归一用的 `<工程>` 替换就对不上。同盘同长名才比得到同一条分支（算_scaffold 同此法）。
+  const 工作 = mkdtempSync(join(根, '_tmp_opener-'))
+  const 工程 = join(工作, '工程')
+  拷目录(源, 工程)
+
+  const 出 = { 步: [] }
+  for (const 步 of 料.操作) {
+    // 与 Python 侧 `_换路径(a, [("@根@", str(工程))])` 逐字对应：dict / list 里的字符串也换。
+    const 参数 = (步.参数 ?? []).map((a) => 换路径(a, [['@根@', 工程]]))
+    const rec = { 调用: 步.调用, 参数 }
+    let 出文 = ''
+    const 原写 = process.stdout.write.bind(process.stdout)
+    process.stdout.write = (s) => { 出文 += String(s); return true }
+    try {
+      const 回 = O[步.调用](...参数)
+      rec.回 = 动(回 ?? null)
+      rec.错 = null
+    } catch (e) {
+      rec.回 = null
+      rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+    } finally {
+      process.stdout.write = 原写
+    }
+    rec.出 = 净文本(出文)
+    出.步.push(rec)
+  }
+  出.树 = 走树(工程)
+  rmSync(工作, { recursive: true, force: true })
+
+  const 对 = [[工程, '<工程>'], [工作, '<临时>'],
+    [工程.split('\\').join('\\\\'), '<工程>'], [工作.split('\\').join('\\\\'), '<临时>']]
+  return 换路径(出, 对)
+}
+
+算式.opener = 算_opener
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

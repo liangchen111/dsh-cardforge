@@ -294,7 +294,9 @@ def _动(x, 键=None):
         return _文本8.sub("<hex8>", x)
     if isinstance(x, dict):
         return {_文本8.sub("<hex8>", str(k)): _动(v, str(k)) for k, v in x.items()}
-    if isinstance(x, list):
+    if isinstance(x, (list, tuple)):
+        # ★ tuple 也要走：`json.dumps` 本来就把 tuple 写成数组，JS 那边 Array 一直走的就是这条。
+        #   少这一条，Python 侧 tuple 里的字符串就**整个跳过归一**，而 JS 侧照样归一 —— 差分必红。
         return [_动(v, 键) for v in x]
     return x
 
@@ -312,7 +314,10 @@ def _树(根):
         for f in sorted(files):
             p = os.path.join(base, f)
             rel = os.path.relpath(p, 根).replace("\\", "/")
-            if rel.startswith(".forge/回收站/") and f.endswith(".json"):
+            # 回收站记录的名字与内容里都带随机量（时间戳 + uuid），只能按**位次**比结构。
+            # 注意**嵌套的**也算（语料把多个夹具工程并排放进一个拷出来的根里，
+            # rel 就成了 `甲界面/.forge/回收站/…`）——少这一支，两边就只能比 sha1，必红。
+            if f.endswith(".json") and (rel.startswith(".forge/回收站/") or "/.forge/回收站/" in rel):
                 第几条 += 1
                 try:
                     记录: object = json.loads(Path(p).read_text(encoding="utf-8"))
@@ -379,6 +384,56 @@ def 算_content(料: dict) -> dict:
 算式["content"] = 算_content
 
 
+def 算_opener(料: dict) -> dict:
+    """顺序跑一串开场白操作，每步比 stdout / 返回值 / 异常消息，最后比整棵树。
+
+    与 `算_content` 同形，只有两点不同：
+
+      · opener 的入口**有时是工程目录、有时是 spec 文件**，没有 content 那种固定的「规格」
+        首位参数 ⇒ 参数全写在语料里（`@根@` 照样被换成临时工程根，dict / list 里的字符串也换）。
+      · 界面档的「写回 spec」支路要 `hud` 的 `HUD.build` —— 语料**故意不走**那条（见语料说明）。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import opener as O
+
+    # ★ 工作目录**建在工具根底下**，不用系统 temp：Windows 的 temp 路径可能是 8.3 短名
+    #   （`C:\Users\ADMINI~1\...`），而 Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+    #   Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出两个写法，
+    #   归一用的 `<工程>` 替换就对不上。同盘同长名才比得到同一条分支（scaffold 同此法）。
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_opener-", dir=str(根)))
+    工程 = 工作 / "工程"
+    shutil.copytree(根 / 料["工程"], 工程)
+
+    出: dict = {"步": []}
+    for 步 in 料["操作"]:
+        参数 = [_换路径(a, [("@根@", str(工程))]) for a in 步.get("参数", [])]
+        buf = io.StringIO()
+        rec: dict = {"调用": 步["调用"], "参数": 参数}
+        try:
+            with contextlib.redirect_stdout(buf):
+                回 = getattr(O, 步["调用"])(*参数)
+            rec["回"] = _动(回)
+            rec["错"] = None
+        except Exception as exc:  # noqa: BLE001
+            rec["回"] = None
+            rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+        rec["出"] = _净文本(buf.getvalue())
+        出["步"].append(rec)
+    出["树"] = _树(工程)
+    shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工程), "<工程>"), (str(工作), "<临时>"),
+          (str(工程).replace("\\", "\\\\"), "<工程>"), (str(工作).replace("\\", "\\\\"), "<临时>")]
+    return _换路径(出, 对)
+
+
+算式["opener"] = 算_opener
+
+
 def 算_sandbox(料: dict) -> dict:
     """同一串步骤跑两遍：模式关 / 模式开。开与关的差别只落在 land / retire / shell 上。"""
     import shutil
@@ -436,6 +491,87 @@ def 算_sandbox(料: dict) -> dict:
 
 
 算式["sandbox"] = 算_sandbox
+
+
+def 算_scaffold(料: dict) -> dict:
+    """顺序跑一串 scaffold 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    ★ 工作目录**建在工具根底下**，不用系统 temp：`forge.scaffold._rel` 是 `os.path.relpath`
+      包了一层 `except Exception: return target` —— Windows 上跨盘符 relpath 会抛
+      `ValueError: path is on mount 'C:', start on mount 'E:'`、被那层 except 吞掉、
+      原样返回绝对路径；而 Node 的 `path.relative` 根本不抛、会算出一串 `../../`。
+      两边同盘才比得到同一条分支（跨盘那条已在 scaffold.mjs 的 `_rel` 里单独拦下）。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import scaffold as SC
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_scaffold-", dir=str(根)))
+    原沙箱 = SC.SB.enabled()
+    # ★ 沙箱开关是**进程级**状态，而算_sandbox 跑完会把它留在「开」上（它的黄金里
+    #   `enabled: true` 就是照实记下来的，没还原）。本函数的黄金必须与调用顺序无关
+    #   —— 单独 `出黄金.py scaffold` 与整套 `跑.py --刷` 得是同一份 —— 所以这里显式摁回关，
+    #   出门再按原样还原（不动下游模块看到的那个值）。
+    SC.SB.enable(False)
+    出: dict = {
+        "常量": {
+            "SRC_NAME": SC.SRC_NAME,
+            "SRC_SLUG": SC.SRC_SLUG,
+            "SKELETON": str(SC.SKELETON),
+            "TEXT_EXT": sorted(SC.TEXT_EXT),
+            "SKIP_DIRS": sorted(SC.SKIP_DIRS),
+            "SKIP_FILES": sorted(SC.SKIP_FILES),
+        },
+        "开工说明": SC.PROJECT_README,
+        "步": [],
+    }
+    try:
+        (工作 / "工作区").mkdir()
+        (工作 / "空卡").mkdir()
+        (工作 / "空目录").mkdir()
+        (工作 / "非空卡").mkdir()
+        (工作 / "非空卡" / "里面.txt").write_text("占位\n", encoding="utf-8", newline="\n")
+        (工作 / "非目录").write_text("我是个文件\n", encoding="utf-8", newline="\n")
+        (工作 / "双spec" / "source").mkdir(parents=True)
+        for 名 in ("a", "b"):
+            shutil.copy2(
+                根 / "assets" / "骨架" / "source" / "骨架.spec.yaml",
+                工作 / "双spec" / "source" / ("%s.spec.yaml" % 名),
+            )
+
+        for 步 in 料["操作"]:
+            if 步.get("开关"):
+                SC.SB.enable(步["开关"][0])
+            参数 = [
+                a.replace("@根@", str(根)).replace("@工作@", str(工作)) if isinstance(a, str) else a
+                for a in 步.get("参数", [])
+            ]
+            buf = io.StringIO()
+            rec: dict = {"调用": 步["调用"], "参数": 参数}
+            try:
+                with contextlib.redirect_stdout(buf):
+                    回 = getattr(SC, 步["调用"])(*参数)
+                # 元组不是 list，_动 不会往里递归 —— 换成 list，跟 JS 侧（那边天生是数组）对齐
+                rec["回"] = _动(list(回) if isinstance(回, tuple) else 回)
+                rec["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                rec["回"] = None
+                rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+            rec["出"] = _净文本(buf.getvalue())
+            出["步"].append(rec)
+        出["树"] = _树(工作)
+    finally:
+        SC.SB.enable(原沙箱)
+        shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(出, 对)
+
+
+算式["scaffold"] = 算_scaffold
 
 
 def main(argv):
