@@ -221,7 +221,9 @@ export function estTokens(text) {
   if (!text) return 0
   const s = String(text)
   const cjk = (s.match(CJK) ?? []).length
-  return 银行家(cjk + (s.length - cjk) / 3.6)
+  // ★ 分母是 `len(text) - cjk` —— Python 的 `len()` 数**码点**，别用 `s.length`（数码元）：
+  //   正文里落一个星平面字符（emoji），它就凭空多算一个「非 CJK 字符」。
+  return 银行家(cjk + (Array.from(s).length - cjk) / 3.6)
 }
 
 /** 建一个临时 .json 路径（与 Python 的 `tempfile.mkstemp` 形状对齐：先占位再关掉）。 */

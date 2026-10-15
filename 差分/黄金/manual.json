@@ -1,0 +1,1957 @@
+{
+  "步": [
+    {
+      "调用": "_esc",
+      "参数": [
+        "&<>\"' 中文「」\n第二行\t制表"
+      ],
+      "回": "&amp;&lt;&gt;&quot;&#x27; 中文「」\n第二行\t制表",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_esc",
+      "参数": [
+        null
+      ],
+      "回": "",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_esc",
+      "参数": [
+        42
+      ],
+      "回": "42",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_nl",
+      "参数": [
+        "行一\n行二 & <b>"
+      ],
+      "回": "行一\n行二 &amp; &lt;b&gt;",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_tokens",
+      "参数": [
+        "中文汉字 abc 123"
+      ],
+      "回": 6,
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_tokens",
+      "参数": [
+        ""
+      ],
+      "回": 0,
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_tokens",
+      "参数": [
+        null
+      ],
+      "回": 0,
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "trigger_mode": "always",
+          "agent_read_strategy": "keyword",
+          "keywords": [
+            "判定"
+          ],
+          "insert_role": "system",
+          "position": "instructions",
+          "enabled": true
+        }
+      ],
+      "回": "<span class=\"tag always\">常驻</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {}
+      ],
+      "回": "<span class=\"tag always\">常驻</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "kind": "opening"
+        }
+      ],
+      "回": "<span class=\"tag always\">开场白</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "enabled": false,
+          "kind": "opening",
+          "trigger_mode": "always"
+        }
+      ],
+      "回": "<span class=\"tag off\">已禁用</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "trigger_mode": "agent_tool",
+          "agent_read_strategy": "required"
+        }
+      ],
+      "回": "<span class=\"tag kw\">必读</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "trigger_mode": "agent_tool",
+          "agent_read_strategy": "keyword"
+        }
+      ],
+      "回": "<span class=\"tag kw\">关键词</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_trig_tag",
+      "参数": [
+        {
+          "trigger_mode": "agent_tool",
+          "agent_read_strategy": "别的"
+        }
+      ],
+      "回": "<span class=\"tag agent\">按需</span>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_cell",
+      "参数": [
+        "| a\nb |"
+      ],
+      "回": "\\| a b \\|",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_cell",
+      "参数": [
+        "| a\nb |",
+        4
+      ],
+      "回": "\\| …",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_cell",
+      "参数": [
+        "😀😀😀😀",
+        3
+      ],
+      "回": "😀😀…",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_cell",
+      "参数": [
+        "中文很长很长很长",
+        0
+      ],
+      "回": "中文很长很长很长",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_default_dir",
+      "参数": [
+        "<工作>/全控/source/全控.spec.yaml"
+      ],
+      "回": "<工作>\\全控\\文档",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_default_dir",
+      "参数": [
+        "<工作>/直读.json"
+      ],
+      "回": "<工作>",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "load_card",
+      "参数": [
+        "<工作>/直读.json"
+      ],
+      "回": [
+        {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": "直读卡",
+            "profile_age": "二十",
+            "profile_sex": "",
+            "profile_height": "一百八"
+          },
+          "setting_library": {
+            "format": "eleckoi.setting-library-snapshot",
+            "version": 1,
+            "active_version_id": "v1",
+            "versions": [
+              {
+                "id": "v1",
+                "name": "默认",
+                "entries": [
+                  {
+                    "id": "c1",
+                    "title": "直读条目",
+                    "kind": "normal",
+                    "group_id": "g1",
+                    "content": "直读的正文。",
+                    "trigger_mode": "always",
+                    "enabled": true,
+                    "position": "instructions",
+                    "insert_role": "system",
+                    "order": 1,
+                    "keywords": [
+                      "直读"
+                    ]
+                  },
+                  {
+                    "id": "c2",
+                    "title": "没有标题这一栏",
+                    "kind": "normal",
+                    "group_id": "",
+                    "content": "",
+                    "trigger_mode": "agent_tool",
+                    "agent_read_strategy": "keyword",
+                    "enabled": true
+                  }
+                ],
+                "groups": [
+                  {
+                    "id": "g1",
+                    "name": "直读组"
+                  }
+                ]
+              }
+            ]
+          },
+          "variable_config": {
+            "format": "eleckoi.variable-config",
+            "version": 1,
+            "active_version_id": "vv1",
+            "versions": [
+              {
+                "id": "vv1",
+                "name": "默认",
+                "objects": [
+                  {
+                    "id": "o1",
+                    "name": "直读对象",
+                    "description": "直读的说明。"
+                  }
+                ],
+                "variables": [
+                  {
+                    "id": "x1",
+                    "title": "直读变量",
+                    "object_id": "o1",
+                    "type": "number",
+                    "default_value": "1",
+                    "read_mode": "on_demand",
+                    "description": "说明。"
+                  }
+                ]
+              }
+            ]
+          },
+          "regex_rules": [
+            {
+              "id": "r1",
+              "name": "直读正则",
+              "pattern": "/a/g",
+              "replacement": "b",
+              "targets": "content",
+              "enabled": true,
+              "order": 1
+            }
+          ]
+        },
+        false
+      ],
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "load_card",
+      "参数": [
+        "<工作>/全控/source/全控.spec.yaml"
+      ],
+      "回": [
+        {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": "全控卡",
+            "group": "",
+            "frontend_beauty_enabled": false,
+            "profile_age": "三十",
+            "profile_sex": "女",
+            "profile_height": "一百七",
+            "profile_birthday": "",
+            "profile_like": "",
+            "image_prompt": "",
+            "opening": "",
+            "show_opening": false
+          },
+          "assets": [],
+          "setting_library": {
+            "_长文本": {
+              "字节": 14607,
+              "行数": 1,
+              "sha1": "954ad321368a1738",
+              "首行": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"library-full\",\"versions\":[{\"id\":\"library-full\",\"name\":\"全控\",\"entries\":[{\"id\":\"e-normal\",\"title\":\"常驻 · 全控正文\",\"kind\":\"normal\"",
+              "尾行": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"library-full\",\"versions\":[{\"id\":\"library-full\",\"name\":\"全控\",\"entries\":[{\"id\":\"e-normal\",\"title\":\"常驻 · 全控正文\",\"kind\":\"normal\""
+            }
+          },
+          "variable_config": {
+            "_长文本": {
+              "字节": 5170,
+              "行数": 172,
+              "sha1": "149cdac983a5b4b0",
+              "首行": "{",
+              "尾行": "}"
+            }
+          },
+          "regex_rules": [
+            {
+              "id": "re-1",
+              "name": "面板",
+              "pattern": "〔面板〕",
+              "replacement": "<span class=\"p\">〔面板〕</span>",
+              "targets": "content",
+              "enabled": true,
+              "order": 1
+            },
+            {
+              "id": "re-2",
+              "name": "空|名字",
+              "pattern": "",
+              "replacement": "",
+              "targets": "content,title",
+              "enabled": false,
+              "order": 2
+            },
+            {
+              "id": "re-3",
+              "name": "无 order",
+              "pattern": "/x/g",
+              "replacement": "y",
+              "targets": "",
+              "enabled": true
+            }
+          ]
+        },
+        true
+      ],
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "load_card",
+      "参数": [
+        "<工作>/没有这个文件.json"
+      ],
+      "回": null,
+      "错": "FileNotFoundError: [Errno 2] No such file or directory: '<工作>/没有这个文件.json'",
+      "出": ""
+    },
+    {
+      "调用": "load_card",
+      "参数": [
+        "<工作>/坏.json"
+      ],
+      "回": null,
+      "错": "JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 3 (char 2)",
+      "出": ""
+    },
+    {
+      "调用": "gather",
+      "参数": [
+        "<工作>/全控/source/全控.spec.yaml"
+      ],
+      "回": {
+        "card": {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": "全控卡",
+            "group": "",
+            "frontend_beauty_enabled": false,
+            "profile_age": "三十",
+            "profile_sex": "女",
+            "profile_height": "一百七",
+            "profile_birthday": "",
+            "profile_like": "",
+            "image_prompt": "",
+            "opening": "",
+            "show_opening": false
+          },
+          "assets": [],
+          "setting_library": {
+            "_长文本": {
+              "字节": 14607,
+              "行数": 1,
+              "sha1": "954ad321368a1738",
+              "首行": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"library-full\",\"versions\":[{\"id\":\"library-full\",\"name\":\"全控\",\"entries\":[{\"id\":\"e-normal\",\"title\":\"常驻 · 全控正文\",\"kind\":\"normal\"",
+              "尾行": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"library-full\",\"versions\":[{\"id\":\"library-full\",\"name\":\"全控\",\"entries\":[{\"id\":\"e-normal\",\"title\":\"常驻 · 全控正文\",\"kind\":\"normal\""
+            }
+          },
+          "variable_config": {
+            "_长文本": {
+              "字节": 5170,
+              "行数": 172,
+              "sha1": "149cdac983a5b4b0",
+              "首行": "{",
+              "尾行": "}"
+            }
+          },
+          "regex_rules": [
+            {
+              "id": "re-1",
+              "name": "面板",
+              "pattern": "〔面板〕",
+              "replacement": "<span class=\"p\">〔面板〕</span>",
+              "targets": "content",
+              "enabled": true,
+              "order": 1
+            },
+            {
+              "id": "re-2",
+              "name": "空|名字",
+              "pattern": "",
+              "replacement": "",
+              "targets": "content,title",
+              "enabled": false,
+              "order": 2
+            },
+            {
+              "id": "re-3",
+              "name": "无 order",
+              "pattern": "/x/g",
+              "replacement": "y",
+              "targets": "",
+              "enabled": true
+            }
+          ]
+        },
+        "from_spec": true,
+        "name": "全控卡",
+        "character": {
+          "name": "全控卡",
+          "group": "",
+          "frontend_beauty_enabled": false,
+          "profile_age": "三十",
+          "profile_sex": "女",
+          "profile_height": "一百七",
+          "profile_birthday": "",
+          "profile_like": "",
+          "image_prompt": "",
+          "opening": "",
+          "show_opening": false
+        },
+        "entries": [
+          {
+            "id": "e-normal",
+            "title": "常驻 · 全控正文",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "【全控】这一条把 HTML 转义要撞的字符全带上：& < > \" ' 与中文引号「」、单引号 ' 混在里面。 第二行里有 <b>不该被当标签</b> 与 &amp; 这种已经像实体的东西。 第三行：符号 😀 与组合字符 é（e + ́）用来试按码点截断。",
+            "agent_selection_hint": "需要转义试金石时读我。",
+            "agent_read_strategy": "normal",
+            "keywords": [],
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 1,
+            "opening_messages": []
+          },
+          {
+            "id": "e-always2",
+            "title": "常驻 · 超长护栏",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": {
+              "_长文本": {
+                "字节": 10227,
+                "行数": 1,
+                "sha1": "b405c8733cf7222c",
+                "首行": "【护栏】常驻正文。字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+                "尾行": "【护栏】常驻正文。字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+              }
+            },
+            "agent_read_strategy": "normal",
+            "keywords": [],
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 2,
+            "opening_messages": []
+          },
+          {
+            "id": "e-kw",
+            "title": "关键词 · 命中",
+            "kind": "normal",
+            "group_id": "grp-b",
+            "content": "短。",
+            "agent_selection_hint": "有键时读我。",
+            "agent_read_strategy": "keyword",
+            "keywords": [
+              "判定",
+              "掷骰",
+              "检定",
+              "四",
+              "五",
+              "六",
+              "七",
+              "八",
+              "九",
+              "十"
+            ],
+            "trigger_mode": "agent_tool",
+            "enabled": true,
+            "position": "",
+            "insert_role": "user",
+            "opening_messages": []
+          },
+          {
+            "id": "e-required",
+            "title": "必读 · 一条",
+            "kind": "normal",
+            "group_id": "grp-b",
+            "content": "第一行 第二行\t带制表 第三行结束",
+            "agent_read_strategy": "required",
+            "keywords": [],
+            "trigger_mode": "agent_tool",
+            "enabled": true,
+            "position": "",
+            "insert_role": "user",
+            "opening_messages": []
+          },
+          {
+            "id": "e-agent",
+            "title": "按需 · 一条",
+            "kind": "normal",
+            "group_id": "grp-c",
+            "content": "按需正文。",
+            "agent_read_strategy": "normal",
+            "keywords": [],
+            "trigger_mode": "agent_tool",
+            "enabled": true,
+            "position": "",
+            "insert_role": "user",
+            "opening_messages": []
+          },
+          {
+            "id": "e-disabled",
+            "title": "已禁用 · 一条",
+            "kind": "normal",
+            "group_id": "grp-c",
+            "content": "禁用的正文。",
+            "trigger_mode": "always",
+            "enabled": false,
+            "position": "instructions",
+            "insert_role": "system",
+            "opening_messages": []
+          },
+          {
+            "id": "e-opening",
+            "title": "开场白 · 一条",
+            "kind": "opening",
+            "group_id": "",
+            "content": "开场的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "",
+            "insert_role": "assistant",
+            "opening_messages": []
+          },
+          {
+            "id": "e-loose",
+            "title": "未分组 · 一条",
+            "kind": "normal",
+            "group_id": "",
+            "content": "未分组的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 7,
+            "opening_messages": []
+          },
+          {
+            "id": "e-meta",
+            "title": "元信息 · 管道|换行",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "| 管道在正文里 | 不该被转义",
+            "agent_read_strategy": "keyword",
+            "keywords": [
+              "a|b",
+              "多行 键"
+            ],
+            "trigger_mode": "agent_tool",
+            "enabled": true,
+            "position": "|斜杠\\尾",
+            "insert_role": "user",
+            "order": 0,
+            "opening_messages": []
+          },
+          {
+            "id": "e-notitle",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "没有标题的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 9,
+            "opening_messages": []
+          },
+          {
+            "id": "e-longtitle",
+            "title": "一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十超长标题到二十字以上",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "长标题的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 10,
+            "opening_messages": []
+          },
+          {
+            "id": "e-cjk",
+            "title": "星平面 · 𝕏 与 😀",
+            "kind": "normal",
+            "group_id": "grp-b",
+            "content": "星平面正文 𝕏 𝕐 😀😀😀。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 11,
+            "opening_messages": []
+          }
+        ],
+        "groups": [
+          {
+            "id": "grp-a",
+            "name": "甲组",
+            "parent_id": "",
+            "order": 1,
+            "tree_view_order": 1,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          },
+          {
+            "id": "grp-b",
+            "name": "乙组",
+            "parent_id": "",
+            "order": 2,
+            "tree_view_order": 2,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          },
+          {
+            "id": "grp-c",
+            "name": "丙组",
+            "parent_id": "",
+            "order": 3,
+            "tree_view_order": 3,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          }
+        ],
+        "objects": [
+          {
+            "id": "obj-full",
+            "name": "全控对象",
+            "parent_id": "",
+            "enabled": true,
+            "description": "这一行说明要足够长，长到索引表那一列的四十字上限真的会把它截掉，而不是碰巧短于上限。",
+            "update_rule": "",
+            "dynamic_key": false,
+            "order": 1,
+            "tree_view_order": 1,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          },
+          {
+            "id": "obj-empty",
+            "name": "空对象",
+            "parent_id": "",
+            "enabled": true,
+            "description": "",
+            "update_rule": "",
+            "dynamic_key": false,
+            "order": 2,
+            "tree_view_order": 2,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          }
+        ],
+        "variables": [
+          {
+            "id": "var-long",
+            "title": "长默认值",
+            "object_id": "obj-full",
+            "enabled": true,
+            "type": "string",
+            "default_value": "这是一个非常长的默认值，长到索引表那一列的二十四个字上限肯定会被截断，末尾会被换成一个省略号。",
+            "description": "说明。",
+            "update_rule": "",
+            "read_mode": "on_demand",
+            "order": 1,
+            "tree_view_order": 1,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          },
+          {
+            "id": "var-null",
+            "title": "空默认值",
+            "object_id": "obj-full",
+            "enabled": true,
+            "type": "string",
+            "default_value": "",
+            "description": "",
+            "update_rule": "",
+            "read_mode": "required",
+            "order": 2,
+            "tree_view_order": 2,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          },
+          {
+            "id": "var-orphan",
+            "title": "野变量",
+            "object_id": "",
+            "enabled": true,
+            "type": "array",
+            "default_value": "[]",
+            "description": "没有挂在任何对象下。",
+            "update_rule": "",
+            "read_mode": "on_demand",
+            "order": 3,
+            "tree_view_order": 3,
+            "created_at": "2026-01-01T00:00:00+08:00",
+            "updated_at": "2026-01-01T00:00:00+08:00"
+          }
+        ],
+        "regex_rules": [
+          {
+            "id": "re-1",
+            "name": "面板",
+            "pattern": "〔面板〕",
+            "replacement": "<span class=\"p\">〔面板〕</span>",
+            "targets": "content",
+            "enabled": true,
+            "order": 1
+          },
+          {
+            "id": "re-2",
+            "name": "空|名字",
+            "pattern": "",
+            "replacement": "",
+            "targets": "content,title",
+            "enabled": false,
+            "order": 2
+          },
+          {
+            "id": "re-3",
+            "name": "无 order",
+            "pattern": "/x/g",
+            "replacement": "y",
+            "targets": "",
+            "enabled": true
+          }
+        ],
+        "gname": {
+          "grp-a": "甲组",
+          "grp-b": "乙组",
+          "grp-c": "丙组"
+        },
+        "oname": {
+          "obj-full": "全控对象",
+          "obj-empty": "空对象"
+        },
+        "const": [
+          {
+            "id": "e-normal",
+            "title": "常驻 · 全控正文",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "【全控】这一条把 HTML 转义要撞的字符全带上：& < > \" ' 与中文引号「」、单引号 ' 混在里面。 第二行里有 <b>不该被当标签</b> 与 &amp; 这种已经像实体的东西。 第三行：符号 😀 与组合字符 é（e + ́）用来试按码点截断。",
+            "agent_selection_hint": "需要转义试金石时读我。",
+            "agent_read_strategy": "normal",
+            "keywords": [],
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 1,
+            "opening_messages": []
+          },
+          {
+            "id": "e-always2",
+            "title": "常驻 · 超长护栏",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": {
+              "_长文本": {
+                "字节": 10227,
+                "行数": 1,
+                "sha1": "b405c8733cf7222c",
+                "首行": "【护栏】常驻正文。字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+                "尾行": "【护栏】常驻正文。字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+              }
+            },
+            "agent_read_strategy": "normal",
+            "keywords": [],
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 2,
+            "opening_messages": []
+          },
+          {
+            "id": "e-disabled",
+            "title": "已禁用 · 一条",
+            "kind": "normal",
+            "group_id": "grp-c",
+            "content": "禁用的正文。",
+            "trigger_mode": "always",
+            "enabled": false,
+            "position": "instructions",
+            "insert_role": "system",
+            "opening_messages": []
+          },
+          {
+            "id": "e-loose",
+            "title": "未分组 · 一条",
+            "kind": "normal",
+            "group_id": "",
+            "content": "未分组的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 7,
+            "opening_messages": []
+          },
+          {
+            "id": "e-notitle",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "没有标题的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 9,
+            "opening_messages": []
+          },
+          {
+            "id": "e-longtitle",
+            "title": "一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十超长标题到二十字以上",
+            "kind": "normal",
+            "group_id": "grp-a",
+            "content": "长标题的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 10,
+            "opening_messages": []
+          },
+          {
+            "id": "e-cjk",
+            "title": "星平面 · 𝕏 与 😀",
+            "kind": "normal",
+            "group_id": "grp-b",
+            "content": "星平面正文 𝕏 𝕐 😀😀😀。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 11,
+            "opening_messages": []
+          }
+        ],
+        "const_chars": 3578,
+        "total_chars": 3624,
+        "issues": [
+          {
+            "level": "WARN",
+            "code": "HINT-MISSING",
+            "where": "条目「必读 · 一条」",
+            "message": "由 AI 读取，但没写 agent_selection_hint（什么时候读我）",
+            "fix": "目录里只给四项：路径、标题、策略、读取提示。这行写实，AI 才知道什么时候该读。"
+          },
+          {
+            "level": "WARN",
+            "code": "HINT-MISSING",
+            "where": "条目「按需 · 一条」",
+            "message": "由 AI 读取，但没写 agent_selection_hint（什么时候读我）",
+            "fix": "目录里只给四项：路径、标题、策略、读取提示。这行写实，AI 才知道什么时候该读。"
+          },
+          {
+            "level": "ERROR",
+            "code": "OPENING-EMPTY",
+            "where": "条目「开场白 · 一条」",
+            "message": "是开场白条目，但一个开场方案都没有",
+            "fix": "至少给一个方案；开卡第一屏靠它。"
+          },
+          {
+            "level": "WARN",
+            "code": "HINT-MISSING",
+            "where": "条目「元信息 · 管道|换行」",
+            "message": "由 AI 读取，但没写 agent_selection_hint（什么时候读我）",
+            "fix": "目录里只给四项：路径、标题、策略、读取提示。这行写实，AI 才知道什么时候该读。"
+          },
+          {
+            "level": "WARN",
+            "code": "ENTRY-TITLE",
+            "where": "条目「(无标题)」",
+            "message": "条目没有标题",
+            "fix": "给一个标题；AI 的目录里只看得见标题。"
+          },
+          {
+            "level": "WARN",
+            "code": "SIZE-CONST",
+            "where": "设定库",
+            "message": "常驻正文合计 3578 字，超过护栏 3000 字",
+            "fix": "常驻每轮都进提示，字数就是成本（经验值：常驻压到 1,900 字以内）。最大的是：常驻 · 超长护栏(3409字)、常驻 · 全控正文(127字)、星平面 · 𝕏 与 😀(14字)。把长示例、对照表挪进按需条目，是省字数最多的一次改动。"
+          },
+          {
+            "level": "INFO",
+            "code": "SIZE-ENTRY",
+            "where": "设定库",
+            "message": "有 1 条正文超过单条护栏 2600 字：常驻 · 超长护栏(3409字)",
+            "fix": "越长越该拆：拆开之后各自有自己的标题和「什么时候读我」，AI 才可能按需取到对的那一条。"
+          },
+          {
+            "level": "WARN",
+            "code": "VAR-SYNC-OBJ",
+            "where": "变量",
+            "message": "objects 里有对象「全控对象」，但 initial_state 里没有初值",
+            "fix": "宿主初始化时没有它，界面读不到 —— 在 initial_state 里补一个同名键。"
+          },
+          {
+            "level": "WARN",
+            "code": "VAR-SYNC-OBJ",
+            "where": "变量",
+            "message": "objects 里有对象「空对象」，但 initial_state 里没有初值",
+            "fix": "宿主初始化时没有它，界面读不到 —— 在 initial_state 里补一个同名键。"
+          },
+          {
+            "level": "WARN",
+            "code": "RE-EMPTY",
+            "where": "正则「空|名字」",
+            "message": "pattern 是空的",
+            "fix": "删掉或补上。"
+          }
+        ]
+      },
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "gather",
+      "参数": [
+        "<工作>/直读.json"
+      ],
+      "回": {
+        "card": {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": "直读卡",
+            "profile_age": "二十",
+            "profile_sex": "",
+            "profile_height": "一百八"
+          },
+          "setting_library": {
+            "format": "eleckoi.setting-library-snapshot",
+            "version": 1,
+            "active_version_id": "v1",
+            "versions": [
+              {
+                "id": "v1",
+                "name": "默认",
+                "entries": [
+                  {
+                    "id": "c1",
+                    "title": "直读条目",
+                    "kind": "normal",
+                    "group_id": "g1",
+                    "content": "直读的正文。",
+                    "trigger_mode": "always",
+                    "enabled": true,
+                    "position": "instructions",
+                    "insert_role": "system",
+                    "order": 1,
+                    "keywords": [
+                      "直读"
+                    ]
+                  },
+                  {
+                    "id": "c2",
+                    "title": "没有标题这一栏",
+                    "kind": "normal",
+                    "group_id": "",
+                    "content": "",
+                    "trigger_mode": "agent_tool",
+                    "agent_read_strategy": "keyword",
+                    "enabled": true
+                  }
+                ],
+                "groups": [
+                  {
+                    "id": "g1",
+                    "name": "直读组"
+                  }
+                ]
+              }
+            ]
+          },
+          "variable_config": {
+            "format": "eleckoi.variable-config",
+            "version": 1,
+            "active_version_id": "vv1",
+            "versions": [
+              {
+                "id": "vv1",
+                "name": "默认",
+                "objects": [
+                  {
+                    "id": "o1",
+                    "name": "直读对象",
+                    "description": "直读的说明。"
+                  }
+                ],
+                "variables": [
+                  {
+                    "id": "x1",
+                    "title": "直读变量",
+                    "object_id": "o1",
+                    "type": "number",
+                    "default_value": "1",
+                    "read_mode": "on_demand",
+                    "description": "说明。"
+                  }
+                ]
+              }
+            ]
+          },
+          "regex_rules": [
+            {
+              "id": "r1",
+              "name": "直读正则",
+              "pattern": "/a/g",
+              "replacement": "b",
+              "targets": "content",
+              "enabled": true,
+              "order": 1
+            }
+          ]
+        },
+        "from_spec": false,
+        "name": "直读卡",
+        "character": {
+          "name": "直读卡",
+          "profile_age": "二十",
+          "profile_sex": "",
+          "profile_height": "一百八"
+        },
+        "entries": [
+          {
+            "id": "c1",
+            "title": "直读条目",
+            "kind": "normal",
+            "group_id": "g1",
+            "content": "直读的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 1,
+            "keywords": [
+              "直读"
+            ]
+          },
+          {
+            "id": "c2",
+            "title": "没有标题这一栏",
+            "kind": "normal",
+            "group_id": "",
+            "content": "",
+            "trigger_mode": "agent_tool",
+            "agent_read_strategy": "keyword",
+            "enabled": true
+          }
+        ],
+        "groups": [
+          {
+            "id": "g1",
+            "name": "直读组"
+          }
+        ],
+        "objects": [
+          {
+            "id": "o1",
+            "name": "直读对象",
+            "description": "直读的说明。"
+          }
+        ],
+        "variables": [
+          {
+            "id": "x1",
+            "title": "直读变量",
+            "object_id": "o1",
+            "type": "number",
+            "default_value": "1",
+            "read_mode": "on_demand",
+            "description": "说明。"
+          }
+        ],
+        "regex_rules": [
+          {
+            "id": "r1",
+            "name": "直读正则",
+            "pattern": "/a/g",
+            "replacement": "b",
+            "targets": "content",
+            "enabled": true,
+            "order": 1
+          }
+        ],
+        "gname": {
+          "g1": "直读组"
+        },
+        "oname": {
+          "o1": "直读对象"
+        },
+        "const": [
+          {
+            "id": "c1",
+            "title": "直读条目",
+            "kind": "normal",
+            "group_id": "g1",
+            "content": "直读的正文。",
+            "trigger_mode": "always",
+            "enabled": true,
+            "position": "instructions",
+            "insert_role": "system",
+            "order": 1,
+            "keywords": [
+              "直读"
+            ]
+          }
+        ],
+        "const_chars": 6,
+        "total_chars": 6,
+        "issues": [
+          {
+            "level": "ERROR",
+            "code": "KEYWORD-EMPTY",
+            "where": "条目「没有标题这一栏」",
+            "message": "读取策略是 keyword（命中后本轮必读），但关键词是空的",
+            "fix": "补关键词，或把策略改成 normal（由 AI 选读）。"
+          },
+          {
+            "level": "WARN",
+            "code": "HINT-MISSING",
+            "where": "条目「没有标题这一栏」",
+            "message": "由 AI 读取，但没写 agent_selection_hint（什么时候读我）",
+            "fix": "目录里只给四项：路径、标题、策略、读取提示。这行写实，AI 才知道什么时候该读。"
+          },
+          {
+            "level": "INFO",
+            "code": "ENTRY-BLANK",
+            "where": "条目「没有标题这一栏」",
+            "message": "正文是空的",
+            "fix": "空条目占目录位置，删掉或填上。"
+          },
+          {
+            "level": "ERROR",
+            "code": "OPENING-NONE",
+            "where": "设定库",
+            "message": "没有开场白条目",
+            "fix": "卡需要一条 kind=opening 的固定开场白。"
+          },
+          {
+            "level": "WARN",
+            "code": "VAR-SYNC-OBJ",
+            "where": "变量",
+            "message": "objects 里有对象「直读对象」，但 initial_state 里没有初值",
+            "fix": "宿主初始化时没有它，界面读不到 —— 在 initial_state 里补一个同名键。"
+          }
+        ]
+      },
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "gather",
+      "参数": [
+        "<工作>/空/source/空.spec.yaml"
+      ],
+      "回": {
+        "card": {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": ""
+          },
+          "assets": [],
+          "setting_library": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"library-empty\",\"versions\":[{\"id\":\"library-empty\",\"name\":\"\",\"entries\":[],\"groups\":[],\"prompt_positions\":[],\"list_all_expanded\":true,\"expanded_group_ids\":[],\"created_at\":\"\",\"updated_at\":\"\"}]}",
+          "variable_config": {
+            "_长文本": {
+              "字节": 492,
+              "行数": 26,
+              "sha1": "ecb918a32ff3edb7",
+              "首行": "{",
+              "尾行": "}"
+            }
+          },
+          "regex_rules": []
+        },
+        "from_spec": true,
+        "name": "空",
+        "character": {
+          "name": ""
+        },
+        "entries": [],
+        "groups": [],
+        "objects": [],
+        "variables": [],
+        "regex_rules": [],
+        "gname": {},
+        "oname": {},
+        "const": [],
+        "const_chars": 0,
+        "total_chars": 0,
+        "issues": [
+          {
+            "level": "WARN",
+            "code": "TOP-NAME",
+            "where": "卡",
+            "message": "character.name 是空的",
+            "fix": "给卡一个名字，否则列表里认不出来。"
+          },
+          {
+            "level": "ERROR",
+            "code": "OPENING-NONE",
+            "where": "设定库",
+            "message": "没有开场白条目",
+            "fix": "卡需要一条 kind=opening 的固定开场白。"
+          }
+        ]
+      },
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "build_manual",
+      "参数": [
+        "<工作>/全控/source/全控.spec.yaml",
+        "<工作>/文档/全控.手册.html"
+      ],
+      "回": {
+        "_回": "<工作>/文档/全控.手册.html",
+        "产物": {
+          "路径": "<工作>\\文档\\全控.手册.html",
+          "字节": 30863,
+          "行数": 83,
+          "sha1": "1853aff436e712d4",
+          "首行": "<!DOCTYPE html>",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成手册 -> <工作>/文档/全控.手册.html\n  条目 12 · 分组 3 · 变量 3 · 对象 2 · 正则 3\n  体检：1 错 · 8 警告\n",
+      "记出": true
+    },
+    {
+      "调用": "build_manual",
+      "参数": [
+        "<工作>/直读.json",
+        "<工作>/文档/直读.手册.html"
+      ],
+      "回": {
+        "_回": "<工作>/文档/直读.手册.html",
+        "产物": {
+          "路径": "<工作>\\文档\\直读.手册.html",
+          "字节": 11708,
+          "行数": 83,
+          "sha1": "503c2ec15fb598ee",
+          "首行": "<!DOCTYPE html>",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成手册 -> <工作>/文档/直读.手册.html\n  条目 2 · 分组 1 · 变量 1 · 对象 1 · 正则 1\n  体检：2 错 · 2 警告\n",
+      "记出": true
+    },
+    {
+      "调用": "build_manual",
+      "参数": [
+        "<工作>/空/source/空.spec.yaml"
+      ],
+      "回": {
+        "_回": "<工作>\\空\\文档\\空.手册.html",
+        "产物": {
+          "路径": "<工作>\\空\\文档\\空.手册.html",
+          "字节": 9054,
+          "行数": 83,
+          "sha1": "da5ebb088c78062e",
+          "首行": "<!DOCTYPE html>",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成手册 -> <工作>\\空\\文档\\空.手册.html\n  条目 0 · 分组 0 · 变量 0 · 对象 0 · 正则 0\n  体检：1 错 · 1 警告\n",
+      "记出": true
+    },
+    {
+      "调用": "build_index",
+      "参数": [
+        "<工作>/全控/source/全控.spec.yaml",
+        "<工作>/文档/全控.索引.md"
+      ],
+      "回": {
+        "_回": "<工作>/文档/全控.索引.md",
+        "产物": {
+          "路径": "<工作>\\文档\\全控.索引.md",
+          "字节": 5336,
+          "行数": 81,
+          "sha1": "3afa208a348b7269",
+          "首行": "# 全控卡 · 索引",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成索引 -> <工作>/文档/全控.索引.md\n",
+      "记出": true
+    },
+    {
+      "调用": "build_index",
+      "参数": [
+        "<工作>/直读.json",
+        "<工作>/文档/直读.索引.md"
+      ],
+      "回": {
+        "_回": "<工作>/文档/直读.索引.md",
+        "产物": {
+          "路径": "<工作>\\文档\\直读.索引.md",
+          "字节": 2727,
+          "行数": 60,
+          "sha1": "653d49927fe8d9c9",
+          "首行": "# 直读卡 · 索引",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成索引 -> <工作>/文档/直读.索引.md\n",
+      "记出": true
+    },
+    {
+      "调用": "build_index",
+      "参数": [
+        "<工作>/空/source/空.spec.yaml"
+      ],
+      "回": {
+        "_回": "<工作>\\空\\文档\\空.索引.md",
+        "产物": {
+          "路径": "<工作>\\空\\文档\\空.索引.md",
+          "字节": 1547,
+          "行数": 41,
+          "sha1": "963cfba2d43fe943",
+          "首行": "# 空 · 索引",
+          "尾行": ""
+        }
+      },
+      "错": null,
+      "出": "已生成索引 -> <工作>\\空\\文档\\空.索引.md\n",
+      "记出": true
+    },
+    {
+      "调用": "_write",
+      "参数": [
+        "写进来的东西 & <>\n第二行",
+        "<工作>/临时/写.txt"
+      ],
+      "回": {
+        "_回": "<工作>/临时/写.txt",
+        "产物": {
+          "路径": "<工作>\\临时\\写.txt",
+          "字节": 33,
+          "行数": 2,
+          "sha1": "37f007d716736eaa",
+          "首行": "写进来的东西 & <>",
+          "尾行": "第二行"
+        }
+      },
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_sec_domains",
+      "参数": [],
+      "回": {
+        "_长文本": {
+          "字节": 1869,
+          "行数": 1,
+          "sha1": "3b8dd1f794d0d49a",
+          "首行": "<section id=\"domains\"><h2><span class=\"n\">5</span>平台真值域</h2><div class=\"empty\" style=\"padding-bottom:8px\">这几个字段的值只有下面这些是认的。写别的不会报错 —— 平台会把它们<b>静默降级</b>成缺省值，症状是「填了没反应」。本工具在打包前会拦住。</div><table><tr><th>字",
+          "尾行": "<section id=\"domains\"><h2><span class=\"n\">5</span>平台真值域</h2><div class=\"empty\" style=\"padding-bottom:8px\">这几个字段的值只有下面这些是认的。写别的不会报错 —— 平台会把它们<b>静默降级</b>成缺省值，症状是「填了没反应」。本工具在打包前会拦住。</div><table><tr><th>字"
+        }
+      },
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_esc",
+      "参数": [
+        [
+          1,
+          2
+        ]
+      ],
+      "回": "[1, 2]",
+      "错": null,
+      "出": "",
+      "记出": true
+    },
+    {
+      "调用": "_cell",
+      "参数": [
+        null
+      ],
+      "回": "",
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "_tokens",
+      "参数": [
+        42
+      ],
+      "回": 1,
+      "错": null,
+      "出": ""
+    },
+    {
+      "调用": "load_card",
+      "参数": [
+        "<工作>/小样/source/小样.spec.yml"
+      ],
+      "回": [
+        {
+          "format": "eleckoi.character-card",
+          "version": 1,
+          "character": {
+            "name": "小样"
+          },
+          "assets": [],
+          "setting_library": "{\"format\":\"eleckoi.setting-library\",\"version\":1,\"active_version_id\":\"v1\",\"versions\":[{\"id\":\"v1\",\"name\":\"默认\",\"entries\":[],\"groups\":[],\"prompt_positions\":[],\"list_all_expanded\":true,\"expanded_group_ids\":[],\"created_at\":\"\",\"updated_at\":\"\"}]}",
+          "variable_config": {
+            "_长文本": {
+              "字节": 492,
+              "行数": 26,
+              "sha1": "ecb918a32ff3edb7",
+              "首行": "{",
+              "尾行": "}"
+            }
+          },
+          "regex_rules": []
+        },
+        true
+      ],
+      "错": null,
+      "出": ""
+    }
+  ],
+  "树": [
+    {
+      "路径": "坏.json",
+      "sha1": "bb3383477c55abf38823c8da9c593d0a6c772288"
+    },
+    {
+      "路径": "直读.json",
+      "sha1": "6e1beda2ef62b6168bcb5384843117260503c169"
+    },
+    {
+      "路径": "临时/写.txt",
+      "sha1": "37f007d716736eaa46b6d7984692bd8f71005ec7"
+    },
+    {
+      "路径": "临时/占位.txt",
+      "sha1": "f6b02f4db9f9473c5d72221e2a12a102fc80f96b"
+    },
+    {
+      "路径": "全控/source/全控.spec.yaml",
+      "结构": {
+        "format": "eleckoi.character-card",
+        "version": 1,
+        "character": {
+          "name": "全控卡",
+          "group": "",
+          "frontend_beauty_enabled": false,
+          "profile_age": "三十",
+          "profile_sex": "女",
+          "profile_height": "一百七",
+          "profile_birthday": "",
+          "profile_like": "",
+          "image_prompt": "",
+          "opening": "",
+          "show_opening": false
+        },
+        "assets": [],
+        "library": {
+          "snapshot_format": "eleckoi.setting-library-snapshot",
+          "snapshot_version": 1,
+          "active_version_id": "library-full",
+          "version_name": "全控",
+          "list_all_expanded": true,
+          "expanded_group_ids": [],
+          "prompt_positions": [],
+          "created_at": "2026-01-01T00:00:00+08:00",
+          "updated_at": "2026-01-01T00:00:00+08:00",
+          "groups": [
+            {
+              "id": "grp-a",
+              "name": "甲组",
+              "parent_id": "",
+              "order": 1,
+              "tree_view_order": 1,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            {
+              "id": "grp-b",
+              "name": "乙组",
+              "parent_id": "",
+              "order": 2,
+              "tree_view_order": 2,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            {
+              "id": "grp-c",
+              "name": "丙组",
+              "parent_id": "",
+              "order": 3,
+              "tree_view_order": 3,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            }
+          ],
+          "entries": [
+            {
+              "id": "e-normal",
+              "title": "常驻 · 全控正文",
+              "kind": "normal",
+              "group_id": "grp-a",
+              "content": "【全控】这一条把 HTML 转义要撞的字符全带上：& < > \" ' 与中文引号「」、单引号 ' 混在里面。 第二行里有 <b>不该被当标签</b> 与 &amp; 这种已经像实体的东西。 第三行：符号 😀 与组合字符 é（e + ́）用来试按码点截断。",
+              "agent_selection_hint": "需要转义试金石时读我。",
+              "agent_read_strategy": "normal",
+              "keywords": [],
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 1
+            },
+            {
+              "id": "e-always2",
+              "title": "常驻 · 超长护栏",
+              "kind": "normal",
+              "group_id": "grp-a",
+              "content": "【护栏】常驻正文。字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字",
+              "agent_read_strategy": "normal",
+              "keywords": [],
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 2
+            },
+            {
+              "id": "e-kw",
+              "title": "关键词 · 命中",
+              "kind": "normal",
+              "group_id": "grp-b",
+              "content": "短。",
+              "agent_selection_hint": "有键时读我。",
+              "agent_read_strategy": "keyword",
+              "keywords": [
+                "判定",
+                "掷骰",
+                "检定",
+                "四",
+                "五",
+                "六",
+                "七",
+                "八",
+                "九",
+                "十"
+              ],
+              "trigger_mode": "agent_tool",
+              "enabled": true,
+              "position": "",
+              "insert_role": "user"
+            },
+            {
+              "id": "e-required",
+              "title": "必读 · 一条",
+              "kind": "normal",
+              "group_id": "grp-b",
+              "content": "第一行 第二行\t带制表 第三行结束",
+              "agent_read_strategy": "required",
+              "keywords": [],
+              "trigger_mode": "agent_tool",
+              "enabled": true,
+              "position": "",
+              "insert_role": "user"
+            },
+            {
+              "id": "e-agent",
+              "title": "按需 · 一条",
+              "kind": "normal",
+              "group_id": "grp-c",
+              "content": "按需正文。",
+              "agent_read_strategy": "normal",
+              "keywords": [],
+              "trigger_mode": "agent_tool",
+              "enabled": true,
+              "position": "",
+              "insert_role": "user"
+            },
+            {
+              "id": "e-disabled",
+              "title": "已禁用 · 一条",
+              "kind": "normal",
+              "group_id": "grp-c",
+              "content": "禁用的正文。",
+              "trigger_mode": "always",
+              "enabled": false,
+              "position": "instructions",
+              "insert_role": "system"
+            },
+            {
+              "id": "e-opening",
+              "title": "开场白 · 一条",
+              "kind": "opening",
+              "group_id": "",
+              "content": "开场的正文。",
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "",
+              "insert_role": "assistant"
+            },
+            {
+              "id": "e-loose",
+              "title": "未分组 · 一条",
+              "kind": "normal",
+              "group_id": "",
+              "content": "未分组的正文。",
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 7
+            },
+            {
+              "id": "e-meta",
+              "title": "元信息 · 管道|换行",
+              "kind": "normal",
+              "group_id": "grp-a",
+              "content": "| 管道在正文里 | 不该被转义",
+              "agent_read_strategy": "keyword",
+              "keywords": [
+                "a|b",
+                "多行 键"
+              ],
+              "trigger_mode": "agent_tool",
+              "enabled": true,
+              "position": "|斜杠\\尾",
+              "insert_role": "user",
+              "order": 0
+            },
+            {
+              "id": "e-notitle",
+              "kind": "normal",
+              "group_id": "grp-a",
+              "content": "没有标题的正文。",
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 9
+            },
+            {
+              "id": "e-longtitle",
+              "title": "一二三四五六七八九十一二三四五六七八九十一二三四五六七八九十超长标题到二十字以上",
+              "kind": "normal",
+              "group_id": "grp-a",
+              "content": "长标题的正文。",
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 10
+            },
+            {
+              "id": "e-cjk",
+              "title": "星平面 · 𝕏 与 😀",
+              "kind": "normal",
+              "group_id": "grp-b",
+              "content": "星平面正文 𝕏 𝕐 😀😀😀。",
+              "trigger_mode": "always",
+              "enabled": true,
+              "position": "instructions",
+              "insert_role": "system",
+              "order": 11
+            }
+          ]
+        },
+        "variables": {
+          "config_format": "eleckoi.variable-config",
+          "config_version": 1,
+          "character_id": "",
+          "name": "默认版本",
+          "version_name": "默认版本",
+          "active_version_id": "variable-config-full",
+          "initial_state": {},
+          "schema_code": "",
+          "objects": [
+            {
+              "id": "obj-full",
+              "name": "全控对象",
+              "parent_id": "",
+              "enabled": true,
+              "description": "这一行说明要足够长，长到索引表那一列的四十字上限真的会把它截掉，而不是碰巧短于上限。",
+              "update_rule": "",
+              "dynamic_key": false,
+              "order": 1,
+              "tree_view_order": 1,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            {
+              "id": "obj-empty",
+              "name": "空对象",
+              "parent_id": "",
+              "enabled": true,
+              "description": "",
+              "update_rule": "",
+              "dynamic_key": false,
+              "order": 2,
+              "tree_view_order": 2,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            }
+          ],
+          "variables": [
+            {
+              "id": "var-long",
+              "title": "长默认值",
+              "object_id": "obj-full",
+              "enabled": true,
+              "type": "string",
+              "default_value": "这是一个非常长的默认值，长到索引表那一列的二十四个字上限肯定会被截断，末尾会被换成一个省略号。",
+              "description": "说明。",
+              "update_rule": "",
+              "read_mode": "on_demand",
+              "order": 1,
+              "tree_view_order": 1,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            {
+              "id": "var-null",
+              "title": "空默认值",
+              "object_id": "obj-full",
+              "enabled": true,
+              "type": "string",
+              "default_value": "",
+              "description": "",
+              "update_rule": "",
+              "read_mode": "required",
+              "order": 2,
+              "tree_view_order": 2,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            },
+            {
+              "id": "var-orphan",
+              "title": "野变量",
+              "object_id": "",
+              "enabled": true,
+              "type": "array",
+              "default_value": "[]",
+              "description": "没有挂在任何对象下。",
+              "update_rule": "",
+              "read_mode": "on_demand",
+              "order": 3,
+              "tree_view_order": 3,
+              "created_at": "2026-01-01T00:00:00+08:00",
+              "updated_at": "2026-01-01T00:00:00+08:00"
+            }
+          ]
+        },
+        "regex_rules": [
+          {
+            "id": "re-1",
+            "name": "面板",
+            "pattern": "〔面板〕",
+            "replacement": "<span class=\"p\">〔面板〕</span>",
+            "targets": "content",
+            "enabled": true,
+            "order": 1
+          },
+          {
+            "id": "re-2",
+            "name": "空|名字",
+            "pattern": "",
+            "replacement": "",
+            "targets": "content,title",
+            "enabled": false,
+            "order": 2
+          },
+          {
+            "id": "re-3",
+            "name": "无 order",
+            "pattern": "/x/g",
+            "replacement": "y",
+            "targets": "",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "路径": "小样/source/小样.spec.yml",
+      "结构": {
+        "format": "eleckoi.character-card",
+        "version": 1,
+        "character": {
+          "name": "小样"
+        },
+        "assets": [],
+        "library": {
+          "snapshot_format": "eleckoi.setting-library",
+          "snapshot_version": 1,
+          "active_version_id": "v1",
+          "version_name": "默认",
+          "groups": [],
+          "entries": []
+        },
+        "variables": {
+          "config_format": "eleckoi.variable-config",
+          "config_version": 1,
+          "objects": [],
+          "variables": []
+        },
+        "regex_rules": []
+      }
+    },
+    {
+      "路径": "文档/全控.手册.html",
+      "sha1": "1853aff436e712d4daf18378785a83f440b91015"
+    },
+    {
+      "路径": "文档/全控.索引.md",
+      "sha1": "3afa208a348b7269052767e9a18fbe6aaa206eef"
+    },
+    {
+      "路径": "文档/直读.手册.html",
+      "sha1": "503c2ec15fb598ee277e0ce239eb9ee70a7ddcdd"
+    },
+    {
+      "路径": "文档/直读.索引.md",
+      "sha1": "653d49927fe8d9c9b318366ae15dc48a5af160a7"
+    },
+    {
+      "路径": "空/source/空.spec.yaml",
+      "结构": {
+        "format": "eleckoi.character-card",
+        "version": 1,
+        "character": {
+          "name": ""
+        },
+        "assets": [],
+        "library": {
+          "snapshot_format": "eleckoi.setting-library-snapshot",
+          "snapshot_version": 1,
+          "active_version_id": "library-empty",
+          "version_name": "",
+          "groups": [],
+          "entries": []
+        },
+        "variables": {
+          "config_format": "eleckoi.variable-config",
+          "config_version": 1,
+          "objects": [],
+          "variables": []
+        },
+        "regex_rules": []
+      }
+    },
+    {
+      "路径": "空/文档/空.手册.html",
+      "sha1": "da5ebb088c78062e51ee62566f465a845fe3a174"
+    },
+    {
+      "路径": "空/文档/空.索引.md",
+      "sha1": "963cfba2d43fe9433ff4b20531413ec0657c2c39"
+    }
+  ]
+}

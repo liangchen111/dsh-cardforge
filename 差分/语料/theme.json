@@ -1,0 +1,309 @@
+{
+  "说明": [
+    "theme 模块的差分语料。与 hud / scaffold 那几台子同一个骨架：写夹具 → 顺序跑一串 forge.theme 的模块级名字",
+    "→ 每步记 stdout / 返回值 / 异常消息 → 最后比整棵工作树。",
+    "★ 本台子与 hud 那台子的**唯一形状差别**：料里有 `情形`（一个列表），每个情形有自己的一份 `预置` /",
+    "  `操作` / 工作目录 / 主题库目录。理由：`THEMES_DIR` 是模块级变量，判定分支（空库 / 库不是目录 /",
+    "  装库时目录还不存在）必须换一个主题库才能踩到，一个料只跑一套库就盖不住。每个情形建一个",
+    "  `_tmp_theme-*`（建在**工具根底下**，不用系统 temp：8.3 短名会让 Python 与 Node 算出两种路径写法），",
+    "  跑完单独归一、单独删。",
+    "★ 参数里的 `@工作@` / `@根@` 由两侧各自的 `出参数()` 逐项递归替换（dict / list 里的字符串也换）。",
+    "★ `THEMES_DIR`：Python 那边直接给 `forge.theme.THEMES_DIR` 赋值，JS 那边 `theme.mjs` 把它写成",
+    "  `export let THEMES_DIR` 并按模块绑定实时读取 —— 两侧都是「进门换、出门还原」，真仓库的",
+    "  `assets/主题/` 一个字节都不动（`import_theme(install=True)` 否则会往里落外来主题）。",
+    "★ 每步可以带一个可选的 `\"沙箱\": true|false`：那一分钟里把 `sandbox.enable()` 设成这个值，跑完还原。",
+    "  `clear_theme()` 是 theme 里唯一碰沙箱的地方（`SB.shell`）—— 沙箱**开**时它不删文件、把「主题.css」",
+    "  改写成空壳（空壳里那句 why 是 theme.py 的字符串，所以这样才验得到它）。",
+    "★ 已申报差异（三条，都不是「顺手改」）：",
+    "  1) 浮点写法：Python `json.dumps` 把 float 写成 `21.0`，JS `JSON.stringify` 写成 `21`。",
+    "     `_parse_color` 的 alpha（`1.0`）、`_luminance` / `_ratio` 的值都可能是整数。两侧",
+    "     各跑一遍 `_折浮()`：Python 把「值为整数的 float」折成 int，JS 把 `-0` 折成 `0`。",
+    "     折的是**写法**不是数 —— 真算错了（21 vs 20.999…）折完照样红。",
+    "  2) `list_themes()` 读不出某个 `.json` 时，异常文本是解析器原话：Python 给",
+    "     `Expecting property name enclosed in double quotes: line 1 column 13 (char 12)`，Node 给",
+    "     `Expected double-quoted property name in JSON at position 12 (line 1 column 13)` —— 天生不同。",
+    "     两侧各跑 `_折读不出来()`，把 `（读不出来：…）` 里的正文换成 `<解析器说>`。语料有一步专门踩它。",
+    "  3) `_read_conf()` 读一份坏掉的 `hud.conf.json` 时，Python 抛 `JSONDecodeError: Expecting …`，",
+    "     Node 抛 `SyntaxError: Expected …` —— 连类名带措辞都不同。两侧各跑 `_折解析器()`，把**错**这一格",
+    "     折成 `解析器: <解析器说>`（只折错文本，不折夹具正文）。情形「坏conf」专门踩它。",
+    "★ 夹具里的文本一律写 LF、不带 BOM（Python `open(encoding='utf-8')` 与 Node `readFileSync(…,'utf8')`",
+    "  都不吃 BOM，带上只会多一层与本题无关的变量）。"
+  ],
+  "情形": [
+    {
+      "名": "齐全",
+      "主题库": "主题库",
+      "预置": {
+        "目录": [
+          "主题库",
+          "别处",
+          "子目录",
+          "空工程",
+          "工程/hud",
+          "工程/source",
+          "乙工程/hud",
+          "丙工程/hud",
+          "丁工程/hud",
+          "丁工程/source",
+          "戊工程/hud",
+          "己工程/hud"
+        ],
+        "文件": {
+          "主题库/预览空.json": "{\n  \"名\": \"预览空\",\n  \"一句话\": \"预览全是假的\",\n  \"变量\": {\n    \"--hud-ink\": \"#222222\",\n    \"--hud-paper-solid\": \"#ffffff\"\n  },\n  \"预览\": {\"暗\": \"\", \"框\": null}\n}\n",
+          "主题库/好.json": "{\n  \"名\": \"好\",\n  \"一句话\": \"一套齐全的皮肤\",\n  \"变量\": {\n    \"--hud-ink\": \"#1c1a17\",\n    \"--hud-ink-2\": \"rgba(28, 26, 23, 0.62)\",\n    \"--hud-dim\": \"#b9b0a0\",\n    \"--hud-paper\": \"rgba(250, 245, 230, 0.78)\",\n    \"--hud-paper-solid\": \"#faf5e6\",\n    \"--hud-field\": \"#f2ece0\",\n    \"--hud-panel\": \"#ffffff\",\n    \"--hud-line\": \"#e0d8c8\",\n    \"--hud-line-2\": \"#cfc5b0\",\n    \"--hud-wash\": \"rgba(0, 0, 0, 0.04)\",\n    \"--hud-wash-2\": \"rgba(0, 0, 0, 0.08)\",\n    \"--hud-accent\": \"#8a6d3b\",\n    \"--hud-danger\": \"#aa3333\",\n    \"--hud-danger-ink\": \"#ffffff\",\n    \"--hud-danger-wash\": \"rgba(170, 51, 51, 0.12)\",\n    \"--hud-shadow\": \"0 1px 3px rgba(0,0,0,.2)\",\n    \"--hud-radius\": \"10px\",\n    \"--hud-radius-s\": \"6px\",\n    \"--hud-font\": \"\\\"宋体\\\", serif\"\n  },\n  \"预览\": {\"底\": \"#faf5e6\", \"字\": \"#1c1a17\", \"强调\": \"#8a6d3b\", \"暗\": \"\", \"框\": null}\n}\n",
+          "主题库/简.json": "{\n  \"名\": \"简\",\n  \"一句话\": \"只有三只槽\",\n  \"变量\": {\n    \"--hud-ink\": \"#222222\",\n    \"--hud-ink-2\": \"#555555\",\n    \"--hud-paper\": \"#eeeeee\"\n  }\n}\n",
+          "主题库/无名.json": "{\n  \"一句话\": \"没有名字那一个\",\n  \"变量\": {\n    \"--hud-ink\": \"#000000\",\n    \"--hud-paper\": \"#ffffff\"\n  }\n}\n",
+          "主题库/空槽.json": "{\n  \"名\": \"空槽\",\n  \"一句话\": \"一个槽都没有\",\n  \"变量\": {}\n}\n",
+          "主题库/说明.txt": "这个文件不是 json，list_themes 应当跳过它。\n",
+          "主题库/外来.json": "{\n  \"名\": \"外来\",\n  \"一句话\": \"从别处拿来的\",\n  \"变量\": {\n    \"--hud-ink\": \"#101010\",\n    \"--hud-paper-solid\": \"#fdfdfd\"\n  }\n}\n",
+          "别处/外来.json": "{\n  \"名\": \"外来\",\n  \"一句话\": \"从别处拿来的\",\n  \"变量\": {\n    \"--hud-ink\": \"#101010\",\n    \"--hud-paper-solid\": \"#fdfdfd\"\n  }\n}\n",
+          "别处/不像.json": "{\n  \"名\": \"不像\",\n  \"一句话\": \"变量不是表\",\n  \"变量\": [\"--hud-ink\"]\n}\n",
+          "别处/空变量.json": "{\n  \"名\": \"空变量\",\n  \"一句话\": \"变量是空的\",\n  \"变量\": {}\n}\n",
+          "别处/无名主题.json": "{\n  \"一句话\": \"文件里没写名\",\n  \"变量\": {\"--hud-ink\": \"#333333\"}\n}\n",
+          "别处/没变量.json": "{\n  \"名\": \"没变量\",\n  \"槽\": {}\n}\n",
+          "别处/坏车.json": "{\n  \"名\": \"坏车\",\n",
+          "工程/hud/hud.conf.json": "{\n  \"卡名\": \"甲\",\n  \"style_id\": \"hud-style-1\",\n  \"global\": \"__T1__\",\n  \"模块\": [],\n  \"主题\": \"好\",\n  \"正则\": [\n    {\"view\": \"view_create.html\", \"name\": \"建卡器\", \"pattern\": \"hud-root\", \"order\": 30},\n    {\"view\": \"view_card.html\", \"name\": \"面板\", \"pattern\": \"hud-root\", \"order\": 40}\n  ]\n}\n",
+          "工程/hud/hud.css": "/* __T1__ 核心样式 */\n.hud-root { color: #bdb2a0;\n}\n",
+          "工程/hud/hud.core.js": "window.__T1__ = { mount: function (root) { root.dataset.hud = '1'; } };\n",
+          "工程/hud/主题.css": "/* 主题：好 */\n.hud-root { --hud-ink: #1c1a17; }\n",
+          "工程/hud/view_create.html": "<section class=\"hud-root\" data-hud=\"create\">\n<!-- 建卡器的视图 -->\n</section>\n",
+          "工程/hud/view_card.html": "<section class=\"hud-root\" data-hud=\"card\">\n<!-- 面板的视图 -->\n</section>\n",
+          "工程/source/甲.spec.yaml": "format: aiselan-card\nversion: 1\ncharacter:\n  name: 甲\nlibrary:\n  entries: []\n",
+          "乙工程/hud/hud.conf.json": "{\n  \"卡名\": \"乙\",\n  \"模块\": []\n}\n",
+          "乙工程/hud/主题.css": "/* 主题：旧的 */\n.hud-root { --hud-ink: #444444; }\n",
+          "丙工程/hud/hud.conf.json": "{\n  \"卡名\": \"丙\",\n  \"模块\": [],\n  \"主题\": \"好\"\n}\n",
+          "丙工程/hud/hud.css": "/* __T3__ 核心样式 */\n.hud-root { color: #bdb2a0;\n}\n",
+          "丙工程/hud/hud.core.js": "window.__T3__ = {};\n",
+          "丁工程/hud/hud.conf.json": "{\n  \"卡名\": \"丁\",\n  \"style_id\": \"hud-style-4\",\n  \"global\": \"__T4__\",\n  \"模块\": [],\n  \"主题\": \"好\",\n  \"正则\": [\n    {\"view\": \"view_create.html\", \"name\": \"建卡器\", \"pattern\": \"hud-root\", \"order\": 30},\n    {\"view\": \"view_card.html\", \"name\": \"面板\", \"pattern\": \"hud-root\", \"order\": 40}\n  ]\n}\n",
+          "丁工程/hud/hud.css": "/* __T4__ 核心样式 */\n.hud-root { color: #bdb2a0;\n}\n",
+          "丁工程/hud/hud.core.js": "window.__T4__ = { mount: function (root) { root.dataset.hud = '1'; } };\n",
+          "丁工程/hud/主题.css": "/* 主题：好 —— 一套齐全的皮肤 */\n/* 由 `forge theme` 生成：只覆盖 --hud-* 颜色槽，版式来自 hud/hud.css. */\n\n.hud,\n.hud-ball,\n.hud-ballpanel {\n  --hud-ink: #1c1a17;\n  --hud-ink-2: rgba(28, 26, 23, 0.62);\n  --hud-paper-solid: #faf5e6;\n  --hud-radius: 10px;\n}\n",
+          "丁工程/hud/view_create.html": "<section class=\"hud-root\" data-hud=\"create\">\n<!-- 建卡器的视图 -->\n</section>\n",
+          "丁工程/hud/view_card.html": "<section class=\"hud-root\" data-hud=\"card\">\n<!-- 面板的视图 -->\n</section>\n",
+          "丁工程/source/丁.spec.yaml": "format: aiselan-card\nversion: 1\ncharacter:\n  name: 丁\nlibrary:\n  entries: []\n",
+          "戊工程/hud/hud.conf.json": "{\n  \"卡名\": \"戊\",\n  \"模块\": []\n}\n",
+          "戊工程/hud/主题.css": "/* 这一份一个 --hud-* 槽都没有 */\n.hud-root { color: #333333; }\n",
+          "己工程/hud/hud.conf.json": "{\n  \"卡名\": \"己\",\n  \"模块\": []\n}\n"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["好"]},
+        {"调用": "find_theme", "参数": ["简.json"]},
+        {"调用": "find_theme", "参数": [" 好 "]},
+        {"调用": "find_theme", "参数": [""]},
+        {"调用": "find_theme", "参数": [null]},
+        {"调用": "find_theme", "参数": ["没这套"]},
+        {"调用": "find_theme", "参数": ["说明"]},
+        {"调用": "find_theme", "参数": [123]},
+        {"调用": "_clean_theme_name", "参数": ["a/b*c:d?e<f>g|h.皮肤.json"]},
+        {"调用": "_clean_theme_name", "参数": ["   "]},
+        {"调用": "_clean_theme_name", "参数": [null]},
+        {"调用": "_clean_theme_name", "参数": [123]},
+        {"调用": "render_css", "参数": [{"_名": "好", "名": "好", "一句话": "一套齐全的皮肤", "变量": {"--hud-ink": "#1c1a17", "--hud-ink-2": "rgba(28, 26, 23, 0.62)", "--hud-dim": "#b9b0a0", "--hud-paper": "rgba(250, 245, 230, 0.78)", "--hud-paper-solid": "#faf5e6", "--hud-field": "#f2ece0", "--hud-panel": "#ffffff", "--hud-line": "#e0d8c8", "--hud-line-2": "#cfc5b0", "--hud-wash": "rgba(0, 0, 0, 0.04)", "--hud-wash-2": "rgba(0, 0, 0, 0.08)", "--hud-accent": "#8a6d3b", "--hud-danger": "#aa3333", "--hud-danger-ink": "#ffffff", "--hud-danger-wash": "rgba(170, 51, 51, 0.12)", "--hud-shadow": "0 1px 3px rgba(0,0,0,.2)", "--hud-radius": "10px", "--hud-radius-s": "6px", "--hud-font": "\"宋体\", serif"}, "预览": {"底": "#faf5e6"}}]},
+        {"调用": "render_css", "参数": [{}]},
+        {"调用": "render_css", "参数": [{"_名": "落名", "名": "外来", "变量": {"--hud-ink": "#000000", "--hud-font": "1em 宋体"}}]},
+        {"调用": "_parse_color", "参数": ["#abcdef"]},
+        {"调用": "_parse_color", "参数": ["#ABCDEF"]},
+        {"调用": "_parse_color", "参数": ["#abc"]},
+        {"调用": "_parse_color", "参数": ["rgba(10, 20, 30, 0.5)"]},
+        {"调用": "_parse_color", "参数": ["rgb( 7 , 8 , 9 )"]},
+        {"调用": "_parse_color", "参数": ["rgb(1,2)"]},
+        {"调用": "_parse_color", "参数": ["rgba(1,2,3,x)"]},
+        {"调用": "_parse_color", "参数": ["#GGGGGG"]},
+        {"调用": "_parse_color", "参数": ["  #ffffff  "]},
+        {"调用": "_parse_color", "参数": [null]},
+        {"调用": "_composite", "参数": [[255, 0, 0], 0.5, [0, 0, 255]]},
+        {"调用": "_composite", "参数": [[20, 20, 20], 0.25, [255, 255, 255]]},
+        {"调用": "_composite", "参数": [[1, 2, 3], 1.0, [9, 9, 9]]},
+        {"调用": "_luminance", "参数": [[0, 0, 0]]},
+        {"调用": "_luminance", "参数": [[255, 255, 255]]},
+        {"调用": "_luminance", "参数": [[18, 52, 86]]},
+        {"调用": "_ratio", "参数": [[0, 0, 0], [255, 255, 255]]},
+        {"调用": "_ratio", "参数": [[18, 52, 86], [250, 245, 230]]},
+        {"调用": "contrast_report", "参数": [{"_名": "好", "变量": {"--hud-ink": "#1c1a17", "--hud-ink-2": "rgba(28, 26, 23, 0.62)", "--hud-dim": "#b9b0a0", "--hud-paper": "#faf5e6", "--hud-paper-solid": "#faf5e6"}}]},
+        {"调用": "contrast_report", "参数": [{"_名": "简", "变量": {"--hud-ink": "#222222", "--hud-ink-2": "#555555", "--hud-paper": "#eeeeee"}}]},
+        {"调用": "contrast_report", "参数": [{"_名": "空槽", "变量": {}}]},
+        {"调用": "contrast_report", "参数": [{"_名": "纸认不出", "变量": {"--hud-paper-solid": "红色", "--hud-ink": "#000000"}}]},
+        {"调用": "contrast_report", "参数": [{"_名": "白纸白字", "变量": {"--hud-paper-solid": "#ffffff", "--hud-ink": "#ffffff", "--hud-ink-2": "#f0f0f0"}}]},
+        {"调用": "_contrast_line", "参数": [{"_名": "好", "变量": {"--hud-ink": "#1c1a17", "--hud-ink-2": "rgba(28, 26, 23, 0.62)", "--hud-dim": "#b9b0a0", "--hud-paper-solid": "#faf5e6"}}]},
+        {"调用": "_contrast_line", "参数": [{}]},
+        {"调用": "_contrast_line", "参数": [{"变量": {"--hud-paper-solid": "#ffffff", "--hud-ink": "#000000"}}]},
+        {"调用": "_project_of", "参数": ["@工作@/工程"]},
+        {"调用": "_project_of", "参数": ["@工作@/工程/source"]},
+        {"调用": "_project_of", "参数": ["@工作@/工程/hud"]},
+        {"调用": "_project_of", "参数": ["@工作@/工程/source/甲.spec.yaml"]},
+        {"调用": "_project_of", "参数": ["@工作@/子目录"]},
+        {"调用": "_read_conf", "参数": ["@工作@/工程"]},
+        {"调用": "_read_conf", "参数": ["@工作@/空工程"]},
+        {"调用": "current", "参数": ["@工作@/工程"]},
+        {"调用": "current", "参数": ["@工作@/乙工程"]},
+        {"调用": "current", "参数": ["@工作@/丙工程"]},
+        {"调用": "_parse_css_slots", "参数": ["--hud-ink : #111 ;\n--hud-ink: #222;\n--hud-paper:rgba(1, 2, 3, 0.5);\n--hud-x: a } --hud-y: {b}; --hud-z: ok;\n--not-hud: #fff;\n{ --hud-brace: #000; }\n"]},
+        {"调用": "_parse_css_slots", "参数": ["什么槽也没有\n"]},
+        {"调用": "_card_name", "参数": ["@工作@/工程"]},
+        {"调用": "_card_of", "参数": ["@工作@/丁工程"]},
+        {"调用": "_card_name", "参数": ["@工作@/空工程"]},
+        {"调用": "print_themes", "参数": [null]},
+        {"调用": "print_themes", "参数": ["@工作@/工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/丁工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/戊工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/空工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/丁工程", "@工作@/别处/自定义.json", "带后缀.皮肤"]},
+        {"调用": "apply_theme", "参数": ["好", "@工作@/丁工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/丁工程", "@工作@/别处/带预览.json"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/外来.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/不像.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/空变量.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/无名主题.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/没这份.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/坏车.json", "@工作@/己工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/外来.json", "@工作@/己工程", true]},
+        {"调用": "apply_theme", "参数": ["简", "@工作@/乙工程"]},
+        {"调用": "apply_theme", "参数": ["好", "@工作@/丙工程"]},
+        {"调用": "apply_theme", "参数": ["预览空", "@工作@/丙工程"]},
+        {"调用": "apply_theme", "参数": ["没这套", "@工作@/工程"]},
+        {"调用": "apply_theme", "参数": ["", "@工作@/工程"]},
+        {"调用": "clear_theme", "参数": ["@工作@/乙工程"]},
+        {"调用": "clear_theme", "参数": ["@工作@/乙工程"]},
+        {"调用": "clear_theme", "参数": ["@工作@/空工程"]},
+        {"调用": "showcase", "参数": ["@工作@/丁工程"]},
+        {"调用": "showcase", "参数": ["@工作@/丙工程"]},
+        {"调用": "showcase", "参数": ["@工作@/空工程"]},
+        {"调用": "print_themes", "参数": ["@工作@/丁工程"]}
+      ]
+    },
+    {
+      "名": "坏槽",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["主题库", "工程/hud", "工程/source"],
+        "文件": {
+          "主题库/怪.json": "{\n  \"名\": \"怪\",\n  \"一句话\": \"写了一个核心不认识的槽\",\n  \"变量\": {\n    \"--hud-ink\": \"#111111\",\n    \"--hud-已知\": \"#222222\",\n    \"--hud-oops-x\": \"#333333\"\n  }\n}\n",
+          "工程/hud/hud.conf.json": "{\n  \"卡名\": \"甲\",\n  \"模块\": [],\n  \"主题\": \"怪\",\n  \"正则\": [\n    {\"view\": \"view_card.html\", \"name\": \"面板\", \"pattern\": \"hud-root\", \"order\": 40}\n  ]\n}\n",
+          "工程/hud/hud.css": "/* 核心样式 */\n.hud-root { color: #bdb2a0;\n}\n",
+          "工程/hud/hud.core.js": "window.__T = {};\n",
+          "工程/hud/主题.css": "/* 主题：怪 */\n.hud-root { --hud-ink: #111111; }\n",
+          "工程/hud/view_card.html": "<section class=\"hud-root\">card</section>\n",
+          "工程/source/甲.spec.yaml": "character:\n  name: 甲\n"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "render_css", "参数": [{"_名": "怪", "一句话": "写了一个核心不认识的槽", "变量": {"--hud-ink": "#111111", "--hud-已知": "#222222", "--hud-oops-x": "#333333"}}]},
+        {"调用": "render_css", "参数": [{"_名": "一个坏的", "变量": {"--hud-oops-x": "#333333"}}]},
+        {"调用": "apply_theme", "参数": ["怪", "@工作@/工程"]},
+        {"调用": "showcase", "参数": ["@工作@/工程"]},
+        {"调用": "contrast_report", "参数": [{"_名": "怪", "变量": {"--hud-ink": "#111111", "--hud-已知": "#222222"}}]},
+        {"调用": "_contrast_line", "参数": [{"变量": {"--hud-paper-solid": "#ffffff", "--hud-ink": "#111111"}}]},
+        {"调用": "print_themes", "参数": [null]},
+        {"调用": "clear_theme", "参数": ["@工作@/工程"], "沙箱": true},
+        {"调用": "current", "参数": ["@工作@/工程"]},
+        {"调用": "list_themes", "参数": []}
+      ]
+    },
+    {
+      "名": "空库",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["别处", "工程/hud"],
+        "文件": {
+          "别处/外来.json": "{\n  \"名\": \"外来\",\n  \"一句话\": \"从别处拿来的\",\n  \"变量\": {\"--hud-ink\": \"#101010\"}\n}\n",
+          "工程/hud/hud.conf.json": "{\n  \"卡名\": \"甲\",\n  \"模块\": []\n}\n"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["好"]},
+        {"调用": "print_themes", "参数": [null]},
+        {"调用": "showcase", "参数": ["@工作@/工程"]},
+        {"调用": "apply_theme", "参数": ["好", "@工作@/工程"]},
+        {"调用": "import_theme", "参数": ["@工作@/别处/外来.json", "@工作@/工程", true]},
+        {"调用": "list_themes", "参数": []},
+        {"调用": "print_themes", "参数": [null]}
+      ]
+    },
+    {
+      "名": "非目录",
+      "主题库": "主题库文件",
+      "预置": {
+        "目录": [],
+        "文件": {
+          "主题库文件": "我不是目录，我是一份文件。\n"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["好"]},
+        {"调用": "print_themes", "参数": [null]}
+      ]
+    },
+    {
+      "名": "坏json",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["主题库", "主题库/目录.json"],
+        "文件": {
+          "主题库/坏.json": "{ \"名\": \"坏\", \"变量\": {"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["坏"]},
+        {"调用": "find_theme", "参数": ["坏.json"]},
+        {"调用": "find_theme", "参数": ["目录"]},
+        {"调用": "print_themes", "参数": [null]}
+      ]
+    },
+    {
+      "名": "坏conf",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["主题库", "坏工程/hud"],
+        "文件": {
+          "主题库/好.json": "{\n  \"名\": \"好\",\n  \"变量\": {\"--hud-ink\": \"#000000\"}\n}\n",
+          "坏工程/hud/hud.conf.json": "{\n  \"卡名\": \"坏\",\n"
+        }
+      },
+      "操作": [
+        {"调用": "current", "参数": ["@工作@/坏工程"]},
+        {"调用": "_read_conf", "参数": ["@工作@/坏工程"]},
+        {"调用": "apply_theme", "参数": ["好", "@工作@/坏工程"]},
+        {"调用": "clear_theme", "参数": ["@工作@/坏工程"]},
+        {"调用": "export_theme", "参数": ["@工作@/坏工程"]},
+        {"调用": "showcase", "参数": ["@工作@/坏工程"]},
+        {"调用": "list_themes", "参数": []}
+      ]
+    },
+    {
+      "名": "非对象数组",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["主题库"],
+        "文件": {
+          "主题库/数组.json": "[\"a\", \"b\"]"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["数组"]},
+        {"调用": "print_themes", "参数": [null]}
+      ]
+    },
+    {
+      "名": "非对象数",
+      "主题库": "主题库",
+      "预置": {
+        "目录": ["主题库"],
+        "文件": {
+          "主题库/数.json": "3"
+        }
+      },
+      "操作": [
+        {"调用": "list_themes", "参数": []},
+        {"调用": "find_theme", "参数": ["数"]},
+        {"调用": "print_themes", "参数": [null]}
+      ]
+    }
+  ]
+}

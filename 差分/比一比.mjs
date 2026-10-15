@@ -82,6 +82,25 @@ try {
   BR = null
 }
 
+// manual 同理：它 import model / pack / validate / domain / content 五个兄弟。名字用 MN：
+// 与 `出黄金.py` 里的 `from forge import manual as MN` 同名，省得两边看串。
+let MN = null
+try {
+  MN = await import('../forgejs/lib/manual.mjs')
+} catch (e) {
+  MN = null
+}
+
+// theme 同理：它 import model / sandbox 两个兄弟，另有一条**延迟导入** hud
+// （`from . import hud as HUD` 写在函数体里）。名字用 TH：单字母 T 还没被占，
+// 但 TH 与 `theme` 对得上、也不跟将来别的台子撞。
+let TH = null
+try {
+  TH = await import('../forgejs/lib/theme.mjs')
+} catch (e) {
+  TH = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -1031,6 +1050,298 @@ function 算_bridge(料) {
 }
 
 算式.bridge = 算_bridge
+
+// ======================================================================================
+//                              manual
+// ======================================================================================
+//
+// 与 出黄金.py 的 `算_manual()` 逐字对应。两处与别的模块不一样，见那边的 docstring：
+//   · 返回值里的**大字符串**（手册 HTML、索引 md）不整个记进差分 —— 折成 `_长文本`
+//     （字节 / 行数 / sha1 前 16 / 首行 / 尾行）。落盘后的文件仍然进 `树`、逐字节比 sha1。
+//   · 返回值里凡是**已经存在的文件路径**，一律顺带记一份 `产物` 形态。
+
+/** Python 的 `s[:n]` —— 按码点切。 */
+const 切码点 = (s, n) => Array.from(String(s)).slice(0, n).join('')
+
+/**
+ * `str(pathlib.Path(v))` —— Python 的 `Path` 在 Windows 上会**把 `/` 规范成 `\`**。
+ *
+ * ★ 差分里到处是「`@工作@/文档/x.html`」这种混着写的路径（`os.path.join` 只接分隔符、
+ *   一个字都不规范化，所以前一截是 `\`、后一截是 `/`）。Python 侧 `_指纹()` 里
+ *   `p = Path(v)` 一构造就把它们统一了，JS 这边若原样拼就少一道 ⇒ 必须在**这里**补上。
+ */
+function _Path文(s) {
+  return String(s).split('/').join('\\')
+}
+
+/**
+ * 一个文件在差分里的「形态」—— 与 出黄金.py 的 `_指纹()` 逐字对应。
+ *
+ * ★ `行数` 是 `len(文本.split("\n"))`（**空文件也算 1 行**），不是 `count("\n")+1`：
+ *   两者只在「末尾有没有换行」上不同，而 golden 里 `</html>\n` 的 `尾行` 正是空串 ⇒ 必须照抄。
+ */
+function 产物指纹(p, 工作) {
+  const b = readFileSync(p)
+  const 文本 = b.toString('utf8')          // Python 是 decode("utf-8", errors="replace")
+  const 行 = 文本.split('\n')
+  const 原 = _Path文(p)
+  const 工作反斜杠 = String(工作).split('\\').join('\\\\')
+  return {
+    路径: 原.split(String(工作)).join('<工作>').split(工作反斜杠).join('<工作>'),
+    字节: b.length,
+    行数: 行.length,
+    sha1: createHash('sha1').update(b).digest('hex').slice(0, 16),
+    首行: 切码点(动(行[0]), 200),
+    尾行: 切码点(动(行[行.length - 1]), 200),
+  }
+}
+
+/**
+ * 返回值折成能比的结构 —— 与 出黄金.py 的 `折回()` 逐字对应。
+ *
+ * ★ 判断顺序**不能换**：先看「长字符串」（按码点 > 400），再看「是不是已存在的文件」。
+ *   一条 400 字以上的路径在 Windows 上本来就 ISFILE 不到，但先把长度那条放前面才与
+ *   Python 完全一致。
+ */
+function 折回(v, 工作) {
+  if (typeof v === 'string') {
+    if (Array.from(v).length > 400) {
+      const b = Buffer.from(v, 'utf8')
+      const 行 = v.split('\n')
+      return {
+        _长文本: {
+          字节: b.length,
+          行数: 行.length,
+          sha1: createHash('sha1').update(b).digest('hex').slice(0, 16),
+          首行: 切码点(动(行[0]), 200),
+          尾行: 切码点(动(行[行.length - 1]), 200),
+        },
+      }
+    }
+    // `os.path.isfile(v)`：拿任意字符串去 stat，任何异常都算「不是文件」。
+    let 存在 = false
+    try {
+      存在 = statSync(v).isFile()
+    } catch {
+      存在 = false
+    }
+    if (存在) return { _回: 动(v), 产物: 产物指纹(v, 工作) }
+    return 动(v)
+  }
+  if (Array.isArray(v)) return v.map((x) => 折回(x, 工作))
+  if (v && typeof v === 'object') {
+    const o = {}
+    for (const [k, x] of Object.entries(v)) o[k] = 折回(x, 工作)
+    return o
+  }
+  return 动(v)
+}
+
+// ★ 两侧 JSON 解析器的报错措辞**天生不同**，而 manual 的 `load_card()` 会把
+//   `json.JSONDecodeError` 原样抛到差分里（hud 那边是统一收成「<解析器原文>」，
+//   这里没有那样做 —— 消息是证据，不该抹掉）。所以本模块**自己**把 Node 的说法翻成
+//   Python 的说法。这张表只覆盖语料真正踩到的几种（语料每一种都有一条），
+//   翻不出来的原样交回，宁可红也不要静默编一个。
+const _JSON说法 = {
+  "Expected property name or '}'": 'Expecting property name enclosed in double quotes',
+  'Expected double-quoted property name': 'Expecting property name enclosed in double quotes',
+  "Expected ':' after property name": "Expecting ':' delimiter",
+  "Expected ',' or ']' after array element": "Expecting ',' delimiter",
+  "Expected ',' or '}' after property value": "Expecting ',' delimiter",
+}
+
+/** Node 的 JSON.parse 报错 → CPython `json` 的报错原文。 */
+function _json错文(e) {
+  // Node 带位置的那一类：`Expected property name or '}' in JSON at position 2 (line 1 column 3)`
+  const m = /^(.*?) in JSON at position (\d+) \(line (\d+) column (\d+)\)$/.exec(e.message)
+  if (m) {
+    const 前 = (m[1] in _JSON说法) ? _JSON说法[m[1]] : m[1]
+    return `${前}: line ${m[3]} column ${m[4]} (char ${m[2]})`
+  }
+  // Node 不报位置的那一类：空输入。
+  if (e.message === 'Unexpected end of JSON input') return 'Expecting value: line 1 column 1 (char 0)'
+  return e.message
+}
+
+/**
+ * 异常消息归一 —— 与 出黄金.py 的 `错文本()` 同名，但 manual 比它多两条翻译。
+ *
+ *   · `load_card()` 读的是 `M.jload()` ⇒ 坏 JSON 在 Python 侧是 `json.JSONDecodeError`，
+ *     在 JS 侧是 `SyntaxError`（措辞还完全不同）⇒ 走 `_json错文` 翻译。
+ *   · 文件不存在：Python 是 `FileNotFoundError: [Errno 2] No such file or directory: '<路径>'`，
+ *     Node 是 `ENOENT: no such file or directory, open '<路径>'`，且 **Node 会把路径里的
+ *     `/` 规范化成 `\`**（`e.path` 靠不住）⇒ 路径必须拿**传进去的那个原字符串**。
+ */
+function 错文本_manual(调用, e, 参数) {
+  if (调用 === 'load_card' && e instanceof SyntaxError) {
+    return 'JSONDecodeError: ' + _json错文(e)
+  }
+  if (调用 === 'load_card' && e && e.code === 'ENOENT') {
+    return `FileNotFoundError: [Errno 2] No such file or directory: '${String(参数[0])}'`
+  }
+  return 净文本(`${e.constructor.name}: ${e.message}`)
+}
+
+function 算_manual(料) {
+  if (!MN) throw new Error('forgejs/lib/manual.mjs 没导入成功，先把它落地再跑 manual')
+  // ★ 工作目录建在**差分根底下**，不用系统 temp —— 同 算_hud / 算_bridge：Windows 的
+  //   temp 可能是 8.3 短名（`C:\Users\ADMINI~1\…`），Python `abspath` 与 Node `resolve`
+  //   会算出两种写法，而手册/索引的默认落点正是从 `abspath(输入路径)` 推出来的。
+  const 工作 = mkdtempSync(join(这里, '_tmp_manual-'))
+  const 出 = { 步: [] }
+  try {
+    const 预置 = 料.预置 ?? {}
+    for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 名), { recursive: true })
+    for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+      const p = join(工作, 名)
+      mkdirSync(dirname(p), { recursive: true })
+      writeFileSync(p, 文, 'utf8')          // Python 是 write_text(newline="\n") ⇒ 原样写
+    }
+
+    for (const 步 of 料.操作) {
+      // 语料里「参数」可以写单个值，也可以写数组；没有这个键就是无参。
+      // `参数2` 是追加的第二个位置参数（`_cell(s, limit)` 这种两个位置的）。
+      const 原参 = ('参数' in 步) ? 步.参数 : []
+      const 参数 = (Array.isArray(原参) ? 原参 : [原参]).map((a) => 出参数(a, 工作, 根))
+      if ('参数2' in 步) 参数.push(出参数(步.参数2, 工作, 根))
+
+      const rec = { 调用: 步.调用, 参数: 动(参数) }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        const 回 = MN[步.调用](...参数)
+        rec.回 = 折回(动回(回 ?? null), 工作)
+        rec.错 = null
+      } catch (e) {
+        rec.回 = null
+        rec.错 = 错文本_manual(步.调用, e, 参数)
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      if (步.收出) rec.记出 = true
+      出.步.push(rec)
+    }
+    出.树 = 走树(工作)
+  } finally {
+    rmSync(工作, { recursive: true, force: true })
+  }
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(收_uuid(出), 对)
+}
+
+算式.manual = 算_manual
+
+// -------------------------------------------------------------------- theme
+
+const _读不出来 = /（读不出来：[^）]*）/
+
+/** 把「值为整数的 float」折成 int（-0 也折成 0）—— 申报差异 1，理由见 `出黄金.py:_折浮`。 */
+function 折浮(x) {
+  if (typeof x === 'number' && Number.isFinite(x) && Number.isInteger(x)) return Object.is(x, -0) ? 0 : x
+  if (Array.isArray(x)) return x.map(折浮)
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const k of Object.keys(x)) o[k] = 折浮(x[k])
+    return o
+  }
+  return x
+}
+
+/** 把 `（读不出来：…）` 里的正文换成 `<解析器说>` —— 申报差异 2，理由见 `出黄金.py:_折读不出来`。 */
+function 折读不出来(x) {
+  if (typeof x === 'string') {
+    return x
+      .replace(/（读不出来：[^）]*）/g, '（读不出来：<解析器说>）')
+      // `import_theme()` 把解析器原话插在另一句话里（`是 json？）：…`），形状不同、同样只差措辞。
+      .replace(/（不是 json？）：[\s\S]*$/, '（不是 json？）：<解析器说>')
+  }
+  if (Array.isArray(x)) return x.map(折读不出来)
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const k of Object.keys(x)) o[k] = 折读不出来(x[k])
+    return o
+  }
+  return x
+}
+
+/** 把「解析器读不出 json」的整条异常文本折成 `解析器: <解析器说>` —— 申报差异 3，理由见 `出黄金.py:_折解析器`。 */
+function 折解析器(x) {
+  if (typeof x === 'string' && /^(JSONDecodeError|SyntaxError): [\s\S]*$/.test(x)) return '解析器: <解析器说>'
+  return x
+}
+
+function 算_theme(料) {
+  if (!TH) throw new Error('forgejs/lib/theme.mjs 没导入成功，先把它落地再跑 theme')
+  // `THEMES_DIR` 是模块级变量（`_join(ROOT, 'assets', '主题')`）。theme.mjs 把它写成
+  // `export let` 并**在函数体里实时读那个绑定**，所以这里换它就是换这台子的主题库 ——
+  // 跑完还原，真仓库的 `assets/主题/` 一个字节都不动（`import_theme(install=True)`
+  // 否则会往里落外来主题，那是脏树）。跟 Python 侧直接赋值 `T.THEMES_DIR` 同效。
+  const 原主题库 = TH.THEMES_DIR
+  const 原沙箱 = SB.enabled()
+  // ★ 沙箱开关是**进程级**状态，而算_sandbox（字母序排在 theme 前面）跑完会把它留在「开」上
+  //   —— 它自己的黄金里 `enabled: true` 就是照实记的，两边都不还原（同 算_scaffold 的注释）。
+  //   本函数的黄金必须与调用顺序无关，所以进门一律先关掉，出门再按原样还原。
+  //   少了这一行：单跑 `比一比.mjs theme` 绿、整套 `跑.py` 红（实测差在第 1049 行 · 偏移 26584：
+  //   乙工程清皮肤第 2 次 `回`，黄金 false「本来就是核心默认，没动。」而 JS true）。
+  SB.enable(false)
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(根, '_tmp_theme-'))
+      let 出 = null
+      try {
+        const 预置 = 情形.预置 ?? {}
+        for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 名), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+          const p = join(工作, 名)
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, 文, 'utf8')
+        }
+        TH._setThemesDir(join(工作, 情形.主题库))
+
+        出 = { 名: 情形.名 ?? null, 步: [] }
+        for (const 步 of 情形.操作) {
+          const 参数 = (步.参数 ?? []).map((a) => 出参数(a, 工作, 根))
+          const rec = { 调用: 步.调用, 参数: 动(参数) }
+          // 可选的 `"沙箱"`：那一分钟里把 `sandbox.enable()` 设成它，跑完还原。
+          // `clear_theme()` 是 theme 里唯一碰沙箱的地方（`SB.shell`）。
+          if ('沙箱' in 步) SB.enable(Boolean(步.沙箱))
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            const 回 = TH[步.调用](...参数)
+            rec.回 = 动(动回(回 ?? null))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = 折解析器(错文本(步.调用, e))
+          } finally {
+            process.stdout.write = 原写
+            if ('沙箱' in 步) SB.enable(false) // 回到本函数的基调（进门关掉那个），不是原沙箱
+          }
+          rec.出 = 净文本(出文)
+          出.步.push(rec)
+        }
+        出.树 = 走树(工作)
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+        TH._setThemesDir(原主题库)
+      }
+      const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+      情形们.push(换路径(折读不出来(折浮(收_uuid(出))), 对))
+    }
+  } finally {
+    TH._setThemesDir(原主题库)
+    SB.enable(原沙箱)
+  }
+  return { 情形: 情形们, 沙箱还原: SB.enabled() === 原沙箱 }
+}
+
+算式.theme = 算_theme
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

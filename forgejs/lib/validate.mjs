@@ -55,6 +55,15 @@ export function pyStr(v) {
 /** Python 的 `s[:n]` —— 按**码点**切，不是按 UTF-16 码元（标题里可能有 emoji）。 */
 export const 切 = (s, n) => Array.from(String(s)).slice(0, n).join('')
 
+/**
+ * Python 的 `len(s)` —— 按**码点**数。
+ *
+ * ★ 别拿 `String.prototype.length` 顶：那是 UTF-16 码元数，星平面字符（emoji）算 2，
+ *   而 `validate.py` 的常驻字数 / 单条字数 / `summarize()` 全走内建 `len()`。
+ *   正文里落一个 emoji，护栏就从 3000 跳到 3001 那一边去。
+ */
+export const lenPy = (s) => Array.from(String(s)).length
+
 /** Python 的 `d.get(k, 默认)` —— 键在、值是 null 时给 null，不是给默认。 */
 export const 取 = (o, k, d) => (o && typeof o === 'object' && k in o ? o[k] : d)
 
@@ -216,15 +225,15 @@ export function validate_card(card, source_label = '卡片') {
       issues.push(M.err('CONST-NO-POSITION', where,
         '是常驻条目（trigger_mode=always），但 position 是空的',
         '常驻条目位置空着会被平台直接过滤掉，一个字都进不去。给一个插入位置（如 instructions）。'))
-      const_chars += pyStr(或(取(e, 'content', null), '')).length
-      const_list.push([title, pyStr(或(取(e, 'content', null), '')).length])
+      const_chars += lenPy(pyStr(或(取(e, 'content', null), '')))
+      const_list.push([title, lenPy(pyStr(或(取(e, 'content', null), '')))])
     } else if (trigger === 'always') {
-      const_chars += pyStr(或(取(e, 'content', null), '')).length
-      const_list.push([title, pyStr(或(取(e, 'content', null), '')).length])
+      const_chars += lenPy(pyStr(或(取(e, 'content', null), '')))
+      const_list.push([title, lenPy(pyStr(或(取(e, 'content', null), '')))])
     }
 
     // 单条过长（先记账，循环后聚合报告，免得几十条一起把报告淹了）
-    const n_chars = pyStr(或(取(e, 'content', null), '')).length
+    const n_chars = lenPy(pyStr(或(取(e, 'content', null), '')))
     if (n_chars > ENTRY_CHARS_LIMIT && kind !== 'opening') oversized.push([title, n_chars])
 
     // 关键词策略却没有关键词 —— 永远读不到
@@ -880,7 +889,7 @@ export function summarize(card) {
   const var_ = P.active_variables(card)
   const entries = 或(取(lib, 'entries', null), [])
   const 常驻 = entries.filter((e) => 取(e, 'trigger_mode', 'always') === 'always' && 取(e, 'kind', null) !== 'opening')
-  const const_chars = 常驻.reduce((n, e) => n + pyStr(或(取(e, 'content', null), '')).length, 0)
+  const const_chars = 常驻.reduce((n, e) => n + lenPy(pyStr(或(取(e, 'content', null), ''))), 0)
   return {
     name: 取(或(取(card, 'character', null), {}), 'name', ''),
     entries: entries.length,

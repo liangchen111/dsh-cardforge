@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（14/27）**
+**已搬完并逐字节绿（16/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -289,6 +289,8 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `mods` | `forgejs/lib/mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
 | `bridge` | `forgejs/lib/bridge.mjs` | ✔ 273,900 字节（51 条预置 · 198 条操作 · 27 条异常） |
 | `hud` | `forgejs/lib/hud.mjs` | ✔ 70,619 字节（95 条操作 · 5 目录 56 文件） |
+| `manual` | `forgejs/lib/manual.mjs` | ✔ 73,272 字节（39 步 · 3 份夹具） |
+| `theme` | `forgejs/lib/theme.mjs` | ✔ 58,911 字节（8 情形 / 124 步） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -296,9 +298,10 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`manual`（556）＋ `theme`（592），两个子代理并排跑。
-两者要的依赖（`model` / `pack` / `validate` / `domain` / `sandbox` / `hud`）都已落地 ⇒ 可以立刻开工。
-`manual` 一落地，`coach`（1,353 · 最肥的一块）就解锁；`png` 要等 `export`，`dist` 要等 `hud`＋`bridge`（都已绿）。
+**在跑**：`coach`（1,353 · 最肥的一块）＋ `export`（396），两个子代理并排跑。
+`manual` 已经落地 ⇒ `coach` 解锁；`export` 一落地，`png`（384）就跟着解锁。
+`dist`（373）的依赖（hud＋bridge＋validate＋pack＋sandbox）已全绿 ⇒ 随时可开。
+`lint`（293）/ `plan`（262）/ `guard`（71）依赖最轻，也随时可开。
 
 **`opener` 的三条界面档支路已经真跑了**（2026-10-16）—— 新增夹具 `卯全界面`（`assets/骨架` 整份）
 后，`写回()`（界面档·标记数 3）与 `改正文(..., 写回=true)` 都进了语料（opener 黄金 228,776 → **341,131**）。
@@ -311,11 +314,15 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 > 干净的根下固定命中 `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`（`_` 排在 `a` 前面）；
 > 多一个 `_tmp_draft-*` 之类就会换一条结果。**这不是移植错，是语料本身依赖工作树形状**（待改成显式路径）。
 
-**之后照剩下来的大小排**：`coach`（1,353 · 最肥的一块）→ `bridge`（707）／`hud`（693）／
-`theme`（592）／`manual`（556）／`preset`（500） → `export`（396）／`png`（384）／`dist`（373）
-／`lint`（293）／`plan`（262）／`bundle`（119）／`guard`（71） → 命令层
+**之后照剩下来的大小排**：`coach`（1,353 · 最肥的一块）→ `preset`（500）→ `export`（396）／
+`png`（384）／`dist`（373）／`lint`（293）／`plan`（262）／`bundle`（119）／`guard`（71） → 命令层
 （`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
 `content`（2,158 行）已经吃掉最肥的一块。
+
+**依赖链（2026-10-16 实测 grep 过 `forge/*.py` 的 import）**：`coach` 要 content/draft/manual/model/pack/validate（**已全绿 ⇒ 可开**）·
+`export` 要 model/pack（**可开**）· `lint` 只要 `io/json/os/re/sys/yaml`（**可开**）· `plan` 只要 sandbox（**可开**）·
+`guard` 只要 os（**可开**）· `dist` 要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`（**可开**）·
+`png` 要 export · `preset` 要 png · `bundle` 要 dist＋export＋manual。
 
 **`hud`（693）要早点搬** —— `opener` 有 3 条分支（`写回` / 改正文时 `写回=true` / `补齐`界面档）
 与 `scaffold` 的 `build_hud` 都因为它没搬而留成抛错（差分覆盖率缺口就卡在这）。

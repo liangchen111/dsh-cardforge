@@ -126,11 +126,14 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：14/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+- **进度：16/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（341,131 字节 · 界面档三条支路已真跑）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** ·
-  **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）**。
-  下一波在跑：**`manual`（556 行）** ＋ **`theme`（592 行）**；`manual` 一好就上 `coach`（1,353）。
+  **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）** ·
+  **`manual`（73,272 字节 · `manual.mjs` 870 行）** · **`theme`（58,911 字节 · `theme.mjs` 886 行）**。
+  下一波在跑：**`coach`（1,353 行 · 最肥的一块）** ＋ **`export`（396 行）**；`export` 一好就上 `png`（384）。
+  依实测 grep 的依赖链：`dist`（要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`）· `lint` · `plan` · `guard`
+  **现在就能开**；`preset` 等 `png`；`bundle` 等 dist＋export＋manual。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 - **差分台的两处既有代码修正**（2026-10-16 · 复核过：`--刷` 重刷后旧黄金一个字节没动）：
@@ -169,4 +172,15 @@
   （报 `active teammate "…" not found`）⇒ 要传话只能**在派工单里一次写死**，或父级自己把活干了。
 - **`出黄金.py <名> --刷` 的参数顺序有坑**：`--刷` 会被当成语料名（`FileNotFoundError: …语料\--刷.json`）；
   真要刷黄金……目前就是先跑 `<名>` 把黄金写出来再比。
+- **码点 ≠ UTF-16 码元**：Python 的 `len(s)`/`s[i]`/切片都按**码点**，JS 的 `s.length` 按**码元** ⇒ 一个 emoji 差一位。
+  `manual` 逮到三处：`_cell` 的 `limit`、`_render_index` 的「字数」列（😀 让 127→128，索引 sha1 直接对不上）、
+  `model.mjs:220 estTokens` 的分母（手册「≈token」列 8→10）。`validate.mjs` 已导出 `lenPy` 备用。
+- **printf 家族必须手写**：`"%s" % None` 是 `"None"`（`util.format('%s', null)` 给 `"null"`，顶不了）·
+  `"%s" % exc` **不是** `M.pyRepr(exc)`（Node 的 `SyntaxError` 在 pyRepr 下给 `{}`）·
+  `"{:,}"` 不能用 `toLocaleString()`（ICU 可能给 NBSP）· `"%.1f"` **不是** `toFixed`（半值取偶 ＋ `.0` 补齐）
+  ⇒ `_fmt` / `_千分` / `_fmt1`。另：**Python `str.replace` 换全部、JS 只换第一处**（`SHOWCASE_SHELL` 里 `@@card@@` 两次）。
+- **路径与数字的写法差**：`str(pathlib.Path(v))` 会把 `/` 规范化成 `\`（`os.path.join` 不会）；
+  `json.dumps(21.0)` 是 `21.0`、`JSON.stringify(21)` 是 `21` ⇒ 归一化要加「折浮」。
+- **`try` 边界不照抄会把两个分支合成一个**：`theme` 里「顶层不是对象」的手写守卫**必须写在 `try` 之外**，
+  否则被同一个 `except` 收成「读不出来」。用顶层是数组 / 数字的两份 `.json` 才抓得住。
 

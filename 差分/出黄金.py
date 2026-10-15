@@ -1039,6 +1039,247 @@ def 算_bridge(料: dict) -> dict:
 算式["bridge"] = 算_bridge
 
 
+def _指纹(p: Path, 工作: Path) -> dict:
+    """把一个产物文件的形态记下来：字节数 / 行数 / sha1 前十六 / 首尾行。
+
+    为什么不把正文整个记进差分：手册 HTML 几十 KB、索引也是，黄金会膨胀到几 MB 且
+    一处改动就满屏 diff。**结构上**「产物没变」＝ sha1 相同；「变成什么了」＝ 首尾行 +
+    行数字节。真要逐字节看，去比对 `差分/黄金/manual.json` 里的 sha1 就够定位到哪一步。
+    """
+    import hashlib
+
+    原 = str(p)
+    b = p.read_bytes()
+    文本 = b.decode("utf-8", errors="replace")
+    行 = 文本.split("\n")
+    return {
+        "路径": 原.replace(str(工作), "<工作>").replace(str(工作).replace("\\", "\\\\"), "<工作>"),
+        "字节": len(b),
+        "行数": len(行),
+        "sha1": hashlib.sha1(b).hexdigest()[:16],
+        "首行": _动(行[0])[:200],
+        "尾行": _动(行[-1])[:200],
+    }
+
+
+def 算_manual(料: dict) -> dict:
+    """顺序跑一串 manual 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_hud` 同形，两处不一样：
+
+      · 返回值里的大字符串（手册 HTML、索引 md）**不整个记进差分** —— 折成产物的形态
+        （见 `_指纹`）。这不是放水：落盘后的文件仍然进 `树`、逐字节比 sha1，
+        两条证据是分开的。
+      · 返回值里凡是**已经存在的文件路径**，一律顺带记一份 `产物` 形态，于是
+        `build_manual` / `build_index` 交回来的路径与它写出来的东西都进了差分。
+    """
+    import contextlib
+    import hashlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import manual as MN
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_manual-", dir=str(根)))
+
+    预置 = 料.get("预置") or {}
+    for 名 in 预置.get("目录") or []:
+        (工作 / 名).mkdir(parents=True, exist_ok=True)
+    for 名, 文 in (预置.get("文件") or {}).items():
+        p = 工作 / 名
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(文, encoding="utf-8", newline="\n")
+
+    def 折回(v):
+        """返回值折成能比的结构：长字符串换成形态；现有文件顺带带上 `产物`。"""
+        if isinstance(v, str):
+            if len(v) > 400:
+                b = v.encode("utf-8")
+                return {"_长文本": {"字节": len(b), "行数": v.count("\n") + 1,
+                                    "sha1": hashlib.sha1(b).hexdigest()[:16],
+                                    "首行": _动(v.split("\n")[0])[:200],
+                                    "尾行": _动(v.split("\n")[-1])[:200]}}
+            try:
+                存在 = os.path.isfile(v)
+            except (OSError, ValueError, TypeError):
+                存在 = False
+            if 存在:
+                return {"_回": _动(v), "产物": _指纹(Path(v), 工作)}
+            return _动(v)
+        if isinstance(v, dict):
+            return {k: 折回(x) for k, x in v.items()}
+        if isinstance(v, list):
+            return [折回(x) for x in v]
+        return _动(v)
+
+    出: dict = {"步": []}
+    try:
+        for 步 in 料["操作"]:
+            # 语料里「参数」可以写单个值（`{"参数": 42}`），也可以写数组；没有这个键就是无参。
+            # `参数2` 是追加的第二个位置参数（`_cell(s, limit)` 这种两个位置的）。
+            原参 = 步["参数"] if "参数" in 步 else []
+            参数 = [出参数(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+            if "参数2" in 步:
+                参数.append(出参数(步["参数2"], 工作, 根))
+            buf = io.StringIO()
+            rec: dict = {"调用": 步["调用"], "参数": _动(参数)}
+            try:
+                with contextlib.redirect_stdout(buf):
+                    回 = getattr(MN, 步["调用"])(*参数)
+                rec["回"] = 折回(动回(回))
+                rec["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                rec["回"] = None
+                rec["错"] = 错文本(步["调用"], exc)
+            rec["出"] = _净文本(buf.getvalue())
+            if 步.get("收出"):
+                rec["记出"] = True
+            出["步"].append(rec)
+        出["树"] = _树(工作)
+    finally:
+        shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(收_uuid(出), 对)
+
+
+算式["manual"] = 算_manual
+
+
+_读不出来 = re.compile(r"（读不出来：[^）]*）")
+# `import_theme()`（`theme.py:308`）把解析器原话插在另一句话里，形状不同、同样只差措辞。
+_不是json = re.compile(r"（不是 json？）：.*$", re.S)
+
+
+def _折浮(x):
+    """把「值为整数的 float」折成 int（-0.0 也折成 0）。
+
+    这是**申报差异 1**：Python `json.dumps` 把 float 写成 `21.0`，JS `JSON.stringify`
+    写成 `21`。`_parse_color` 的 alpha、`_luminance` / `_ratio` 的结果都可能是整数，
+    不折的话两侧的 JSON 逐字节比必然红 —— 而那不是 bug，是两种语言的浮点写法。
+    折的是**写法**不是数：真算错了（21 vs 20.999…）折完照样红。
+    """
+    if isinstance(x, float):
+        if x.is_integer():
+            return int(x)
+        return x
+    if isinstance(x, dict):
+        return {k: _折浮(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_折浮(v) for v in x]
+    return x
+
+
+def _折读不出来(x):
+    """把 `（读不出来：…）` 里的正文换成 `<解析器说>`。
+
+    这是**申报差异 2**：`list_themes()` 读不出某份 `.json` 时，异常文本是解析器原话 ——
+    Python 给 `Expecting property name enclosed in double quotes: line 1 column 13 (char 12)`，
+    Node 给 `Expected double-quoted property name in JSON at position 12 (line 1 column 13)`。
+    两侧天生不同，故只比「读不出来」这件事发生过、以及前后文。
+    """
+    if isinstance(x, str):
+        return _不是json.sub("（不是 json？）：<解析器说>", _读不出来.sub("（读不出来：<解析器说>）", x))
+    if isinstance(x, dict):
+        return {k: _折读不出来(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_折读不出来(v) for v in x]
+    return x
+
+
+_解析器错 = re.compile(r"^(JSONDecodeError|SyntaxError): .*$", re.S)
+
+
+def _折解析器(x):
+    """把「解析器读不出 json」的整条异常文本折成 `解析器: <解析器说>`。
+
+    这是**申报差异 3**：`_read_conf()` 读一份坏掉的 `hud.conf.json` 时，
+    Python 抛 `JSONDecodeError: Expecting property name enclosed in double quotes: …`，
+    Node 抛 `SyntaxError: Expected double-quoted property name in JSON at …` ——
+    连类名带措辞都不同。只折**错**这一格（语料正文里不带这种字样）。
+    """
+    if isinstance(x, str) and _解析器错.match(x):
+        return "解析器: <解析器说>"
+    return x
+
+
+def 算_theme(料: dict) -> dict:
+    """顺序跑一串 theme 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_hud` 的区别只有一处形状：料里是 `情形` 列表 —— 一个情形一份工作目录 + 一个主题库。
+    `THEMES_DIR` 是模块级变量（`os.path.join(ROOT, "assets", "主题")`），这里直接赋值、
+    跑完还原，真仓库的 `assets/主题/` 一个字节都不动（`import_theme(install=True)` 否则会往里落）。
+    每步还可以带一个可选的 `"沙箱"`：那一分钟里把 `sandbox.enable()` 设成它，跑完还原。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import sandbox as _SB
+    from forge import theme as T
+
+    原主题库 = T.THEMES_DIR
+    原沙箱 = _SB.enabled()
+    # ★ 沙箱开关是**进程级**状态，而算_sandbox（字母序排在 theme 前面）跑完会把它留在「开」上
+    #   —— 它自己的黄金里 `enabled: true` 就是照实记的，两边都不还原（同 算_scaffold 的注释）。
+    #   本函数的黄金必须与调用顺序无关，所以进门一律先关掉，出门再按原样还原。
+    #   少了这一行：`跑.py --刷 theme` 单跑出的黄金是「关」着的行为，而 `跑.py` 整套跑时
+    #   JS 侧还开着 ⇒ 清皮肤第 2 次 `回` 会 true/false 分岔（实测差在第 1049 行 · 偏移 26584）。
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_theme-", dir=str(根)))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                预置 = 情形.get("预置") or {}
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 名).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 名
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_text(文, encoding="utf-8", newline="\n")
+
+                T.THEMES_DIR = os.path.join(str(工作), 情形["主题库"])
+
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in 情形["操作"]:
+                    # 「参数」可以写单个值，也可以写数组；没有这个键就是无参。
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参数 = [出参数(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": _动(参数)}
+                    if "沙箱" in 步:
+                        _SB.enable(bool(步["沙箱"]))
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = getattr(T, 步["调用"])(*参数)
+                        rec["回"] = _动(动回(list(回) if isinstance(回, tuple) else 回))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = _折解析器(错文本(步["调用"], exc))
+                    finally:
+                        if "沙箱" in 步:
+                            _SB.enable(False)  # 回到本函数的基调（进门关掉那个），不是原沙箱
+                    rec["出"] = _净文本(buf.getvalue())
+                    出["步"].append(rec)
+                出["树"] = _树(工作)
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+                T.THEMES_DIR = 原主题库
+            情形们.append(_换路径(_折读不出来(_折浮(收_uuid(出))), 对))
+    finally:
+        T.THEMES_DIR = 原主题库
+        _SB.enable(原沙箱)
+    return {"情形": 情形们, "沙箱还原": _SB.enabled() == 原沙箱}
+
+
+算式["theme"] = 算_theme
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

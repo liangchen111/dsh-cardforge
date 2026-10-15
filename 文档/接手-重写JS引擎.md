@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（14/27 个模块逐字节绿）
+## 现状（16/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -31,8 +31,10 @@
 | `mods` | `forgejs\lib\mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
 | `bridge` | `forgejs\lib\bridge.mjs` | ✔ 273,900 字节（1274 行 · 51 条预置 · 198 条操作 · 27 条以异常收场） |
 | `hud` | `forgejs\lib\hud.mjs` | ✔ 70,619 字节（952 行 · 95 条操作 · 5 目录 56 文件） |
+| `manual` | `forgejs\lib\manual.mjs` | ✔ 73,272 字节（870 行 · 39 步 · 3 份夹具） |
+| `theme` | `forgejs\lib\theme.mjs` | ✔ 58,911 字节（886 行 · 8 情形 / 124 步） |
 
-**在跑**：`manual`（556 行）＋ `theme`（592 行）。两者要的依赖都已落地；`manual` 一好，`coach`（1,353）解锁。
+**在跑**：`coach`（1,353 行 · 最肥的一块）＋ `export`（396 行）。
 
 ## 怎么跑
 
@@ -51,12 +53,11 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`manual`(556) ＋ `theme`(592)，两个子代理并排。`manual` 一好就上 `coach`(1,353 · 最肥的一块)。
+1. **在跑**：`coach`(1,353 · 最肥的一块) ＋ `export`(396)，两个子代理并排。`export` 一好就上 `png`(384)。
 2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
-   已可开工：`manual`(556) · `theme`(592) · `export`(396) · `lint`(293 · 只 io/json/os/re/yaml) ·
-   `plan`(262 · 只 sandbox) · `guard`(71 · 只 os)。
-   被卡的：`coach`(1,353) 等 `manual` · `png`(384) 等 `export` · `preset`(500) 等 `png` ·
-   `dist`(373) 等 hud+bridge+validate+pack+sandbox（**已全绿 ⇒ 可开**） · `bundle`(119) 等 dist+export+manual。
+   已可开工：`lint`(293 · 只 io/json/os/re/sys/yaml) · `plan`(262 · 只 sandbox) · `guard`(71 · 只 os) ·
+   `dist`(373 · 要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`，**这些都已全绿 ⇒ 可开**)。
+   被卡的：`png`(384) 等 `export` · `preset`(500) 等 `png` · `bundle`(119) 等 dist+export+manual。
    最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
@@ -69,7 +70,7 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
    `git diff -U0` 只看得到该看的行 · `--刷` 重刷后**旧黄金一个字节没动**。
 
 
-## 十二条纪律（差分台已经证明有用）
+## 十三条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
@@ -103,6 +104,14 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
     **凡「Python 真值判断」的地方都走它。** 另：`regex-<uuid4>` 这种**新生成**的 id 要按形状收掉 ——
     两侧已有 `收_uuid`（`出黄金.py:878-893` 定义、`:443`/`:955` 用；`比一比.mjs:887-902` 定义、`:599`/`:950` 用），
     只认 `-XXXX-XXXX-` 那两段，剩下的 hex8 交给原有形状规则。
+13. **码点 · printf 家族 · 路径规范化**（`manual` / `theme` 两块撞出来的）：
+    Python 的 `len(s)` / `s[i]` / 切片都是**码点**，JS 的 `s.length` 是 **UTF-16 码元** ⇒ 一个 emoji 就多算一位
+    （`_cell` 的 `limit`、`_render_index` 的「字数」列、`estTokens` 的分母全中招；`validate.mjs` 已导 `lenPy` 备用）；
+    `"%s" % None` 是 `"None"`（`util.format('%s', null)` 给 `"null"`，顶不了）· `"%s" % exc` **不是** `M.pyRepr(exc)` ·
+    `"{:,}"` 不能用 `toLocaleString()`（ICU 可能给 NBSP）· `"%.1f"` **不是** `toFixed`（半值取偶 ＋ `.0` 补齐）
+    ⇒ 各自手写 `_fmt` / `_千分` / `_fmt1`；**Python `str.replace` 换全部、JS `String.replace` 只换第一处**；
+    `str(pathlib.Path(v))` 会把 `/` 规范化成 `\`（`os.path.join` 不带）· `json.dumps(21.0)` 是 `21.0`、`JSON.stringify(21)` 是 `21`（归一化要「折浮」）。
+    **「顶层不是对象」这类手写守卫必须写在 `try` 之外** —— 塞进 `try` 会被同一个 `except` 收成「读不出来」，两个分支合成一个。
 
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）
