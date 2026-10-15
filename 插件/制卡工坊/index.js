@@ -140,6 +140,7 @@ const 工具说明 = [
   '  稿子有毛病会一次报全，而且**一个字都不往目标位置写**；改完稿子想重落，args 里加 "--覆盖"。',
   '',
   '要一条条来也行：先 ["--help"] 看全部命令（new / entry / check / build / png / preset …）。',
+  '在哪儿做卡：不给 cwd 就落 `我的文档/ElecKoi卡库`。一张卡＝卡库下一个子目录，同时做几张就各建各的；要做在别处就给 cwd。',
   '',
   '不要加 `--沙箱` —— 本工具由宿主进程直接执行，不受命令行沙箱限制，加了反而丢掉原子落盘。',
   '返回 exitCode / stdout / stderr；exitCode 非 0 就是这步没成，按 stderr 改。',
@@ -499,7 +500,7 @@ export function apply(ctx, config) {
           {
             type: 'text',
             text: [
-              `$ forge.py ${调用参数.args.join(' ')}`,
+              `$ forge.py ${(Array.isArray(调用参数.args) && 调用参数.args.length ? 调用参数.args : ['--help']).join(' ')}`,
               值.stdout.replace(/\s+$/, ''),
               值.stderr.replace(/\s+$/, '') === '' ? '' : `[stderr]\n${值.stderr.replace(/\s+$/, '')}`,
               `[exit ${值.exitCode}]`,
@@ -510,13 +511,12 @@ export function apply(ctx, config) {
         ],
       },
       async execute(调用参数, exec) {
-        if (调用参数.args.length === 0) {
-          throw new Error('args 不能是空的：至少给一个子命令，比如 ["--help"]。')
-        }
+        // 空 args 不给报错，直接当问路 —— 这一条是给「人就说了句『用 cardforge』」准备的。
+        const 实参 = Array.isArray(调用参数.args) && 调用参数.args.length > 0 ? 调用参数.args : ['--help']
         const 工作目录 = 定工作目录(config, 调用参数.cwd)
         // 只读命令：不为它造目录；默认目录压根不存在时，退到插件目录去跑（照样能看规程）。
         let 跑在哪儿 = 工作目录
-        if (只读命令.has(String(调用参数.args[0] ?? ''))) {
+        if (只读命令.has(String(实参[0] ?? ''))) {
           if (!existsSync(工作目录)) 跑在哪儿 = 插件目录
         } else {
           try {
@@ -538,7 +538,7 @@ export function apply(ctx, config) {
         const 结果 = await 跑(
           { ...config, python: 解释器.命令, 前置: 解释器.前置 },
           跑在哪儿,
-          [config.forge, ...调用参数.args],
+          [config.forge, ...实参],
           exec?.signal,
         )
         if (!解释器.有yaml && 结果.stderr.includes('yaml') === false) {
