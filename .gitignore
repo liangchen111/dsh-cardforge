@@ -12,7 +12,9 @@ dist/
 # 本机配置：只读禁区名单（一行一个路径，见 forge/guard.py）
 只读名单.txt
 
-# 临时/一次性
-.workbuddy/_沙箱实测/node_modules/
-.workbuddy/_试/
-.workbuddy/回收站/
+# 出厂产物（见 出厂.py）
+出厂/
+
+# 工作区（见 README「一张卡工程长什么样」）
+.forge/_取/
+.forge/回收站/

@@ -32,7 +32,7 @@ from . import model as M
 from . import pack
 
 # 不带进包里的东西
-SKIP_DIRS = {"__pycache__", "out", ".git", ".workbuddy", "node_modules"}
+SKIP_DIRS = {"__pycache__", "out", ".git", ".forge", "node_modules"}
 SKIP_TAILS = (".pyc", ".pyo")
 
 

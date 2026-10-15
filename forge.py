@@ -439,7 +439,7 @@ def _project_of_path(path):
 
 def _collect(root):
     """把一个目录里所有的 spec / 卡收集起来（跳过产物目录与缓存）。"""
-    skip = {"__pycache__", "out", "node_modules", ".git", ".workbuddy"}
+    skip = {"__pycache__", "out", "node_modules", ".git", ".forge"}
     got = []
     for base, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d not in skip and not d.startswith(".")]

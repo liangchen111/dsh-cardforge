@@ -4,23 +4,23 @@ description: 帮用户做一张 ElecKoi 角色卡（类酒馆的 AI 角色扮演
 ---
 
 <!-- 本文件是「门牌」：一段短入口，完整规程在同目录的 AI制卡规程.md。
-     把本文件（或整个目录）拷到 ~/.workbuddy/skills/ 下即成为技能。 -->
+     把本文件（或整个目录）拷到你 AI 客户端的技能目录（如 ~/.claude/skills/）下即成为技能。 -->
 
 # ElecKoi 制卡（本机）
 
-> **完整规程在 `E:\workGZQ\制卡工具\向导\AI制卡规程.md` —— 动手之前先把它读一遍，一步一步照做。**
+> **完整规程在 `向导/AI制卡规程.md` —— 动手之前先把它读一遍，一步一步照做。**
 > 这份文件只是「门牌」：告诉你工具在哪、规矩是什么，细节全在规程里。
 > **不想一次读全文**：`python forge.py guide` 出目录，
 > `guide --节 三` / `--篇 预算` / `--对话 访谈` 取你需要的那一段。
 
 ## 工具
 
-- 工具本体：`E:\workGZQ\制卡工具\forge.py`
-- 跑它用这个 python（隔离环境，依赖已装好，**别用系统的 python**）：
-  `C:\Users\Administrator\.workbuddy\binaries\python\envs\cardforge\Scripts\python.exe`
+- 工具本体：仓库根目录的 `forge.py`（这份门牌在 `向导/` 下，向上两级就是仓库根）。
+- 跑它用你自己那个装好 PyYAML 的 Python 环境，**别用系统 python**：
+  能打出下面这条命令的帮助、就算环境对了。
 - 例：
   ```bash
-  cd /e/workGZQ/制卡工具 && "C:/Users/Administrator/.workbuddy/binaries/python/envs/cardforge/Scripts/python.exe" forge.py --help
+  cd <仓库根> && python forge.py --help
   ```
 - 忘了某个子命令的参数**别猜**：`python forge.py <子命令> --help` 会打出它自己的用法（裸跑也打，且不写盘）。
 - 规程的源在 `forge/coach.py`（`python forge.py coach` 重新生成这份门牌与规程），**改规程只改那一处**。
@@ -46,11 +46,11 @@ description: 帮用户做一张 ElecKoi 角色卡（类酒馆的 AI 角色扮演
 
 ## 还有一条：让 ElecKoi 里的 AI 自己做卡
 
-`E:\workGZQ\制卡工具\插件\制卡工坊\` 是个 ElecKoi 插件（**纯宿主**，不画界面）。
+`插件/制卡工坊/` 是个 ElecKoi 插件（**纯宿主**，不画界面）。
 装上之后，会话里的 AI 手上会多一个 `cardforge` 工具，能直接跑 `forge.py`，
 **不受 ElecKoi 自己那层命令行沙箱限制**（改名 / 原子落盘都正常）。
 它还能用 `["guide"]` 自己把规程取到手（`["guide","--篇","写法"]` 取一节 / 一篇 / 一段），
-不必等人把规程贴进对话。装法与验证见 `E:\workGZQ\制卡工具\文档\C轨插件·实测单.md`。
+不必等人把规程贴进对话。装法与验证见该插件目录里的说明。
 
 > 分不清用哪条：**有 `cardforge` 就用它，且不要加 `--沙箱`**；
 > 只有自带命令行工具时，才加 `--沙箱`（丢掉原子落盘，但照样能做出卡）。
@@ -58,5 +58,6 @@ description: 帮用户做一张 ElecKoi 角色卡（类酒馆的 AI 角色扮演
 ## 别做
 
 - 别手改 `成品/*.card.json`、`模块账本.json`。
-- 别往 `E:\workGZQ\艾瑟兰` 里写任何东西（那是只读参考实卡）。
+- 别往只读名单里列的路径写任何东西（名单在仓库根的 `只读名单.txt`，默认空；
+  配法与理由见 `forge/guard.py` 顶部）。
 - 别并发改同一份 spec（后落盘的赢，前一条静默消失）。

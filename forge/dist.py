@@ -34,7 +34,7 @@ MANIFEST_FORMAT = "forge.工程包"
 MANIFEST_VERSION = 1
 
 # 打包时不带走的（与 bundle.SKIP_DIRS 一致；这里再写一份是为了导入方向也独立成立）
-SKIP_DIRS = {"__pycache__", "out", ".git", ".workbuddy", "node_modules"}
+SKIP_DIRS = {"__pycache__", "out", ".git", ".forge", "node_modules"}
 SKIP_TAILS = (".pyc", ".pyo")
 
 

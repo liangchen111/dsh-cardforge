@@ -21,16 +21,27 @@
  * —— 官方约定：随 dsh 一起发的包从 dsh 安装处解析。
  */
 import { spawn } from 'node:child_process'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
 /** 稳定标识（Loader 用它认插件）。 */
 export const name = 'cardforge'
 
-/** 本机默认路径。都能在 `cordis.patch.yml` 的 config 里改。 */
-const 默认解释器 = 'C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.12/python.exe'
-const 默认依赖目录 = 'C:/Users/Administrator/.workbuddy/binaries/python/envs/cardforge/Lib/site-packages'
-const 默认工具 = 'E:/workGZQ/制卡工具/forge.py'
+/**
+ * 出厂默认值 —— **不含任何本机路径**。
+ *
+ * - 解释器：用 `PATH` 里那个 `python`（你机器上装着 PyYAML 的那个）。
+ * - 依赖目录：留空＝不动 `PYTHONPATH`（记成 `pythonPath` 的人是拿 venv 的
+ *   site-packages 喂基础解释器用的，用不上就别填）。
+ * - `forge.py`：**自动认** —— 这个插件住在仓库的 `插件/制卡工坊/` 下，
+ *   往上两级就是仓库根，`forge.py` 就在那儿。
+ */
+const 插件目录 = dirname(fileURLToPath(import.meta.url))
+const 默认解释器 = 'python'
+const 默认依赖目录 = ''
+const 默认工具 = resolve(插件目录, '..', '..', 'forge.py')
 
 /**
  * 可配置项（写进 `cordis.patch.yml`，改它不用动代码）。
@@ -176,6 +187,9 @@ export function apply(ctx, config) {
   if (!Number.isFinite(config.timeoutMs) || config.timeoutMs <= 0) {
     throw new Error('制卡工坊：timeoutMs 必须是正数')
   }
+  // 空字符串＝「用出厂默认」（配置里留空比删掉那一行更省事）。
+  if (String(config.forge ?? '').trim() === '') config.forge = 默认工具
+  if (String(config.python ?? '').trim() === '') config.python = 默认解释器
 
   ctx.tools.register(
     defineTool({

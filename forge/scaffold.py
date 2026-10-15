@@ -202,7 +202,7 @@ def new_card(name, dest=None, id_prefix=None, quiet=False, modules=None,
     #  顺序反了就会先写回旧内容、再被灌掉。
     来源说明 = ""
     if source:
-        工作区 = os.path.join(proj, ".workbuddy", "_取")
+        工作区 = os.path.join(proj, ".forge", "_取")
         os.makedirs(工作区, exist_ok=True)
         try:
             外来, 来源说明 = 取内容层(source, 工作区, out=说)
