@@ -129,7 +129,7 @@
 - **进度：12/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（228,776 字节）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** · **`mods`（303,578 字节）**。
-  下一波在跑：**`coach`（1,353 行）** ＋ **`bridge`（707 行）**。
+  下一波在跑：**`bridge`（707 行）** ＋ **`hud`（693 行）**；`coach`（1,353）要等 `manual`（556）。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 - **差分台的两处既有代码修正**（2026-10-16 · 复核过：`--刷` 重刷后旧黄金一个字节没动）：

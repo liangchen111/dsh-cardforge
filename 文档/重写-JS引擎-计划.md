@@ -294,7 +294,8 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`coach`（1,353 行）＋ `bridge`（707 行），两个子代理并排跑。
+**在跑**：`bridge`（707 行）＋ `hud`（693 行），两个子代理并排跑。
+（`hud` 提前——它卡着 `opener` 的 3 条分支与 `scaffold` 的 `build_hud`；`coach` 要等 `manual`，所以排在后面。）
 
 > ⚠️ **跑差分前别在工具根留 `_tmp_*` 残目录**：`scaffold` 语料第 27 条是
 > `取内容层("", 工作区)` —— Python `abspath("")` / Node `resolve("")` 都落回**当前工作目录**（＝工具根），
