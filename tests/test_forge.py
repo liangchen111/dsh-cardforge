@@ -319,5 +319,76 @@ class 测体检(基类):
         self.assertEqual(LINT.读(卡)[0], 文本)      # 读两次一样（没有随机）
 
 
+class 测只读禁区(基类):
+    """名单必须是**用户配置**的：工具本体不许认识任何人的私有路径。"""
+
+    def 名单里(self):
+        from forge import guard
+        return guard.readonly_paths()
+
+    def test_默认不认任何私有路径(self):
+        # 本机 `只读名单.txt` 里可以有艾瑟兰，但**代码里**不许出现 —— 靠临时改 ROOT 验空默认
+        from forge import guard
+        旧 = guard.ROOT
+        try:
+            guard.ROOT = os.path.join(tempfile.gettempdir(), "_forge_没有名单的根")
+            os.environ.pop(guard.ENV, None)
+            self.assertEqual(guard.readonly_paths(), [])
+        finally:
+            guard.ROOT = 旧
+
+    def test_环境变量认(self):
+        from forge import guard
+        旧 = os.environ.get(guard.ENV)
+        try:
+            os.environ[guard.ENV] = os.pathsep.join([r"C:\甲", r"D:\乙"])
+            got = self.名单里()
+            self.assertIn(r"C:\甲", got)
+            self.assertIn(r"D:\乙", got)
+        finally:
+            if 旧 is None:
+                os.environ.pop(guard.ENV, None)
+            else:
+                os.environ[guard.ENV] = 旧
+
+    def test_名单文件认_并且能读到中文路径(self):
+        from forge import guard
+        旧 = guard.ROOT
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                guard.ROOT = tmp
+                p = os.path.join(tmp, guard.LIST_FILE)
+                with open(p, "w", encoding="utf-8") as fh:
+                    fh.write("# 注释行\n\nE:\\有的卡\\艾瑟兰\n")
+                self.assertIn("E:\\有的卡\\艾瑟兰", self.名单里())
+        finally:
+            guard.ROOT = 旧
+
+    def test_命中就拒绝_外面就放行(self):
+        from forge import guard
+        旧 = os.environ.get(guard.ENV)
+        try:
+            os.environ[guard.ENV] = os.path.join(tempfile.gettempdir(), "_forge禁区")
+            禁 = os.path.join(tempfile.gettempdir(), "_forge禁区")
+            self.assertIsNotNone(guard.readonly_reason(禁))
+            self.assertIsNotNone(guard.readonly_reason(os.path.join(禁, "里面", "卡.json")))
+            self.assertIsNone(guard.readonly_reason(os.path.join(tempfile.gettempdir(), "_forge别处")))
+        finally:
+            if 旧 is None:
+                os.environ.pop(guard.ENV, None)
+            else:
+                os.environ[guard.ENV] = 旧
+
+    def test_点只读标记也算(self):
+        from forge import guard
+        with tempfile.TemporaryDirectory() as tmp:
+            子 = os.path.join(tmp, "子目录")
+            os.makedirs(子)
+            self.assertIsNone(guard.readonly_reason(子))
+            open(os.path.join(tmp, guard.MARKER), "w").close()
+            self.assertIsNotNone(guard.readonly_reason(子))
+            self.assertIsNotNone(guard.readonly_reason(os.path.join(子, "卡.json")))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

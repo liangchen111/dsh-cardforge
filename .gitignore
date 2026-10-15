@@ -9,6 +9,9 @@ build/
 dist/
 *.egg-info/
 
+# 本机配置：只读禁区名单（一行一个路径，见 forge/guard.py）
+只读名单.txt
+
 # 临时/一次性
 .workbuddy/_沙箱实测/node_modules/
 .workbuddy/_试/
