@@ -45,6 +45,10 @@ forge <命令>
 
 **「找不到 Python」不用配。** 插件配置里的 `python` 留空就是**自动找**：先看你有没有设 `FORGE_PYTHON`，再挨个试常见位置（用户目录装的 Python、`C:\Python3xx`、DSH 自带那份、`PATH` 上的 `python3` / `python` / `py -3`），**真跑一次 `import yaml`**，谁能跑通用谁——因为 forge 要 PyYAML，而 Windows 上「装了 Python」不等于「`python` 在 PATH 上」。实在找不到，工具会告诉你它找过哪些地方，装一个 Python（勾「Add to PATH」）重启 ElecKoi 即可；机器上有好几个 Python 挑错了，才需要在 `python` 那一行写死完整路径。
 
+**卸载插件不会带走那个预设 —— 这是故意的。** 预设存在 ElecKoi 自己的数据里，插件一卸它就没人管了；不自动删是因为你可能已经改过它，删掉就是数据丢失。不想要就在「预设管理器 → 创作预设」里把「制卡助手」删掉。
+
+**点安装报「连接 GitHub 超时」＝这台机器到 github.com 不通。** 插件管理器的预检只有 5 秒（`git ls-remote`），直连时实测 21 秒都连不上。两条路：① 给 git 配代理 —— `git config --global http.https://github.com/.proxy http://127.0.0.1:你的代理端口`（配完裸 `git ls-remote https://github.com/liangchen111/eleckoi-cardforge.git` 应在 5 秒内出结果；不想要了 `git config --global --unset http.https://github.com/.proxy`）；② 点「试试其他方式」，改成贴**本机插件目录的绝对路径**（比如 `E:\workGZQ\制卡工具\插件\制卡工坊`），完全不碰网络。
+
 PNG 那两个成品是**可直接分发的单文件**，对方不需要装 Python、不需要克隆仓库。要改内容再重新导出：
 
 ```
