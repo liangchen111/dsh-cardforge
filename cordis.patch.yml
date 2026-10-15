@@ -1,0 +1,25 @@
+# 把「制卡工坊」插进当前 profile 的插件组合。
+#
+# 这一份是**给「贴仓库地址直装」用的**（ElecKoi → 侧栏「添加插件」→ 填
+#   https://github.com/liangchen111/eleckoi-cardforge
+# 装完由 DSH 自己读根目录的 package.json → dsh.bundle.patch → 这个文件）。
+#
+# 同一份内容另有一处：`插件/制卡工坊/cordis.patch.yml`（给「把插件目录拷进 profile」那种装法）。
+# **两处的 config 默认值必须一致** —— `门禁.py` 里有一条断言盯着它，改一处不改另一处会当场红。
+#
+# 下面 config 全是**出厂默认**，一颗字都不用改就能用：
+#   python      —— 跑 forge.py 的解释器（默认用 PATH 里的 python；留空也是这个）
+#   pythonPath  —— 追加到 PYTHONPATH 的依赖目录（装着 PyYAML）；留空＝不加
+#   forge       —— forge.py 的位置；留空＝自动用插件目录往上两级的 forge.py
+#   cwd         —— 默认工作目录；留空则每次调用都必须带 cwd
+#   timeoutMs   —— 单条命令的墙钟上限
+# 你机器上 Python 不叫 python（比如是 python3），就改 python 那一行。
+- insert:
+    - id: cardforge
+      name: 'eleckoi-cardforge'
+      config:
+        python: 'python'
+        pythonPath: ''
+        forge: ''
+        cwd: ''
+        timeoutMs: 180000

@@ -390,5 +390,53 @@ class 测只读禁区(基类):
             self.assertIsNotNone(guard.readonly_reason(os.path.join(子, "卡.json")))
 
 
+class 测出厂清单(基类):
+    """贴仓库地址直装那条路，靠的是根上的 `package.json` + `cordis.patch.yml`。
+
+    两处 `cordis.patch.yml`（根＝贴链接直装；`插件/制卡工坊/`＝本地拷装）的 config
+    默认值必须**一模一样** —— 否则「装法不同、行为不同」，用户按着装法踩不同的坑。
+    """
+
+    def _读yml(self, *段):
+        import yaml
+        with open(os.path.join(ROOT, *段), encoding="utf-8") as f:
+            return yaml.safe_load(f)
+
+    def _根包(self):
+        with open(os.path.join(ROOT, "package.json"), encoding="utf-8") as f:
+            return json.load(f)
+
+    def _出厂模块(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("forge出厂", os.path.join(ROOT, "出厂.py"))
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+
+    def test_根清单指向真实存在的文件(self):
+        pkg = self._根包()
+        补丁 = pkg["dsh"]["bundle"]["patch"]
+        self.assertTrue(os.path.exists(os.path.join(ROOT, 补丁)), 补丁)
+        self.assertTrue(os.path.exists(os.path.join(ROOT, pkg["main"])), pkg["main"])
+        self.assertTrue(os.path.exists(os.path.join(ROOT, pkg["exports"]["."])), pkg["exports"]["."])
+
+    def test_两处补丁的默认值一模一样(self):
+        根 = self._读yml("cordis.patch.yml")[0]["insert"][0]
+        内 = self._读yml("插件", "制卡工坊", "cordis.patch.yml")[0]["insert"][0]
+        self.assertEqual(根["config"], 内["config"])
+        self.assertEqual(根["id"], 内["id"])
+
+    def test_补丁里的包名就是包自己的名字(self):
+        根 = self._读yml("cordis.patch.yml")[0]["insert"][0]
+        self.assertEqual(根["name"], self._根包()["name"])
+
+    def test_出厂要把贴链接直装那两件带上(self):
+        m = self._出厂模块()
+        for 名 in ("package.json", "cordis.patch.yml"):
+            self.assertIn(名, m.要装的文件, 名)
+        for 名 in m.不装:
+            self.assertNotIn(名, m.要装的文件, 名)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -44,6 +44,7 @@ for _流 in (sys.stdout, sys.stderr):
 要装的目录 = ["forge", "assets", "samples", "向导", "插件", "tests"]
 #: 单件照搬
 要装的文件 = ["forge.py", "README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml",
+              "package.json", "cordis.patch.yml",
               ".gitignore", "门禁.py", "文档/使用说明.md"]
 
 #: 明确不装（写在代码里是为了让 --自检 能断言它们真的没被装）
@@ -145,9 +146,21 @@ def _复制(相对, 到):
     shutil.copy2(src, dst)
 
 
+def _删树(路径):
+    """删目录树 —— Windows 上 `.git` 里的对象文件是只读的，`shutil.rmtree` 会当场
+    `PermissionError: [WinError 5] 拒绝访问`。照官方配方先改权限再删。"""
+    def _放(func, 子):
+        os.chmod(子, 0o700)
+        func(子)
+    try:
+        shutil.rmtree(路径, onexc=lambda f, q, e: _放(f, q))
+    except TypeError:                      # Python < 3.12 只认 onerror
+        shutil.rmtree(路径, onerror=lambda f, q, e: _放(f, q))
+
+
 def 安装(出):
     if os.path.isdir(出):
-        shutil.rmtree(出)
+        _删树(出)
     os.makedirs(出)
     for 相对 in 集合():
         _复制(相对, 出)
