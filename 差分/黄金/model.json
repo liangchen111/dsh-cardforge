@@ -104,7 +104,11 @@
       "display_only",
       "prompt_only",
       "run_on_edit",
-      "order"
+      "order",
+      "trim_strings",
+      "min_depth",
+      "max_depth",
+      "substitute_regex"
     ]
   },
   "ordered": [
