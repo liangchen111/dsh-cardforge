@@ -1,0 +1,3 @@
+- insert:
+    - id: eleckoi-client-presets
+      name: '@eleckoi/dsh-client-presets'

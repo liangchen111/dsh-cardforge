@@ -1,0 +1,17 @@
+# 把「制卡工坊」插进当前 profile 的插件组合。
+#
+# 只加一行插件；下面 config 里的路径都能按你自己的机器改：
+#   python      —— 跑 forge.py 的解释器
+#   pythonPath  —— 追加到 PYTHONPATH 的依赖目录（里面要装着 PyYAML）
+#   forge       —— forge.py 的位置
+#   cwd         —— 默认工作目录；留空则每次调用都必须带 cwd
+#   timeoutMs   —— 单条命令的墙钟上限
+- insert:
+    - id: cardforge
+      name: '@local/cardforge'
+      config:
+        python: 'C:/Users/Administrator/.workbuddy/binaries/python/versions/3.13.12/python.exe'
+        pythonPath: 'C:/Users/Administrator/.workbuddy/binaries/python/envs/cardforge/Lib/site-packages'
+        forge: 'E:/workGZQ/制卡工具/forge.py'
+        cwd: ''
+        timeoutMs: 180000

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Card Forge",
+    "description": "Gives the session agent a cardforge tool that runs this machine's forge.py (spawned by the Host process, outside the shell sandbox)."
+  }
+}

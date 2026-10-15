@@ -1,0 +1,12 @@
+# 制卡工具 · 忽略清单
+__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.venv/
+*.log
+
+# 临时/一次性
+.workbuddy/_沙箱实测/node_modules/
+.workbuddy/_试/
+.workbuddy/回收站/

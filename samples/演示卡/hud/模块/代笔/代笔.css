@@ -1,0 +1,97 @@
+/* ============================================================================
+ * 代笔模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ *
+ * 扣子与输入框用核心那几套类（.hud-btn / .hud-input），这里只补这一块。
+ * ========================================================================== */
+
+.hud-ai {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+.hud-ai__t {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+}
+
+.hud-ai__lead {
+  margin: 3px 0 7px;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-ai__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 7px;
+}
+
+.hud-ai__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.hud-ai__l {
+  flex: 0 0 4.6em;
+  color: var(--hud-ink-2);
+  font-size: 12px;
+}
+
+.hud-ai__hint {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  opacity: 0.85;
+}
+
+/* 正在等 AI 回话的那颗扣子：按住不放，点不动 */
+.hud-ai__row .is-waiting {
+  border-color: rgba(120, 94, 52, 0.5);
+  background: rgba(120, 94, 52, 0.16);
+  cursor: default;
+}
+
+.hud-ai__req {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+}
+
+.hud-ai__pre {
+  max-height: 168px;
+  margin: 6px 0 0;
+  overflow: auto;
+  color: var(--hud-ink-2);
+  font: 11.5px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hud-ai__note {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.07);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.hud-ai__note.is-error {
+  border-left-color: #a8442f;
+  background: rgba(168, 68, 47, 0.09);
+  color: #7d3324;
+}

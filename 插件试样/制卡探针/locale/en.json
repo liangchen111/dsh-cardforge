@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Card Forge Probe",
+    "description": "Draws a small badge under the composer. If you can see it, a local plugin installed successfully."
+  }
+}

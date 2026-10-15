@@ -1,0 +1,3 @@
+- insert:
+    - id: cardforge-probe
+      name: '@local/cardforge-probe'

@@ -1,0 +1,62 @@
+---
+name: eleckoi-card-maker
+description: 帮用户做一张 ElecKoi 角色卡（类酒馆的 AI 角色扮演软件）。当用户说「做张卡 / 开新卡 / 帮我写个角色 / 做张世界书 / 改一下这张卡 / 给这张卡加点东西」时使用。内含制卡流程、内容方法论九篇、ElecKoi 真值域红线；用 forge.py 落成能导入的卡。
+---
+
+<!-- 本文件是「门牌」：一段短入口，完整规程在同目录的 AI制卡规程.md。
+     把本文件（或整个目录）拷到 ~/.workbuddy/skills/ 下即成为技能。 -->
+
+# ElecKoi 制卡（本机）
+
+> **完整规程在 `E:\workGZQ\制卡工具\向导\AI制卡规程.md` —— 动手之前先把它读一遍，一步一步照做。**
+> 这份文件只是「门牌」：告诉你工具在哪、规矩是什么，细节全在规程里。
+> **不想一次读全文**：`python forge.py guide` 出目录，
+> `guide --节 三` / `--篇 预算` / `--对话 访谈` 取你需要的那一段。
+
+## 工具
+
+- 工具本体：`E:\workGZQ\制卡工具\forge.py`
+- 跑它用这个 python（隔离环境，依赖已装好，**别用系统的 python**）：
+  `C:\Users\Administrator\.workbuddy\binaries\python\envs\cardforge\Scripts\python.exe`
+- 例：
+  ```bash
+  cd /e/workGZQ/制卡工具 && "C:/Users/Administrator/.workbuddy/binaries/python/envs/cardforge/Scripts/python.exe" forge.py --help
+  ```
+- 忘了某个子命令的参数**别猜**：`python forge.py <子命令> --help` 会打出它自己的用法（裸跑也打，且不写盘）。
+- 规程的源在 `forge/coach.py`（`python forge.py coach` 重新生成这份门牌与规程），**改规程只改那一处**。
+
+## 一分钟版（细节以规程为准）
+
+1. **先问，别编。** 缺信息就问，一次最多两三个问题：这张卡想让人体验什么 / 什么调子 / 玩家是谁 / 有哪些角色。问完立刻给草稿让用户挑。
+2. **建工程 → 写内容 → 开场白 → 体检 → 出成品**：
+   `new` 建卡 → `entry --改/--新` 逐条写（长正文写成文件，用 `--正文@文件`）→
+   `opener` 改开场白 → `check`（**必须 0 错**）→ `build 成品/<名>.card.json` → `manual` / `index`。
+   **内容已经说得清时走近道**：照 `python forge.py make --示例` 那份卡稿改
+   （同目录 `示例卡稿.yaml`，一张能直接落成绿卡的完整卡），
+   再 `python forge.py make 我的卡.yaml` —— 建工程 / 写条目 / 加变量正则 / 换开场白 /
+   出成品 / 体检，**一趟全做完**，不用来回十几轮。
+3. **交付只说三件事**：卡做好了在哪、怎么导入、下一步能改什么。不要甩字段名和命令清单。
+
+## 四条最值钱的（规程里展开讲）
+
+- **`spec.yaml` 是唯一真相，`card.json` 是派生物。** 只手改 spec；交付给 ElecKoi 的永远是 `成品/*.card.json`。
+- **变量在卡里住三处**（面板对象 / 初值 / Zod 校验码），**少任何一处都不报错，只是运行时静默丢值**——必须用 `forge.py var` 加，别手改。同理改名用 `--改名`、换对象用 `--换对象`。
+- **开场白的真源在 `hud/hud.conf.json`，不在 spec**；它正文末尾那 **3 个零宽空格**是「建卡界面」正则的触发标记，**删了导入后建卡界面静默消失、check 一字不报**。这两种工程都只能让 `opener` 动它。
+- **真值域护城河**：读取策略只认 `必读/选读/关键词`（写「变量条件」会被静默降级）、动态模式只认 `standard` / `ejs_reference`、`agent_read_condition` 平台根本不读。看全部合法值：`python forge.py domains`。
+
+## 还有一条：让 ElecKoi 里的 AI 自己做卡
+
+`E:\workGZQ\制卡工具\插件\制卡工坊\` 是个 ElecKoi 插件（**纯宿主**，不画界面）。
+装上之后，会话里的 AI 手上会多一个 `cardforge` 工具，能直接跑 `forge.py`，
+**不受 ElecKoi 自己那层命令行沙箱限制**（改名 / 原子落盘都正常）。
+它还能用 `["guide"]` 自己把规程取到手（`["guide","--篇","写法"]` 取一节 / 一篇 / 一段），
+不必等人把规程贴进对话。装法与验证见 `E:\workGZQ\制卡工具\文档\C轨插件·实测单.md`。
+
+> 分不清用哪条：**有 `cardforge` 就用它，且不要加 `--沙箱`**；
+> 只有自带命令行工具时，才加 `--沙箱`（丢掉原子落盘，但照样能做出卡）。
+
+## 别做
+
+- 别手改 `成品/*.card.json`、`模块账本.json`。
+- 别往 `E:\workGZQ\艾瑟兰` 里写任何东西（那是只读参考实卡）。
+- 别并发改同一份 spec（后落盘的赢，前一条静默消失）。

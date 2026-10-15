@@ -1,0 +1,3 @@
+- insert:
+    - id: eleckoi-client-creator-studio
+      name: '@eleckoi/dsh-client-creator-studio'

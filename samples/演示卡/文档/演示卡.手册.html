@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>演示卡 · 卡片手册</title>
+<style>
+:root{
+  --ink:#2f2a22; --ink2:#6b6152; --ink3:#9a8f7c;
+  --line:rgba(120,94,52,.26); --line2:rgba(120,94,52,.14);
+  --bg:#faf6ee; --card:#fffdf8; --accent:#8d2a22; --gold:#ad8527;
+  --err:#a01a10; --warn:#8a6410; --info:#5b6b7a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.75 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.layout{display:flex;align-items:flex-start;max-width:1400px;margin:0 auto;gap:28px;padding:28px}
+nav{position:sticky;top:28px;flex:0 0 196px;padding:16px;border:1px solid var(--line);
+  border-radius:8px;background:var(--card);font-size:13.5px}
+nav h4{margin:0 0 10px;font-size:12px;letter-spacing:.18em;color:var(--ink3);font-weight:700}
+nav a{display:block;padding:4px 0;color:var(--ink2)}
+nav a:hover{color:var(--accent)}
+main{flex:1;min-width:0}
+header{border-bottom:2px solid var(--line);padding-bottom:18px;margin-bottom:26px}
+h1{margin:0 0 6px;font-size:27px;letter-spacing:.03em}
+h1 .sub{font-size:14px;color:var(--ink3);font-weight:400;letter-spacing:0;margin-left:10px}
+section{margin:0 0 40px;scroll-margin-top:20px}
+h2{font-size:18px;margin:0 0 14px;padding-bottom:7px;border-bottom:1px solid var(--line);letter-spacing:.05em}
+h2 .n{color:var(--gold);font-weight:700;margin-right:8px}
+h3{font-size:14.5px;margin:22px 0 9px;color:var(--ink2);letter-spacing:.06em}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 0}
+.stat{flex:0 0 auto;padding:9px 15px;border:1px solid var(--line);border-radius:7px;background:var(--card)}
+.stat b{display:block;font-size:21px;line-height:1.25;color:var(--accent)}
+.stat span{font-size:11.5px;color:var(--ink3);letter-spacing:.1em}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+th,td{text-align:left;padding:7px 11px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{background:rgba(120,94,52,.07);font-weight:700;font-size:12.5px;letter-spacing:.06em;color:var(--ink2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;padding:0 7px;border-radius:4px;font-size:11.5px;line-height:18px;white-space:nowrap}
+.tag.always{background:rgba(173,133,39,.16);color:#7a5c10}
+.tag.agent{background:rgba(90,110,130,.15);color:#4c5c6b}
+.tag.kw{background:rgba(141,42,34,.12);color:var(--accent)}
+.tag.off{background:rgba(0,0,0,.07);color:var(--ink3)}
+details{border:1px solid var(--line);border-radius:8px;background:var(--card);margin:0 0 9px;overflow:hidden}
+details>summary{cursor:pointer;padding:9px 13px;font-size:13.5px;list-style:none;display:flex;gap:10px;align-items:baseline}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸";color:var(--gold);flex:0 0 auto}
+details[open]>summary::before{content:"▾"}
+details>summary .t{font-weight:700;flex:0 0 auto}
+details>summary .g{color:var(--ink3);font-size:12px;margin-left:auto;white-space:nowrap}
+.body{padding:2px 15px 15px;border-top:1px dashed var(--line2)}
+.body pre{margin:8px 0 0;white-space:pre-wrap;word-break:break-word;
+  font:13px/1.8 inherit;color:var(--ink);background:transparent;padding:0}
+.hint{margin:9px 0 0;padding:6px 10px;border-left:2px solid var(--gold);
+  background:rgba(173,133,39,.07);font-size:12.5px;color:var(--ink2)}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.meta code{font-size:11.5px;color:var(--ink2);background:rgba(120,94,52,.08);
+  padding:1px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace}
+.issue{padding:7px 12px;border-left:3px solid;border-radius:0 6px 6px 0;margin:0 0 7px;
+  font-size:13px;background:var(--card);border-top:1px solid var(--line2);
+  border-right:1px solid var(--line2);border-bottom:1px solid var(--line2)}
+.issue.ERROR{border-left-color:var(--err)}
+.issue.WARN{border-left-color:var(--warn)}
+.issue.INFO{border-left-color:var(--info)}
+.issue .lv{font-weight:700;font-size:11.5px;letter-spacing:.08em;margin-right:8px}
+.issue.ERROR .lv{color:var(--err)} .issue.WARN .lv{color:var(--warn)} .issue.INFO .lv{color:var(--info)}
+.issue .fx{color:var(--ink2);font-size:12.5px}
+.issue .cd{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;color:var(--ink3)}
+.empty{color:var(--ink3);font-size:13px;padding:8px 0}
+footer{margin:40px 0 0;padding-top:14px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--ink3)}
+@media(max-width:900px){.layout{flex-direction:column}nav{position:static;width:100%;flex:auto}}
+</style>
+</head>
+<body>
+<div class="layout"><nav><h4>目录</h4><a href="#overview">总览</a><a href="#entries">条目清单</a><a href="#vars">变量</a><a href="#regex">正则</a><a href="#domains">平台真值域</a><a href="#health">体检</a><h4 style="margin-top:14px">构成</h4><a href="#entries">条目 9</a><a href="#vars">变量 10</a><a href="#regex">正则 9</a></nav><main><header><h1>演示卡</h1><div style="color:var(--ink3);font-size:13px">ElecKoi 角色卡手册 · 由规格文件编译</div></header><section id="overview"><h2><span class="n">1</span>总览</h2><div class="stats"><div class="stat"><b>9</b><span>条目</span></div><div class="stat"><b>3</b><span>分组</span></div><div class="stat"><b>2</b><span>常驻条目</span></div><div class="stat"><b>10</b><span>变量</span></div><div class="stat"><b>9</b><span>正则</span></div><div class="stat"><b>3,466</b><span>设定库总字数</span></div><div class="stat"><b>963</b><span>≈ token</span></div></div></section><section id="entries"><h2><span class="n">2</span>条目清单</h2><h3>分组</h3><table><tr><th>分组</th><th>条目数</th><th>包含</th></tr><tr><td><b>世界</b></td><td class="num">2</td><td>核心 · 世界总纲、可选 · 时局压力</td></tr><tr><td><b>规则</b></td><td class="num">1</td><td>规则 · 骰子与判定</td></tr><tr><td><b>名册</b></td><td class="num">1</td><td>名册 · 常用名字</td></tr><tr><td><b>（未分组）</b></td><td class="num">5</td><td>AI角色开场白、核心 · 叙事尺度、规则 · 档案备份、规则 · 点数池</td></tr></table><h3>全部条目</h3><table><tr><th>#</th><th>标题</th><th>触发</th><th>分组</th><th>策略</th><th>键</th><th>字数</th><th>≈token</th></tr><tr><td class="num">1</td><td>AI角色开场白</td><td><span class="tag always">开场白</span></td><td>—</td><td class="num">normal</td><td class="num">0</td><td class="num">35</td><td class="num">30</td></tr><tr><td class="num">2</td><td>核心 · 世界总纲</td><td><span class="tag always">常驻</span></td><td>世界</td><td class="num">normal</td><td class="num">0</td><td class="num">164</td><td class="num">155</td></tr><tr><td class="num">3</td><td>规则 · 骰子与判定</td><td><span class="tag kw">关键词</span></td><td>规则</td><td class="num">keyword</td><td class="num">11</td><td class="num">824</td><td class="num">643</td></tr><tr><td class="num">4</td><td>名册 · 常用名字</td><td><span class="tag agent">按需</span></td><td>名册</td><td class="num">normal</td><td class="num">0</td><td class="num">88</td><td class="num">77</td></tr><tr><td class="num">5</td><td>可选 · 时局压力</td><td><span class="tag kw">关键词</span></td><td>世界</td><td class="num">keyword</td><td class="num">3</td><td class="num">119</td><td class="num">107</td></tr><tr><td class="num">6</td><td>核心 · 叙事尺度</td><td><span class="tag always">常驻</span></td><td>—</td><td class="num">normal</td><td class="num">0</td><td class="num">468</td><td class="num">421</td></tr><tr><td class="num">7</td><td>规则 · 档案备份</td><td><span class="tag kw">关键词</span></td><td>—</td><td class="num">keyword</td><td class="num">6</td><td class="num">735</td><td class="num">656</td></tr><tr><td class="num">8</td><td>规则 · 点数池</td><td><span class="tag kw">关键词</span></td><td>—</td><td class="num">keyword</td><td class="num">6</td><td class="num">593</td><td class="num">524</td></tr><tr><td class="num">9</td><td>规则 · AI 代笔</td><td><span class="tag kw">关键词</span></td><td>—</td><td class="num">keyword</td><td class="num">4</td><td class="num">440</td><td class="num">398</td></tr></table><h3>正文（点标题展开）</h3><details><summary><span class="t">1. AI角色开场白</span><span class="tag always">开场白</span><span class="g">35 字</span></summary><div class="body"><div class="meta"><code>位置 （空！会被过滤）</code><code>角色 assistant</code><code>order 1</code></div><pre>欢迎来到这张演示卡卡。
+
+在故事开始之前，请先写下你的名字。
+
+​​​</pre></div></details><details><summary><span class="t">2. 核心 · 世界总纲</span><span class="tag always">常驻</span><span class="g">164 字</span></summary><div class="body"><div class="meta"><code>位置 instructions</code><code>角色 system</code><code>order 1</code></div><pre>【演示卡 · 世界总纲】 这一段写这个世界一句话能站住的那几件事。演示卡卡不带世界观 —— 把它换成你的。 三条约定（可以改，但建议先留着）： 一、查库：下面那些条目都不在系统提示里，是按需去读的；需要时自己去目录里取。 二、变量：面板上的数字只在变量真被改动时才变，不许替玩家发明。 三、口吻：先确认这一段还在，再动笔写正文。</pre></div></details><details><summary><span class="t">3. 规则 · 骰子与判定</span><span class="tag kw">关键词</span><span class="g">824 字</span></summary><div class="body"><div class="meta"><code>角色 system</code><code>关键词 骰、掷骰、检定、判定、对抗、难度、DC、d20</code><code>order 2</code></div><div class="hint">什么时候读我：需要掷骰、要写一次检定的结果、或不确定某件事该不该掷、那一行该怎么写时读我。</div><pre>【规则 · 骰子与判定】
+
+什么时候掷：结果真的两说，才掷。一眼能定的事（推门、走路、拿得起桌上的东西）
+不要掷 —— 掷骰是用来替你裁掉「写不下去」的，不是给每句话配个数字的。
+
+判定分两种。有对手的用第一种。
+
+
+■ 对抗 —— 双方各掷 1d20 + 各自那一份加值，比总值，高者胜；持平则维持原状。
+
+
+输出格式（两句都要写出来，玩家要看得见对手那一半）：
+
+
+〔骰·检定名〕你 1d20+7 = 17+7 = 24 ▸ 对手 1d20+3 = 11+3 = 14 ▶ 胜
+
+
+■ 难度 —— 没有对手，只跟死物、天候、机关较劲时用。1d20 + 加值 与 DC 比较。
+
+
+〔骰·识字〕你 1d20+3 = 11+3 = 14 ▶ DC 15 · 失败
+
+
+DC 的尺子：10 容易｜15 普通｜20 困难｜25 极难｜30 近乎不可能。
+谁设的关，就按谁的尺子标 —— 街边一把锁不该是 DC 30，神立的门槛不该是 DC 12。
+
+
+■ 结果那一格只许写这几个词
+
+
+· 出 20 —— 写「大成功」，不要写成「胜」。
+· 出 1 —— 写「大失败」，不要写成「负」。
+· 对抗的其余情形 —— 写「胜」「负」「平」。
+· 难度的其余情形 —— 写「成功」「失败」，不要写成「败」或「过」。
+
+
+这几个词是界面的路标：那一格写了「大成功」，整行才会渲成金色的骰子框；
+写成别的词，它就只是一行普通文字。自然骰出 20 却写成「胜」，那颗 20 就白掷了。
+
+
+■ 三条别踩
+
+
+一、那一行**只写纯文本**，一个字不多。带边框的骰子框是界面拿一串样式代码画出来的 ——
+把渲染结果抄进正文，只会原样显示成一堆标签。
+
+二、加值从哪来，是这张卡自己的事（属性、技能、器物、临场情形）。
+本模块只管那一行的形状与界面上认哪几个词，不管数值怎么算。
+
+三、差距过大不掷：双方加值差到 10 以上，直接叙述成败。骰子只用来处理势均力敌的事。
+</pre></div></details><details><summary><span class="t">4. 名册 · 常用名字</span><span class="tag agent">按需</span><span class="g">88 字</span></summary><div class="body"><div class="meta"><code>角色 system</code><code>order 3</code></div><div class="hint">什么时候读我：要给配角取名、或确认某个名字属于谁时读我。</div><pre>【演示卡 · 常用名字】 给配角取名用的一张清单。演示卡里只有三行占位：门吏 · 货栈老板 · 披斗篷的旅人。 换成你的名册 —— 有名字的世界，读起来比「一个路人」结实得多。</pre></div></details><details><summary><span class="t">5. 可选 · 时局压力</span><span class="tag kw">关键词</span><span class="g">119 字</span></summary><div class="body"><div class="meta"><code>角色 user</code><code>关键词 时局、压力、局势</code><code>order 4</code></div><div class="hint">什么时候读我：只有变量「世界设定 · 压力源」为 true 时才读我；开关关着就别读。</div><pre>【演示卡 · 时局压力（可选）】 这一条只在变量「压力源」为 true 时才该被读到 —— 它演示的是第三种读取策略： 把「要不要加载这一条」绑到一个变量上。演示卡里它写的是占位内容。 注意：开关关着的时候，它不进目录，也就不用花上下文。</pre></div></details><details><summary><span class="t">6. 核心 · 叙事尺度</span><span class="tag always">常驻</span><span class="g">468 字</span></summary><div class="body"><div class="meta"><code>位置 instructions</code><code>角色 system</code><code>order 5</code></div><pre>【叙事尺度 · 玩家的三个档位】
+
+变量「世界设定 · 叙事尺度」是**玩家**的档位，不是你的。你只按它当前的值决定这一轮
+怎么落笔 —— 不解释它、不修改它、也不问玩家它是什么意思。三档各是什么，这张卡定死了：
+
+
+· 克制 —— 收紧。镜头只跟着玩家走，玩家不问就不展开；冲突不升级，不主动添戏。
+  玩家在酒馆坐着，就写酒馆里的事，不要安排刺客破门。
+
+
+· 标准 —— 有来有回。该起波澜就起，但每一件事都要有来处：谁在推、为什么是现在。
+
+
+· 放开 —— 主动推事。世界自己会动：势力、仇家、时局会找上门；允许大场面，
+  也允许不可逆的后果。玩家不动，事情也往前走。
+
+
+三档比的不是「写得好不好」，是「世界主动到什么程度」。照当前这一档收放，
+不要因为某一段写着痛快，就自己把档位往上抬一级。
+
+
+【时局压力（开关）】
+
+变量「世界设定 · 压力源」是一个开关。它打开时，那张卡里那些「外部的、玩家没在管的事」
+才该被你读到，并按每轮推进一步去写；它关着的时候，世界只在玩家碰到它的时候才动。
+开关由玩家拨，你不改。
+</pre></div></details><details><summary><span class="t">7. 规则 · 档案备份</span><span class="tag kw">关键词</span><span class="g">735 字</span></summary><div class="body"><div class="meta"><code>角色 system</code><code>关键词 备份、存档、档案、导出、导入、取回</code><code>order 6</code></div><div class="hint">什么时候读我：玩家提到备份、存档、导出、导入、取回角色档案时读我。</div><pre>【规则 · 档案备份】
+
+建卡器那一页有一块「档案备份」，它把玩家那份档案搬到三个地方：
+
+  · 那一格文本 —— 给「换台机器、想把角色单独留着」用的，是草稿纸，关掉软件就空了；
+  · 变量树里的「存档」位子 —— **这一局过夜的那一份**。它跟玩家档案住同一套变量系统，
+    所以按会话存：重启软件、关掉这段对话再回来都在，按「从存档取回」即可填回；
+  · 宿主窗口的本地存储（localStorage）—— **这台机器上的永久档**。它按机器存，
+    所以另开一段新对话也读得回来；「从存档取回」在本局那份空着时会退到它。
+    这两处都得靠你在正文里一个字都不提（见下）。
+
+里面装着两样：变量里已经封缄的档案，和界面上还没封缄的草稿。把那段文本粘回
+那一格、点「读回」，界面与变量都回到导出时的样子。
+
+与你的关系只有四条：
+
+一、那是给玩家搬档案用的，不是剧情道具。**别把那段文本写进正文**，
+也别在正文里演「掏出一卷密文」——它跟这一局的故事没有关系。
+
+二、**变量树里的「存档」你不要碰，这台机器上那个永久档你更碰不着也不要提。**
+它们是机器位：不读、不改、不在正文里提它们，也别在变量面板里「顺手整理」变量里那一处。
+玩家问起，就说那是建卡器自己的抽屉。
+
+三、读回之后变量会回到导出那一刻的样子；「从存档取回」只填界面，
+**不会动已经封缄的那份档案**。玩家说「我读回存档了」时，按变量的**当前值**写，
+不要接着上一轮的旧值往下走。
+
+四、格式的事你别动手。玩家要改存档，就说清改哪一项、值该是什么，
+让他自己在格子里改、自己读回 —— 手写的存档被认出来是手写的，
+该由界面那一格如实说「读不出来」，不由你代劳。
+</pre></div></details><details><summary><span class="t">8. 规则 · 点数池</span><span class="tag kw">关键词</span><span class="g">593 字</span></summary><div class="body"><div class="meta"><code>角色 system</code><code>关键词 属性、点数、加点、加成、等级、分配</code><code>order 7</code></div><div class="hint">什么时候读我：涉及属性、属性点、等级、加点、分配或加成时读我。</div><pre>【规则 · 点数池】
+
+建卡器上那六项数字不是随手填的，它们花的是**一笔预算**：
+
+　可分配点 ＝ 等级 × 每级点数 ＋ 永久奖励
+　已用　　 ＝ 六项各自**高于起点**的部分，加起来
+　剩余　　 ＝ 可分配 − 已用
+
+建卡器的预算那一行就是这三个数，一边填一边变。**单项没有上限** —— 唯一的
+约束是这笔预算用没超；超了会被界面拦住，封不了缄。
+
+三条与你有关的：
+
+一、数是玩家自己定的，**你不重算、不代填、不替他把点数撒开**。「交给命运」
+那颗扣子是玩家点的，走了界面那条路；你只在正文里照他给出的**最终值**写。
+
+二、**等级决定池子多大，不决定单项能到多高。** 同一个人可以有一项很高、
+其余平平，也可以六项齐头 —— 那是路线不同，不是作弊。别拿「同级的人应该
+都差不多」去压玩家的数值，也别在正文里替他解释「这不太合理」。
+
+三、**加成是临时的，不进池子。** 吃了药、戴上戒指、中了咒，动的是加成；
+升级、练成、受神明恩赐，动的是等级或永久奖励。玩家说「我吃了药」时，
+写加成，不要写进属性里 —— 属性是长在身上的，加成是事过即还的。
+
+玩家在正文里写「分配 力量+3 敏捷+2」这类调整时，照他给的数更新对应项，
+并复述最终值与剩余点数；对不上的（低于起点、超支、只说了个大概没给数）
+就说清哪一项不对、让他改，**不要自己替他削**。
+</pre></div></details><details><summary><span class="t">9. 规则 · AI 代笔</span><span class="tag kw">关键词</span><span class="g">440 字</span></summary><div class="body"><div class="meta"><code>角色 system</code><code>关键词 代笔、润色、取回、帮我写</code><code>order 8</code></div><div class="hint">什么时候读我：收到带【代笔 · 栏位名】的请求，或玩家提到代笔、润色、取回时读我。</div><pre>【规则 · AI 代笔】
+
+界面上的「AI 代笔」会发出一条带【代笔 · 栏位名】的请求。收到时**只回那一块**，
+按它写明的要求给内容：不写正文剧情、不写〔面板〕这类卡片标记、不借这一块改动
+任何数值、也不替他决定他没让你定的项。形状是「【代笔 · 姓名】」另起一行写内容；
+一次发几栏就回几块。
+
+四条：
+
+一、这是他自己的角色卡 —— 代笔只是替他起一版，他会自己改。不必写全，
+也不要为了好看塞进他没要的东西。
+
+二、他那一栏已经填了内容时，请求里会把那份内容带出来：那是**润色** ——
+按他的意思与关键信息改，不要另起炉灶。
+
+三、请求里那两句「要求」与「当前档案」是你唯一的依据。说一行就一行、说几条就
+几条；不要顺手多给几栏，也不要替他决定职业、出身这类他没问的事。
+
+四、只回请求里写了栏位名的那一块。他没问的栏一个字都不要动 ——
+界面取回的是【代笔 · 栏位名】那一块，你没写的那一栏搬不进去。
+
+一次点了几栏，界面就等这几块；先把它们给完，再谈别的。
+</pre></div></details></section><section id="vars"><h2><span class="n">3</span>变量（4 个对象 / 10 项）</h2><h3>变量运行配置 <span style="color:var(--ink3);font-weight:400">0 项</span></h3><div class="empty">（无变量）</div><h3>世界设定 <span style="color:var(--ink3);font-weight:400">2 项</span></h3><div class="empty" style="padding:0 0 6px">作者级开关：控制「要不要加载某条可选内容」，以及玩家侧的一个档位。这些值都由人手动维护，AI 不得自行改动。</div><table><tr><th>变量</th><th>类型</th><th>默认</th><th>读取</th><th>说明</th></tr><tr><td>压力源</td><td><code>boolean</code></td><td><code>false</code></td><td>on_demand</td><td>控制要不要加载「可选 · 时局压力」那一条。false = 不加载、不消耗上下文；true = 每轮加载。</td></tr><tr><td>叙事尺度</td><td><code>string</code></td><td><code>标准</code></td><td>required</td><td>一个由玩家自己填含义的档位。本卡不解释这三档分别是什么；玩家在自己的智能体预设里定义它们，并绑到这个变量上。</td></tr></table><h3>玩家 <span style="color:var(--ink3);font-weight:400">7 项</span></h3><div class="empty" style="padding:0 0 6px">玩家角色的档案。建卡时由玩家声明写入，此后由玩家掌握。</div><table><tr><th>变量</th><th>类型</th><th>默认</th><th>读取</th><th>说明</th></tr><tr><td>姓名</td><td><code>string</code></td><td><code></code></td><td>on_demand</td><td>玩家角色的姓名。</td></tr><tr><td>性别</td><td><code>string</code></td><td><code></code></td><td>on_demand</td><td>玩家角色的性别。AI 不自动更新。</td></tr><tr><td>种族</td><td><code>string</code></td><td><code></code></td><td>on_demand</td><td>玩家角色的种族。</td></tr><tr><td>等级</td><td><code>number</code></td><td><code>1</code></td><td>on_demand</td><td>玩家角色的等级。演示卡里只当一个普通数字用，不接任何公式。</td></tr><tr><td>状态</td><td><code>string</code></td><td><code>正常</code></td><td>on_demand</td><td>玩家角色当前的状态，一句话。</td></tr><tr><td>钱币</td><td><code>number</code></td><td><code>0</code></td><td>on_demand</td><td>玩家角色身上的钱。</td></tr><tr><td>背包</td><td><code>array</code></td><td><code>[]</code></td><td>on_demand</td><td>随身携带的东西，一件一行。</td></tr></table><h3>存档 <span style="color:var(--ink3);font-weight:400">1 项</span></h3><div class="empty" style="padding:0 0 6px">建卡器那块「档案备份」的过夜处。导出时这一格被写成整份备份（界面上正在填的草稿 ＋ 已经封缄的档案），按「从存档取回」就能把表单填回来。它跟玩家档案住在同一套变量系统里，所以也是按会话存的 —— 重启软件、关掉这段对话再回来都在；新开一段对话是另一局，那里是空的。这是给机器用的位子：AI 不读、不写、也不在叙事里提它。没接「备份」模块的卡，它一直空着。</div><table><tr><th>变量</th><th>类型</th><th>默认</th><th>读取</th><th>说明</th></tr><tr><td>角色</td><td><code>string</code></td><td><code></code></td><td>on_demand</td><td>建卡器按「导出」写下的那一整段备份（界面上正在填的草稿 ＋ 已经封缄的档案），原样存着；按「从存档取回」就能把表单填回来。它按会话存，所以新开一段对话是空的。</td></tr></table></section><section id="regex"><h2><span class="n">4</span>正则（9 条）</h2><div class="empty" style="padding-bottom:8px">替换是「order 小的先认走」——更具体的排前面，兜底的排最后。</div><table><tr><th>#</th><th>名称</th><th>order</th><th>作用对象</th><th>模式字数</th><th>替换字数</th><th>状态</th></tr><tr><td class="num">1</td><td>建卡界面 · 羊皮卷</td><td class="num">10</td><td>AiOutput</td><td class="num">11</td><td class="num">112420</td><td>开</td></tr><tr><td class="num">2</td><td>面板 · 羊皮卷</td><td class="num">20</td><td>AiOutput</td><td class="num">4</td><td class="num">112354</td><td>开</td></tr><tr><td class="num">3</td><td>骰子显示 · 羊皮卷（对抗 · 大成功）</td><td class="num">30</td><td>AiOutput</td><td class="num">70</td><td class="num">581</td><td>开</td></tr><tr><td class="num">4</td><td>骰子显示 · 羊皮卷（对抗 · 大失败）</td><td class="num">31</td><td>AiOutput</td><td class="num">70</td><td class="num">581</td><td>开</td></tr><tr><td class="num">5</td><td>骰子显示 · 羊皮卷（带DC · 大成功）</td><td class="num">32</td><td>AiOutput</td><td class="num">82</td><td class="num">420</td><td>开</td></tr><tr><td class="num">6</td><td>骰子显示 · 羊皮卷（带DC · 大失败）</td><td class="num">33</td><td>AiOutput</td><td class="num">82</td><td class="num">420</td><td>开</td></tr><tr><td class="num">7</td><td>骰子显示 · 羊皮卷（对抗）</td><td class="num">34</td><td>AiOutput</td><td class="num">88</td><td class="num">546</td><td>开</td></tr><tr><td class="num">8</td><td>骰子显示 · 羊皮卷（带DC）</td><td class="num">35</td><td>AiOutput</td><td class="num">94</td><td class="num">397</td><td>开</td></tr><tr><td class="num">9</td><td>骰子显示 · 羊皮卷（兜底）</td><td class="num">36</td><td>AiOutput</td><td class="num">43</td><td class="num">377</td><td>开</td></tr></table></section><section id="domains"><h2><span class="n">5</span>平台真值域</h2><div class="empty" style="padding-bottom:8px">这几个字段的值只有下面这些是认的。写别的不会报错 —— 平台会把它们<b>静默降级</b>成缺省值，症状是「填了没反应」。本工具在打包前会拦住。</div><table><tr><th>字段</th><th>合法值</th><th>缺省</th><th>旧值会被改成</th></tr><tr><td><code>trigger_mode</code></td><td><code>always</code> / <code>agent_tool</code></td><td><code>always</code></td><td>—</td></tr><tr><td><code>agent_read_strategy</code></td><td><code>required</code> / <code>keyword</code> / <code>normal</code></td><td><code>normal</code></td><td>variable_condition→normal</td></tr><tr><td><code>kind</code></td><td><code>normal</code> / <code>opening</code> / <code>history_compaction</code> / <code>hidden_tool_timeline</code></td><td><code>normal</code></td><td>—</td></tr><tr><td><code>dynamic_mode</code></td><td><code>standard</code> / <code>ejs_reference</code></td><td><code>standard</code></td><td>ejs_controller→standard、single_condition→standard</td></tr><tr><td><code>content_mode</code></td><td><code>plain_text</code> / <code>ejs</code></td><td><code>plain_text</code></td><td>—</td></tr><tr><td><code>keyword_condition</code></td><td><code>none</code> / <code>any</code> / <code>all</code> / <code>not_any</code></td><td><code>none</code></td><td>—</td></tr><tr><td><code>insert_role</code></td><td><code>system</code> / <code>user</code> / <code>assistant</code></td><td><code>user</code></td><td>—</td></tr></table><h3>平台不读的字段</h3><table><tr><td><code>agent_read_condition</code></td><td>平台根本不读它 —— 全 asar 出现 0 次 —— ElecKoi 根本不读它。它承载的「变量条件加载」意图在 ElecKoi 里不生效。</td></tr></table></section><section id="health"><h2><span class="n">6</span>体检</h2><div class="issue INFO"><span class="lv">通过</span>没有发现问题。</div></section></main></div>
+</body>
+</html>

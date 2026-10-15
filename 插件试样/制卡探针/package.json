@@ -1,0 +1,31 @@
+{
+  "name": "@local/cardforge-probe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "制卡工具探针：在输入框下面画一枚小方块，验证「自己写的插件能不能装进 ElecKoi」这条路。",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  }
+}
