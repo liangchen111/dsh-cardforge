@@ -41,7 +41,7 @@ dsh-cardforge
 贴仓库地址也行（源码树就在那儿，谁都能翻）：
 
 ```
-https://github.com/liangchen111/eleckoi-cardforge
+https://github.com/liangchen111/dsh-cardforge
 ```
 
 也可以贴本机目录的绝对路径（例如 `X:\你的工具目录\插件\制卡工坊`），或贴 `插件/制卡工坊/` 的路径改本地版。

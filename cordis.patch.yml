@@ -1,7 +1,7 @@
 # 把「制卡工坊」插进当前 profile 的插件组合。
 #
 # 这一份是**给「贴仓库地址直装」用的**（ElecKoi → 侧栏「添加插件」→ 填
-#   https://github.com/liangchen111/eleckoi-cardforge
+#   https://github.com/liangchen111/dsh-cardforge
 # 装完由 DSH 自己读根目录的 package.json → dsh.bundle.patch → 这个文件）。
 #
 # 同一份内容另有一处：`插件/制卡工坊/cordis.patch.yml`（给「把插件目录拷进 profile」那种装法）。
