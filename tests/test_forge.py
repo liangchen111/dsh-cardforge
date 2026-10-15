@@ -27,7 +27,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from forge import model as M                      # noqa: E402
-from forge import pack, png as PNG, preset as PRESET  # noqa: E402
+from forge import pack, png as PNG, preset as PRESET, plan as PLAN  # noqa: E402
 
 卡 = os.path.join(ROOT, "向导", "制卡助手", "成品", "制卡助手.card.json")
 卡稿 = os.path.join(ROOT, "向导", "制卡助手", "source", "制卡助手.spec.yaml")
@@ -248,6 +248,30 @@ class 测打包(基类):
         pack.build(卡稿, out)
         PRESET.build(out, out_path=self.路("p.preset.json"), quiet=True, out=静)
         PRESET.verify(self.路("p.preset.json"), 静)
+
+
+class 测规划书(基类):
+    """规划书这一环最容易假绿：空模板要是也能过，等于没有闸。"""
+
+    def test_空模板必须被拦下(self):
+        问题 = PLAN.查(PLAN.模板("测试卡"))
+        self.assertEqual(len(问题), len(PLAN.格子))
+
+    def test_填满的模板能放行(self):
+        行 = ["# 规划书 · 测试卡", ""]
+        for 标题, _, 必含 in PLAN.格子:
+            行 += ["## %s" % 标题, "",
+                   "- " + "、".join(必含 or []) + " —— 这一节填好了。", ""]
+        self.assertEqual(PLAN.查("\n".join(行)), [])
+
+    def test_填了却漏了关键格子也要拦(self):
+        问题 = PLAN.查("# 规划书 · 测试卡\n\n## 三、世界\n\n- 这一个世界有山有水。\n")
+        self.assertTrue(any("没有" in p for p in 问题))
+
+    def test_反推真卡出得来而且过体检(self):
+        文本 = PLAN.反推(卡)
+        self.assertIn("制卡助手", 文本)
+        self.assertEqual(PLAN.查(文本), [])
 
 
 if __name__ == "__main__":

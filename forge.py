@@ -26,6 +26,9 @@
     python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]
                                                 把卡里的设定搬成一份 ElecKoi「创作预设」
                                                 （--名 改预设名 · --项 只搬这几条 · --png 一并出图）
+    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]
+                                                写卡之前先落一份规划书；给了卡就从卡反推
+                                                （`plan --查 规划书.md` 查缺什么）
     python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）
     python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引
     python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡
@@ -74,6 +77,7 @@ sys.path.insert(0, HERE)
 
 from forge import (bridge, coach as COACH, content as CONTENT, domain, draft as DRAFT,  # noqa: E402
                    export, hud as HUD, manual, model as M, mods, opener as OPENER, pack,
+                   plan as PLAN,
                    png as PNG, preset as PRESET, sandbox as SB, scaffold,
                    theme as THEME, validate)
 
@@ -689,6 +693,16 @@ def cmd_preset(argv):
     finally:
         SB.cleanup(tmp)
     return 0
+
+
+def cmd_plan(argv):
+    """规划书：打一份空的 / 从卡反推 / 查一份写完的。"""
+    if argv and argv[0] in ("--h", "--help", "-h"):
+        print("用法：python forge.py plan [-o 出.md]                  打一份空规划书")
+        print("      python forge.py plan <卡.json 或 spec.yaml>      从现成的卡反推一份")
+        print("      python forge.py plan --查 规划书.md              查一份写完的，缺什么当场说")
+        return 0
+    return PLAN.main(argv)
 
 
 def cmd_manual(argv):
@@ -2987,7 +3001,7 @@ COMMANDS = {
     "unpack": cmd_unpack, "build": cmd_build, "check": cmd_check,
     "hud": cmd_hud, "bundle": cmd_bundle, "import": cmd_import,
     "analyze": cmd_analyze, "to-eleckoi": cmd_to_eleckoi, "to-tavern": cmd_to_tavern,
-    "png": cmd_png, "preset": cmd_preset,
+    "png": cmd_png, "preset": cmd_preset, "plan": cmd_plan,
     "manual": cmd_manual, "index": cmd_index, "coach": cmd_coach, "guide": cmd_guide,
     "make": cmd_make,
     "mods": cmd_mods, "add": cmd_add, "drop": cmd_drop,
