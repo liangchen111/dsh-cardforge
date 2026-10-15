@@ -29,6 +29,9 @@
     python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]
                                                 写卡之前先落一份规划书；给了卡就从卡反推
                                                 （`plan --查 规划书.md` 查缺什么）
+    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]
+                                                正文体检（防八股）：只查句式骨架，不查词
+                                                （`lint --标准` 打判据表；`-` 读标准输入）
     python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）
     python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引
     python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡
@@ -76,7 +79,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from forge import (bridge, coach as COACH, content as CONTENT, domain, draft as DRAFT,  # noqa: E402
-                   export, hud as HUD, manual, model as M, mods, opener as OPENER, pack,
+                   export, hud as HUD, lint as LINT, manual, model as M, mods, opener as OPENER, pack,
                    plan as PLAN,
                    png as PNG, preset as PRESET, sandbox as SB, scaffold,
                    theme as THEME, validate)
@@ -703,6 +706,24 @@ def cmd_plan(argv):
         print("      python forge.py plan --查 规划书.md              查一份写完的，缺什么当场说")
         return 0
     return PLAN.main(argv)
+
+
+def cmd_lint(argv):
+    """正文体检（防八股）：只查句式骨架，不查词。"""
+    # 空参分支＝这条命令的用法文本（`_打命令用法` 借它回答 `lint --help`，
+    # 自检第 34 项要求这段里必须出现 `forge.py lint`）。
+    if not argv or argv[0] in ("--h", "--help", "-h"):
+        print("用法：python forge.py lint <卡.json 或 spec.yaml 或 文本> [-o 报告.md]")
+        print("      python forge.py lint -      从标准输入读（写完一轮自查用）")
+        print("      python forge.py lint --标准 打判据表（每条判据的口径与来源）")
+        print("有硬判据不过 ⇒ 退出码 1；三条硬判据 = 提示冒号＋空行接列表 · 对立句式 ≤1 · 破折号 0")
+        print("长文本（>2000 汉字）自动降级成只报密度 —— 硬阈值是按「一轮输出」标定的。")
+        return 0 if argv else 2
+    try:
+        return LINT.main(argv)
+    except LINT.LintError as exc:
+        print("!! %s" % exc)
+        return 1
 
 
 def cmd_manual(argv):
@@ -3001,7 +3022,7 @@ COMMANDS = {
     "unpack": cmd_unpack, "build": cmd_build, "check": cmd_check,
     "hud": cmd_hud, "bundle": cmd_bundle, "import": cmd_import,
     "analyze": cmd_analyze, "to-eleckoi": cmd_to_eleckoi, "to-tavern": cmd_to_tavern,
-    "png": cmd_png, "preset": cmd_preset, "plan": cmd_plan,
+    "png": cmd_png, "preset": cmd_preset, "plan": cmd_plan, "lint": cmd_lint,
     "manual": cmd_manual, "index": cmd_index, "coach": cmd_coach, "guide": cmd_guide,
     "make": cmd_make,
     "mods": cmd_mods, "add": cmd_add, "drop": cmd_drop,

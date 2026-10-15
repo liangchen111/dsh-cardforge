@@ -27,7 +27,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from forge import model as M                      # noqa: E402
-from forge import pack, png as PNG, preset as PRESET, plan as PLAN  # noqa: E402
+from forge import pack, png as PNG, preset as PRESET, plan as PLAN, lint as LINT  # noqa: E402
 
 卡 = os.path.join(ROOT, "向导", "制卡助手", "成品", "制卡助手.card.json")
 卡稿 = os.path.join(ROOT, "向导", "制卡助手", "source", "制卡助手.spec.yaml")
@@ -272,6 +272,51 @@ class 测规划书(基类):
         文本 = PLAN.反推(卡)
         self.assertIn("制卡助手", 文本)
         self.assertEqual(PLAN.查(文本), [])
+
+
+class 测体检(基类):
+    """「去 AI 味」最容易做成假绿：词表一撒全是命中，或者什么都查不出来。
+
+    这里盯的是两件事：判据真的抓得住（正例），以及**长文本不许拿一轮的硬阈值去量**。
+    实测教训：艾瑟兰实卡 3,174,883 B 里有 4,706 处破折号 —— 那是长篇常态，
+    拿「破折号 0 处」去判整卡，数字大到没有意义。
+    """
+
+    def test_短文本硬判据真的会拦(self):
+        坏 = "交付纪律：\n- 一\n- 二\n不是模型笨，是消息没送到。\n"
+        不过 = LINT.体检(坏, out=lambda *a: None, 单轮=True)
+        self.assertTrue(不过)
+
+    def test_干净短文本全过(self):
+        好 = "他把碗搁下，问她吃过了没有。她摇头。屋里那盏灯芯短了，光只够照到半张桌子。"
+        self.assertEqual(LINT.体检(好, out=lambda *a: None, 单轮=True), [])
+
+    def test_长文本自动降级只报密度(self):
+        长 = ("不是这样，是那样。" * 400)
+        不过 = LINT.体检(长, out=lambda *a: None)
+        self.assertEqual(不过, [])
+
+    def test_字数决定单轮还是长文(self):
+        自小 = LINT.体检("他把碗搁下。", out=lambda *a: None)
+        self.assertEqual(自小, [])
+
+    def test_对立句式的两种写法都认得(self):
+        self.assertTrue(LINT.查对立句("不是他不想来，是来不了。"))
+        self.assertTrue(LINT.查对立句("这不光是钱的问题，而是人的问题。"))
+        self.assertEqual(LINT.查对立句("他不想来，因为来不了。"), [])
+
+    def test_破折号与提示冒号认得出(self):
+        self.assertEqual(len(LINT.查破折号("他——是的他——来了。")), 2)
+        self.assertTrue(LINT.查提示冒号("交付纪律：\n\n- 一\n"))
+        self.assertEqual(LINT.查提示冒号("他把碗搁下，问她吃过了没有。\n"), [])
+
+    def test_读得懂卡_json与纯文本两条路(self):
+        文本, 出处 = LINT.读(卡)                      # 读() 返回 (正文, 出处)
+        self.assertEqual(出处, 卡)
+        self.assertGreater(len(文本), 200)          # 卡里的条目正文都取出来了
+        self.assertIn("四条铁律", 文本)             # 是内容，不是 JSON 壳
+        self.assertNotIn("eleckoi.character-card", 文本)
+        self.assertEqual(LINT.读(卡)[0], 文本)      # 读两次一样（没有随机）
 
 
 if __name__ == "__main__":
