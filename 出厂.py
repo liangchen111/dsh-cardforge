@@ -159,20 +159,40 @@ def _删树(路径):
 
 
 def 安装(出):
+    """把出厂集合复制到 `出`。
+
+    ★ **保留已有的 `.git`** —— 重打出厂不该顺手毁掉出厂仓库，否则每重打一次都得
+    重新 `git init` 再强推一回（第一版就是栽在这：装的时候整棵删，`.git` 没了，
+    接着 `git -C 出厂/… add` 一路往上找到**开发仓库**的 `.git`，把出厂提交写进了
+    开发仓库的历史）。"""
+    藏 = None
     if os.path.isdir(出):
+        点git = os.path.join(出, ".git")
+        if os.path.isdir(点git):
+            # ★ 藏在**同级**（`出` 外面）—— 藏在里面会被紧接着的 `_删树(出)` 一起删掉
+            藏 = os.path.abspath(出).rstrip("\\/") + ".git.keep"
+            if os.path.isdir(藏):
+                _删树(藏)
+            os.replace(点git, 藏)
         _删树(出)
     os.makedirs(出)
+    if 藏:
+        os.replace(藏, os.path.join(出, ".git"))
     for 相对 in 集合():
         _复制(相对, 出)
     return 出
 
 
 def 打包(目录, 出zip=None):
+    """把 `目录` 打成 zip（顶层套一层目录名）。
+
+    ★ **不装 `.git`** —— 出厂目录里有独立仓库（`--仓库` 建的），`os.walk` 会连整个
+    对象库一起塞进 zip（实测 1.7 MB → 3.8 MB）。zip 是给人下载的成品，不带版本库。"""
     出zip = 出zip or (目录.rstrip("\\/") + ".zip")
     固定时间 = (2026, 10, 15, 0, 0, 0)  # 同一份内容每次打出来的 zip 逐字节相同
     with zipfile.ZipFile(出zip, "w", zipfile.ZIP_DEFLATED) as z:
         for 目录_, 子目录们, 文件们 in os.walk(目录):
-            子目录们.sort()
+            子目录们[:] = sorted(d for d in 子目录们 if d != ".git")
             for 名 in sorted(文件们):
                 p = os.path.join(目录_, 名)
                 内部 = os.path.join(os.path.basename(目录.rstrip("\\/")),
@@ -226,6 +246,28 @@ def 自检():
         except re.error as e:
             _ = e
             问题.append("红线正则写错了：%s（%s）" % (模式, 说明))
+    # ★ 重打不许毁出厂仓库：在临时目录里放个假 `.git`，装一遍看它还在不在
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix="forge_出厂_") as 窝:
+        试 = os.path.join(窝, "试")
+        os.makedirs(os.path.join(试, ".git"))
+        with open(os.path.join(试, ".git", "HEAD"), "w", encoding="utf-8") as f:
+            f.write("ref: refs/heads/main\n")
+        安装(试)
+        if not os.path.isfile(os.path.join(试, ".git", "HEAD")):
+            问题.append("重打出厂会把出厂仓库的 .git 抹掉 —— 安装() 得先把 .git 挪开再放回来")
+        if not os.path.isfile(os.path.join(试, "forge.py")):
+            问题.append("安装() 没把 forge.py 放进去")
+        # ★ zip 不许带 `.git`
+        os.makedirs(os.path.join(试, ".git"), exist_ok=True)
+        with open(os.path.join(试, ".git", "HEAD"), "w", encoding="utf-8") as f:
+            f.write("ref: refs/heads/main\n")
+        z = 打包(试, os.path.join(窝, "试.zip"))
+        with zipfile.ZipFile(z) as zf:
+            # 按**路径段**判，别用子串 —— `.gitignore` 里也有 `.git`
+            坏 = [n for n in zf.namelist() if ".git" in n.split("/")]
+        if 坏:
+            问题.append("zip 里混进了版本库：%s" % 坏[:3])
     return (not 问题), 问题
 
 
