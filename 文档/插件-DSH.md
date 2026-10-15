@@ -35,28 +35,18 @@ dsh-cardforge
 ```
 
 包名按插件生态的惯例用 `dsh-` 前缀（本机已装的 `dsh-pocket` / `dsh-context` / `dsh-bookmarks` /
-`dsh-whale-widget` 都是这个规矩）。贴包名装的好处：对方只拿到一个几 MB 的包，
-**不碰仓库、不拉历史**，仓库可以是私有的。
-
-贴仓库地址也行（源码树就在那儿，谁都能翻）：
-
-```
-https://github.com/liangchen111/dsh-cardforge
-```
+`dsh-whale-widget` 都是这个规矩）。贴包名装的好处：对方只拿到一个 1.7 MB 的包，
+**不碰仓库、不拉历史**（本项目的源码仓库是私有的，也不打算开）。
 
 也可以贴本机目录的绝对路径（例如 `X:\你的工具目录\插件\制卡工坊`），或贴 `插件/制卡工坊/` 的路径改本地版。
 
+**刚发版的那几分钟可能装不上**：插件管理器默认用「中国大陆镜像源」，它抓新包有延迟。
+等一会儿，或把安装源切成官方源（`registry.npmjs.org`）再装。
+
 **插件只在宿主启动时载入，装完不重启不生效**（装完立刻去看，工具和预设都还没出现）。
 
-连不上 GitHub 时，安装前的预检是 `git ls-remote`、上限 5 秒，会报「连接 GitHub 超时」。
-给 git 单独配代理（不动系统代理）：
-
-```
-git config --global http.https://github.com/.proxy http://127.0.0.1:17890
-# 回滚：git config --global --unset http.https://github.com/.proxy
-```
-
-或改用「试试其他方式」贴本机目录路径。
+（只有走「贴 Git 地址」那条路才会碰到 GitHub 连不上的问题：安装前预检是 `git ls-remote`、
+上限 5 秒，报「连接 GitHub 超时」。贴包名装不碰 GitHub。）
 
 ---
 
@@ -117,7 +107,7 @@ git config --global http.https://github.com/.proxy http://127.0.0.1:17890
 
 | 字段 | 我们的取值 | 依据 |
 |---|---|---|
-| `name` / `version` | `dsh-cardforge` / `0.28.1` | 清单里**唯二强制**的字段；名字按生态惯例带 `dsh-` 前缀 |
+| `name` / `version` | `dsh-cardforge` / `0.28.2` | 清单里**唯二强制**的字段；名字按生态惯例带 `dsh-` 前缀 |
 | `dsh.bundle.patch` | `./cordis.patch.yml` | **bundle 的判定字段**。没有它也装得上，但只当普通依赖装、不激活任何层，并打一行 `dsh: warning: … declares no dsh.bundle` |
 | `dsh.manifestVersion` | `1` | 不写也行，写了就是明说「按这一版约定读」 |
 | `type` / `main` / `exports` | `module` / `插件/制卡工坊/index.js` | 官方最小包就长这样 |

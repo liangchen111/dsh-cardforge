@@ -39,7 +39,7 @@ forge <命令>
 | 做卡时被 AI 陪着 | `向导/制卡助手/成品/制卡助手.preset.png` | ElecKoi →「预设管理器」→「导入预设」→ **分类必须选「创作预设」**（选错会提示「这不是创作预设。」） |
 | 在对话里问「怎么建卡」 | `向导/制卡助手/成品/制卡助手.card.png` | 当普通角色卡导入（手机端「导入角色」也认这张） |
 | 自己要做卡 | 仓库链接或出厂 zip | 解压后 `python forge.py plan` 开工；也可以 `pip install -e .` |
-| 想常驻 ElecKoi 界面 | 插件名 **`dsh-cardforge`** | 侧栏「插件」→「添加插件」→ 贴包名 `dsh-cardforge` → 安装 → **重启 ElecKoi**（名字还没同步过去时，贴仓库地址 `https://github.com/liangchen111/dsh-cardforge` 一样能装） |
+| 想常驻 ElecKoi 界面 | 插件名 **`dsh-cardforge`** | 侧栏「插件」→「添加插件」→ 贴包名 `dsh-cardforge` → 安装 → **重启 ElecKoi**（刚发版那几分钟镜像源可能还没抓到，等一会儿或把安装源切成官方源） |
 
 四条容易踩的：
 
