@@ -589,6 +589,46 @@ AI 每轮先报出骰子值与来源，再据此叙事。好处是同一颗骰�
 交付前对玩家只说人话：「手机上打开看一眼，面板里的数字是不是真的动」——
 比让他读一百行调试日志有用。
 
+### 参考 · 值得看的四类资料
+
+【参考 · 值得看的四类资料】
+
+**一、卡规范与宿主文档**（改结构前必看）
+
+- SillyTavern 世界书：https://docs.sillytavern.app/usage/core-concepts/worldinfo/
+  —— `order` 越大越靠末尾、`constant` 先占预算、`scan depth`、递归三开关都在这一页。
+  官方自己写明：`Match whole words` **对中文有害、建议关掉**。
+- 角色卡 V2/V3 规范：https://github.com/malfoyslastname/character-card-spec-v2
+  —— 「已有数据绝不销毁」「未知键值一律保留」两条硬约束的出处。
+- ElecKoi 的能力说明书就在客户端里（创作预设自带的 `guides`）：角色 / 设定库 / 变量 /
+  脚本 / 正则五组，每组都带逐条纪律与例子。**写卡前先把它读一遍**。
+
+**二、同类工具（学它们的形状，不抄文案）**
+
+- TavernWeave（22 个 Skill 的仓库）：https://github.com/LiarMTTT/TavernWeave
+  —— 每个 skill 只有 `name` + `description`，`description` 干三件事：做什么 / 何时用 /
+  **不要用它做什么（该交给哪个兄弟 skill）**。这是「路由」写得最干净的一份样例。
+- 一张卡就是一份工程的样例（规划书先行 + 分层验证 + 单一交付入口）：
+  https://github.com/leyu6922-art/st-character-card-authoring-public
+- 防八股写在提示词里的样例：https://github.com/ShanTing-sy/character-card-creator
+  —— 方向对，但**只有形容词、没有数值**，这正是我们要补的那一半。
+
+**三、去 AI 味（这篇是源头，别只看二手）**
+
+- 维基百科 *Signs of AI writing*：https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing
+  —— 它同时**明确否掉**「完美语法 / 用词生僻 / bland 就是 AI」这几条，等于官方承认
+  **词表不是判据**。
+- 四道闸的实现样例：https://github.com/misbahsy/anti-ai-slop
+  —— 100 分制扣分、跳过代码与引文、**≥90 分且无严重项才过**、失败最多回炉两次。
+
+**四、我们自己的三份底稿**（在 `E:\workGZQ\制卡工具\文档\`）
+
+- `制卡助手-拆解（2026-10-15）.md` —— 这份工具该长成什么样。
+- `制卡助手-机制融合（2026-10-15）.md` —— 各家机制怎么揉成一条流水线。
+- `制卡助手-玩法机制库（2026-10-15）.md` —— 能直接抄进卡里的玩法与工具缺口。
+
+看别人东西的规矩只有一条：**参考做法，不搬文案**。
+
 ## 六、验收标准（不满足就不要交付）
 
 1. `python forge.py check <工程目录>` —— **0 错**。有错就别交，先改。
