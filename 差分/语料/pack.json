@@ -3,5 +3,8 @@
   "卡": [
     "向导/制卡助手/成品/制卡助手.card.json",
     "差分/语料/pack/最小卡.card.json"
+  ],
+  "非卡": [
+    "差分/语料/pack/不是ElecKoi卡.json"
   ]
 }

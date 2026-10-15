@@ -165,6 +165,16 @@ def 算_pack(料: dict) -> dict:
             "规格": 结构,
             "卡字节": Path(重建).read_text(encoding="utf-8"),
         })
+    # 认卡守卫：不是 ElecKoi 卡时必须当场拒绝（只比消息，因为两边的异常类型名不同）
+    出["非卡"] = []
+    for 相对 in 料.get("非卡", []):
+        卡 = str(根 / 相对)
+        工作 = tempfile.mkdtemp(prefix="pack-")
+        try:
+            P.unpack(卡, os.path.join(工作, "x.spec.yaml"))
+            出["非卡"].append({"输入": 相对, "值": "没报错（不该）"})
+        except Exception as exc:  # noqa: BLE001
+            出["非卡"].append({"输入": 相对, "消息": str(exc)})
     return 出
 
 

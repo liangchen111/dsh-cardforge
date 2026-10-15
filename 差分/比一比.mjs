@@ -134,6 +134,18 @@ function 算_pack(料) {
     P.build(规格, 重建)
     出.卡.push({ 输入: 相对, 规格: 结构, 卡字节: readFileSync(重建, 'utf8') })
   }
+  // 认卡守卫：不是 ElecKoi 卡时必须当场拒绝（只比消息，两边的异常类型名不同）
+  出.非卡 = []
+  for (const 相对 of 料.非卡 ?? []) {
+    const 卡 = join(根, 相对)
+    const 工作 = mkdtempSync(join(tmpdir(), 'packjs-'))
+    try {
+      P.unpack(卡, join(工作, 'x.spec.json'))
+      出.非卡.push({ 输入: 相对, 值: '没报错（不该）' })
+    } catch (错) {
+      出.非卡.push({ 输入: 相对, 消息: 错.message })
+    }
+  }
   return 出
 }
 

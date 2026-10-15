@@ -970,5 +970,11 @@
       },
       "卡字节": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\n    \"name\": \"最小卡\",\n    \"group\": \"\"\n  },\n  \"assets\": [],\n  \"setting_library\": \"{\\\"format\\\":\\\"eleckoi.setting-library-snapshot\\\",\\\"version\\\":1,\\\"active_version_id\\\":\\\"\\\",\\\"versions\\\":[{\\\"id\\\":\\\"\\\",\\\"name\\\":\\\"\\\",\\\"entries\\\":[],\\\"groups\\\":[],\\\"prompt_positions\\\":[],\\\"list_all_expanded\\\":true,\\\"expanded_group_ids\\\":[],\\\"created_at\\\":\\\"\\\",\\\"updated_at\\\":\\\"\\\"}]}\",\n  \"variable_config\": \"{\\n  \\\"format\\\": \\\"eleckoi.variable-config\\\",\\n  \\\"version\\\": 1,\\n  \\\"character_id\\\": \\\"\\\",\\n  \\\"name\\\": \\\"\\\",\\n  \\\"active_version_id\\\": \\\"\\\",\\n  \\\"updated_at\\\": \\\"\\\",\\n  \\\"initial_state\\\": {},\\n  \\\"schema_code\\\": \\\"\\\",\\n  \\\"objects\\\": [],\\n  \\\"variables\\\": [],\\n  \\\"expanded_object_ids\\\": [],\\n  \\\"versions\\\": [\\n    {\\n      \\\"id\\\": \\\"\\\",\\n      \\\"name\\\": \\\"\\\",\\n      \\\"initial_state\\\": {},\\n      \\\"schema_code\\\": \\\"\\\",\\n      \\\"objects\\\": [],\\n      \\\"variables\\\": [],\\n      \\\"expanded_object_ids\\\": [],\\n      \\\"created_at\\\": \\\"\\\",\\n      \\\"updated_at\\\": \\\"\\\"\\n    }\\n  ]\\n}\",\n  \"regex_rules\": [],\n  \"我自加的字段\": {\n    \"保留\": true\n  }\n}"
     }
+  ],
+  "非卡": [
+    {
+      "输入": "差分/语料/pack/不是ElecKoi卡.json",
+      "消息": "这不像 ElecKoi 卡：character / setting_library / variable_config 三样一样都没有。\n  先认一下是什么卡： python forge.py analyze \"不是ElecKoi卡.json\"\n  酒馆卡走 python forge.py to-eleckoi（`import` 与 `new --从` 会自动转）。"
+    }
   ]
 }
