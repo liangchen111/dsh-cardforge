@@ -81,12 +81,17 @@ export const Config = z.object({
 })
 
 /**
- * 需要 `tools` 服务；没有它插件保持不激活，而不是抛错。
+ * 只声明 `tools`；没有它插件保持不激活，而不是抛错。
  *
- * `eleckoiAgentPresetsApi` 是**可选**的：它在 ElecKoi 里才有，在纯 DSH 里没这个服务 ——
- * 声明成 optional，这样两种宿主都能装上，只是纯 DSH 里不装预设。
+ * ★ 别写成 `{ required: [...], optional: [...] }` —— 这份 cordis（`@deepseek-ai/cordis`
+ * `lib/index.js:1491 Inject.resolve`）只认两种形状：**字符串数组**，或**服务名→配置的对象**。
+ * 写成 `{required, optional}` 会被当成「有两个必填服务，一个叫 required、一个叫 optional」，
+ * 于是永远等不到、插件静默不激活。可选服务一律用 `ctx.get(名字, false)` 取（见 `取预设服务`）。
+ *
+ * `eleckoiAgentPresetsApi` 就是这种可选服务：它在 ElecKoi 里才有，纯 DSH 里没有 ——
+ * 取不到就跳过装预设，工具本身照常可用。
  */
-export const inject = { required: ['tools'], optional: ['eleckoiAgentPresetsApi'] }
+export const inject = ['tools']
 
 const 工具说明 = [
   '做 ElecKoi 角色卡的本机工具（forge）。建卡 / 改卡 / 体检 / 出成品都走它。',
