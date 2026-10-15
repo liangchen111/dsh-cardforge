@@ -22,7 +22,7 @@
 
 **可安装。**
 
-- `pyproject.toml`（`eleckoi-cardforge`）· `forge/cli.py`（薄壳）· `forge/__main__.py` · `LICENSE`（MIT）。
+- `pyproject.toml`（`eleckoi-cardforge`）· `forge/cli.py`（薄壳）· `forge/__main__.py` · `LICENSE`（MIT，署名 `虎牙`）。
 - 三种入口等价：`python forge.py <命令>` / `python -m forge <命令>` / `pip install -e .` 后 `forge <命令>`。
 - 必须 `-e`：CLI 的实体是根目录 `forge.py`，而 `forge/` 是内核包，**两者同名**，普通安装装不走 CLI。
 
