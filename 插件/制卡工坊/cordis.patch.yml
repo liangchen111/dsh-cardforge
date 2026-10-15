@@ -6,6 +6,8 @@
 #   forge       —— forge.py 的位置；留空＝自动用插件目录往上两级的 forge.py
 #   cwd         —— 默认工作目录；留空则每次调用都必须带 cwd
 #   timeoutMs   —— 单条命令的墙钟上限
+#   installPreset  —— 装插件时顺手把「制卡助手」创作预设装进 ElecKoi；不想要就改 false
+#   activatePreset —— 装完若当前还是官方默认创作预设，就顺手切过去；你自己选过的不动
 # 你机器上 Python 不叫 python（比如是 python3），就改 python 那一行。
 - insert:
     - id: cardforge
@@ -16,3 +18,5 @@
         forge: ''
         cwd: ''
         timeoutMs: 180000
+        installPreset: true
+        activatePreset: true

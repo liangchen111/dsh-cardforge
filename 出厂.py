@@ -320,7 +320,8 @@ def main(argv=None):
 
     if "--仓库" in argv:
         if os.path.isdir(os.path.join(出, ".git")):
-            shutil.rmtree(os.path.join(出, ".git"))
+            # 走 _删树：git 的对象文件在 Windows 上是只读的，裸 rmtree 会 WinError 5。
+            _删树(os.path.join(出, ".git"))
         for cmd in (["git", "init", "-q", "-b", "main"],
                     ["git", "add", "-A"],
                     ["git", "commit", "-q", "-m",

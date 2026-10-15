@@ -19,8 +19,15 @@
  *
  * 只依赖 `@deepseek-ai/dsh-tools`（宿主插件可用的服务）。**不声明任何 dependencies**
  * —— 官方约定：随 dsh 一起发的包从 dsh 安装处解析。
+ *
+ * 第二件顺手做的事：**装插件时把「制卡助手」创作预设装进 ElecKoi**（`装预设`）。
+ * 用户在预设管理器里手动导一次也成，但那样得先找到 PNG 再点「导入 → 创作预设」，
+ * 装插件还要多三步 —— 能自动就自动。做法＝ElecKoi 开的 `eleckoiAgentPresetsApi`
+ * （`catalog` / `import` / `setActive`），只在「还没有这个预设」时才写、只在
+ * 「当前还是官方默认创作预设」时才切，任何失败都只记日志、不影响 `cardforge` 工具。
  */
 import { spawn } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import z from '@deepseek-ai/schemastery'
@@ -61,10 +68,25 @@ export const Config = z.object({
   cwd: z.string().default(''),
   /** 单次命令的墙钟上限（毫秒）。 */
   timeoutMs: z.number().default(180000),
+  /**
+   * 装插件时顺手把「制卡助手」创作预设装进 ElecKoi；已经有了就跳过。
+   * 不喜欢被自动写预设就设成 `false`（工具照常可用，只是待你自己导一次预设）。
+   */
+  installPreset: z.boolean().default(true),
+  /**
+   * 装完之后，**只在当前创作预设还是官方那个默认预设时**，把「制卡助手」设为当前。
+   * 你自己挑过的创作预设一律不动。
+   */
+  activatePreset: z.boolean().default(true),
 })
 
-/** 需要 `tools` 服务；没有它插件保持不激活，而不是抛错。 */
-export const inject = ['tools']
+/**
+ * 需要 `tools` 服务；没有它插件保持不激活，而不是抛错。
+ *
+ * `eleckoiAgentPresetsApi` 是**可选**的：它在 ElecKoi 里才有，在纯 DSH 里没这个服务 ——
+ * 声明成 optional，这样两种宿主都能装上，只是纯 DSH 里不装预设。
+ */
+export const inject = { required: ['tools'], optional: ['eleckoiAgentPresetsApi'] }
 
 const 工具说明 = [
   '做 ElecKoi 角色卡的本机工具（forge）。建卡 / 改卡 / 体检 / 出成品都走它。',
@@ -177,11 +199,97 @@ function 跑(配置, 工作目录, 参数, 信号) {
   })
 }
 
+/** 装进 ElecKoi 的那份创作预设叫什么。 */
+const 预设名 = '制卡助手'
+
+/** 官方那个开箱默认的创作预设编号 —— 只有当前用的是它，才允许我们换掉。 */
+const 官方默认创作预设编号 = 'agent-preset-creator'
+
+/** 睡一会儿（等 ElecKoi 那边的预设服务上线）。 */
+const 睡 = (毫秒) => new Promise((完成) => setTimeout(完成, 毫秒))
+
+/**
+ * 取 ElecKoi 的预设接口。
+ *
+ * 拿不到就返回 `undefined`（纯 DSH 里没有这个服务）—— 本插件照常提供工具，只是不装预设。
+ * 两路都试：`ctx.<服务名>` 与 `ctx.get(名字, 不报错)`，因为不同版本 cordis 的可选依赖行为不一样。
+ */
+function 取预设服务(ctx) {
+  for (const 取法 of [() => ctx.eleckoiAgentPresetsApi, () => (typeof ctx.get === 'function' ? ctx.get('eleckoiAgentPresetsApi', false) : undefined)]) {
+    try {
+      const 服务 = 取法()
+      if (服务 && typeof 服务.catalog === 'function') return 服务
+    } catch {
+      /* 这一路拿不到，试下一路 */
+    }
+  }
+  return undefined
+}
+
+/** 读仓库里那份预设（`forge.py preset` 的产物）。先找插件目录里的副本，再找仓库里的正本。 */
+function 读预设() {
+  const 候选 = [
+    resolve(插件目录, '制卡助手.preset.json'),
+    resolve(插件目录, '..', '..', '向导', '制卡助手', '成品', '制卡助手.preset.json'),
+  ]
+  for (const 路径 of 候选) {
+    try {
+      return { 路径, 文本: readFileSync(路径, 'utf8') }
+    } catch {
+      /* 看下一个 */
+    }
+  }
+  return undefined
+}
+
+/**
+ * 把「制卡助手」创作预设装进 ElecKoi —— 用户装完插件就不必再手动导一次预设。
+ *
+ * 三条纪律：
+ *   1. **幂等** —— 已经有同名的创作预设就一个字不写（升级插件不重复堆预设）；
+ *   2. **不抢** —— 只有当前创作预设还是官方默认那个才顺手切过去；用户自己挑过的不动；
+ *   3. **不挡路** —— 任何失败都只记一条日志，绝不影响 `cardforge` 工具本身。
+ */
+async function 装预设(ctx, config) {
+  if (!config.installPreset) return
+
+  let 服务
+  for (let 次 = 0; 次 < 8 && !服务; 次 += 1) {
+    if (次 > 0) await 睡(750)
+    服务 = 取预设服务(ctx)
+  }
+  if (!服务) return
+
+  const 目录 = await 服务.catalog()
+  const 已有 = (目录?.presets ?? []).find((项) => 项.purpose === 'creator' && 项.name === 预设名)
+
+  let 编号 = 已有?.id
+  if (!编号) {
+    const 稿 = 读预设()
+    if (!稿) {
+      ctx.logger?.warn?.(`[制卡工坊] 找不到预设文件（找过插件目录与仓库的 向导/制卡助手/成品/），跳过自动安装。`)
+      return
+    }
+    const 结果 = await 服务.import(
+      'eleckoi',
+      { displayName: '制卡助手.preset.json', mimeType: 'application/json', base64: Buffer.from(稿.文本, 'utf8').toString('base64') },
+      'creator',
+    )
+    编号 = 结果?.preset?.id
+    ctx.logger?.info?.(`[制卡工坊] 已装创作预设「${预设名}」（${稿.路径}）。`)
+  }
+
+  if (编号 && config.activatePreset && 目录?.activePresetIds?.creator === 官方默认创作预设编号) {
+    await 服务.setActive(编号)
+    ctx.logger?.info?.(`[制卡工坊] 已把「${预设名}」设为当前创作预设。`)
+  }
+}
+
 /**
  * 注册 `cardforge` 工具。
  *
  * @param {import('@deepseek-ai/cordis').Context} ctx 插件上下文
- * @param {{python: string, pythonPath: string, forge: string, cwd: string, timeoutMs: number}} config 校验过的配置
+ * @param {{python: string, pythonPath: string, forge: string, cwd: string, timeoutMs: number, installPreset: boolean, activatePreset: boolean}} config 校验过的配置
  */
 export function apply(ctx, config) {
   if (!Number.isFinite(config.timeoutMs) || config.timeoutMs <= 0) {
@@ -190,6 +298,11 @@ export function apply(ctx, config) {
   // 空字符串＝「用出厂默认」（配置里留空比删掉那一行更省事）。
   if (String(config.forge ?? '').trim() === '') config.forge = 默认工具
   if (String(config.python ?? '').trim() === '') config.python = 默认解释器
+
+  // 顺手把创作预设装上；失败只记日志，绝不挡工具本身（见 `装预设` 的三条纪律）。
+  void 装预设(ctx, config).catch((错) => {
+    ctx.logger?.warn?.(`[制卡工坊] 自动安装创作预设失败（不影响 cardforge 工具）：${错?.message ?? 错}`)
+  })
 
   ctx.tools.register(
     defineTool({
