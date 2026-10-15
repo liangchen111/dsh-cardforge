@@ -310,8 +310,12 @@ def _auto_instructions(pname, entries, groups):
     """没说就自动写一段 —— 预设管理器里那一栏总得有字，否则两个预设分不清。"""
     titles = [e.get("title") for e in entries if e.get("title")]
     head = " · ".join(titles[:4]) + ("…" if len(titles) > 4 else "")
-    return ("「%s」的创作预设：把这张卡里的 %d 条设定搬了过来%s。"
-            "选中它之后，AI 手里就有这套设定与规程，可以照着开新卡、改老卡。"
+    return ("「%s」的创作预设：把这张卡里的 %d 条设定搬了过来%s。\n"
+            "选中它之后，AI 手里就有这套设定与规程，可以照着开新卡、改老卡。\n"
+            "第一句直接说你要什么就行，比如「我要做一张都市怪谈的卡」。"
+            "说了题材，它会先跟你把规划书过一遍，再一层一层问，不会一上来就写正文。\n"
+            "装了「制卡工坊」插件的话，它自己就能调本机的 forge.py 落盘；"
+            "没装也行，只是最后那步要你自己照它给的内容跑命令。"
             % (pname, len(entries), ("（%s）" % head) if head else ""))
 
 
