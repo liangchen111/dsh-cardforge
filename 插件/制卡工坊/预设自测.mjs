@@ -16,7 +16,7 @@ let 源码 = readFileSync(真身, 'utf8')
 源码 = 源码
   .replace(/^import z from .*$/m, `const z = { object: (x) => x, string: () => ({ default: () => '' }), number: () => ({ default: () => 0 }), boolean: () => ({ default: () => true }) }`)
   .replace(/^import \{ defineTool \} from .*$/m, `const defineTool = (x) => x`)
-源码 += '\nexport { 装预设, 读预设, 取预设服务, 找解释器, 候选解释器 }\n'
+源码 += '\nexport { 装预设, 读预设, 取预设服务, 找解释器, 候选解释器, 定工作目录, 卡库目录 }\n'
 const 临时 = join(插件目录, '.预设自测.mjs')
 writeFileSync(临时, 源码, 'utf8')
 let mod
@@ -25,7 +25,7 @@ try {
 } finally {
   unlinkSync(临时)
 }
-const { 装预设, 读预设, 找解释器, 候选解释器 } = mod
+const { 装预设, 读预设, 找解释器, 候选解释器, 定工作目录, 卡库目录 } = mod
 
 let 过 = 0
 let 败 = 0
@@ -111,6 +111,15 @@ console.log('7) 自动找 Python（作者机器上实测踩过 `spawn python ENO
     `     本机挑中：${挑中 ? `${挑中.说明}（${挑中.命令}）· PyYAML ${挑中.有yaml ? '有' : '没有'}` : '没找到任何 Python'}`,
   )
   if (挑中) 断言(挑中.说明.length > 0 && Array.isArray(挑中.前置), '返回形状 = {命令, 前置, 说明, 有yaml}')
+}
+
+console.log('8) 卡做在哪个目录（谁优先）')
+{
+  断言(定工作目录({ cwd: '' }, '') === 卡库目录, `都不给 → 卡库默认（${卡库目录}）`)
+  断言(定工作目录({ cwd: '' }, ' E:/别处 ') === 'E:/别处', '调用方给的 cwd 最优先')
+  断言(定工作目录({ cwd: 'D:/配置里' }, '') === 'D:/配置里', '其次才是插件配置里的 cwd')
+  断言(定工作目录({ cwd: 'D:/配置里' }, 'E:/参数') === 'E:/参数', '参数压过配置')
+  断言(卡库目录.endsWith(join('Documents', 'ElecKoi卡库')), '默认目录 = 用户目录下的 Documents（由环境变量推出来，不是写死的盘符）')
 }
 
 console.log(`\n${败 === 0 ? '全过 ✔' : '有失败 ✘'}　${过} 过 / ${败} 败`)

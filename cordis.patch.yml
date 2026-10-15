@@ -11,7 +11,7 @@
 #   python      —— 跑 forge.py 的解释器；**留空＝自动找**（挨个试常见位置，优先能 import yaml 的）
 #   pythonPath  —— 追加到 PYTHONPATH 的依赖目录（装着 PyYAML）；留空＝不加
 #   forge       —— forge.py 的位置；留空＝自动用插件目录往上两级的 forge.py
-#   cwd         —— 默认工作目录；留空则每次调用都必须带 cwd
+#   cwd         —— 默认工作目录；留空＝用 `<用户目录>/Documents/ElecKoi卡库`（会自动建）
 #   timeoutMs   —— 单条命令的墙钟上限
 #   installPreset  —— 装插件时顺手把「制卡助手」创作预设装进 ElecKoi；不想要就改 false
 #   activatePreset —— 装完若当前还是官方默认创作预设，就顺手切过去；你自己选过的不动

@@ -49,6 +49,8 @@ forge <命令>
 
 **点安装报「连接 GitHub 超时」＝这台机器到 github.com 不通。** 插件管理器的预检只有 5 秒（`git ls-remote`），直连时实测 21 秒都连不上。两条路：① 给 git 配代理 —— `git config --global http.https://github.com/.proxy http://127.0.0.1:你的代理端口`（配完裸 `git ls-remote https://github.com/liangchen111/eleckoi-cardforge.git` 应在 5 秒内出结果；不想要了 `git config --global --unset http.https://github.com/.proxy`）；② 点「试试其他方式」，改成贴**本机插件目录的绝对路径**（就是出厂包里 `插件\制卡工坊` 那个目录，形如 `X:\你的工具目录\插件\制卡工坊`），完全不碰网络。
 
+**卡做在哪个目录，也不用每次说。** 插件配置里的 `cwd` 留空就是**`<你的用户目录>\Documents\ElecKoi卡库`**（没有就自动建）；调用时给了 `cwd` 参数就听参数的（参数 > 配置 > 默认）。想换地方就把 `cwd` 写成你要的目录，或每次调用带上。
+
 PNG 那两个成品是**可直接分发的单文件**，对方不需要装 Python、不需要克隆仓库。要改内容再重新导出：
 
 ```

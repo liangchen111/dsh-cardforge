@@ -27,7 +27,7 @@
  * 「当前还是官方默认创作预设」时才切，任何失败都只记日志、不影响 `cardforge` 工具。
  */
 import { spawn } from 'node:child_process'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import z from '@deepseek-ai/schemastery'
@@ -52,6 +52,19 @@ const 默认依赖目录 = ''
 const 默认工具 = resolve(插件目录, '..', '..', 'forge.py')
 
 /**
+ * 没给工作目录时卡做在哪儿 —— **`<你的用户目录>/Documents/ElecKoi卡库`**。
+ *
+ * 为什么不写死一个盘：别人的机器上不一定有那个盘。放 `Documents` 下是 Windows 上
+ * 「用户自己的文档」的通用位置，跨机器都成立；调用方给了 `cwd` 参数就听调用方的。
+ */
+const 卡库目录 = join(String(process.env.USERPROFILE ?? process.env.HOME ?? process.cwd()), 'Documents', 'ElecKoi卡库')
+
+/** 定工作目录：调用方参数 > 插件配置 > 卡库默认。 */
+function 定工作目录(配置, 参数cwd) {
+  return String(参数cwd ?? '').trim() || String(配置?.cwd ?? '').trim() || 卡库目录
+}
+
+/**
  * 可配置项（写进 `cordis.patch.yml`，改它不用动代码）。
  *
  * `python` + `pythonPath` 的组合是**故意的**：`pythonPath` 指到隔离 venv 的
@@ -70,7 +83,7 @@ export const Config = z.object({
   pythonPath: z.string().default(默认依赖目录),
   /** forge.py 的位置。 */
   forge: z.string().default(默认工具),
-  /** 不给 cwd 参数时用的默认工作目录；空字符串＝必须由调用方给。 */
+  /** 默认工作目录；**留空＝用 `<你的用户目录>\Documents\ElecKoi卡库`**（没有就自动建）。 */
   cwd: z.string().default(''),
   /** 单次命令的墙钟上限（毫秒）。 */
   timeoutMs: z.number().default(180000),
@@ -467,7 +480,7 @@ export function apply(ctx, config) {
         },
         cwd: {
           type: 'string',
-          description: '跑命令的工作目录（做卡时通常是你想让工程落地的父目录）。不给就用插件配置里的 cwd。',
+          description: '跑命令的工作目录（做卡时通常是你想让工程落地的父目录）。不给就用插件配置里的 cwd，插件配置也空就用 `<用户目录>/Documents/ElecKoi卡库`（会自动建）。',
         },
       },
       output: {
@@ -498,9 +511,11 @@ export function apply(ctx, config) {
         if (调用参数.args.length === 0) {
           throw new Error('args 不能是空的：至少给一个子命令，比如 ["--help"]。')
         }
-        const 工作目录 = String(调用参数.cwd ?? '').trim() || String(config.cwd ?? '').trim()
-        if (工作目录 === '') {
-          throw new Error('没给工作目录：请在 cwd 参数里写清把卡做在哪个目录（例如 "E:/卡库"），或在本插件配置里设 cwd。')
+        const 工作目录 = 定工作目录(config, 调用参数.cwd)
+        try {
+          mkdirSync(工作目录, { recursive: true })
+        } catch (错) {
+          throw new Error(`工作目录建不出来：${工作目录}（${错?.message ?? 错}）—— 在 cwd 参数里换一个能写的目录。`)
         }
         const 解释器 = await 找解释器(config)
         if (!解释器) {
