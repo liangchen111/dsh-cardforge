@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（8/27）**
+**已搬完并逐字节绿（12/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -283,6 +283,10 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | YAML 子集读取器 | `forgejs/lib/yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
 | `sandbox` | `forgejs/lib/sandbox.mjs` | ✔ 5,397 字节（模式关／开两遍） |
 | `content` | `forgejs/lib/content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵树） |
+| `opener` | `forgejs/lib/opener.mjs` | ✔ 228,776 字节（105 步 · 10 个夹具工程） |
+| `scaffold` | `forgejs/lib/scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵树） |
+| `draft` | `forgejs/lib/draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
+| `mods` | `forgejs/lib/mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -290,10 +294,26 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**下一轮**：按计划 §四 的批次顺序走 —— **`draft`（815 行）** → `coach`（1,353） →
-`scaffold`（600）／`theme`（592）／`mods`（682）／`hud`（693） → `png`／`preset`／`dist`／
-`bundle`／`export`／`opener`／`bridge`／`manual`／`plan`／`guard`／`lint` → 命令层
-（33 条命令，名字一个不改）。`content`（2,158 行）已经吃掉最肥的一块。
+**在跑**：`coach`（1,353 行）＋ `bridge`（707 行），两个子代理并排跑。
+
+> ⚠️ **跑差分前别在工具根留 `_tmp_*` 残目录**：`scaffold` 语料第 27 条是
+> `取内容层("", 工作区)` —— Python `abspath("")` / Node `resolve("")` 都落回**当前工作目录**（＝工具根），
+> 于是它去扫工具根下最浅的 `.spec.yaml`，而 `_找文件` 按名字排序 ⇒ 谁是「最浅的第一个」取决于根里当时有什么。
+> 干净的根下固定命中 `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`（`_` 排在 `a` 前面）；
+> 多一个 `_tmp_draft-*` 之类就会换一条结果。**这不是移植错，是语料本身依赖工作树形状**（待改成显式路径）。
+
+**之后照剩下来的大小排**：`coach`（1,353 · 最肥的一块）→ `bridge`（707）／`hud`（693）／
+`theme`（592）／`manual`（556）／`preset`（500） → `export`（396）／`png`（384）／`dist`（373）
+／`lint`（293）／`plan`（262）／`bundle`（119）／`guard`（71） → 命令层
+（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
+`content`（2,158 行）已经吃掉最肥的一块。
+
+**`hud`（693）要早点搬** —— `opener` 有 3 条分支（`写回` / 改正文时 `写回=true` / `补齐`界面档）
+与 `scaffold` 的 `build_hud` 都因为它没搬而留成抛错（差分覆盖率缺口就卡在这）。
+**`forgejs/lib/` 里凡是调 `M.ydump` 的地方一律是 `M.jdump`**（计划 §二①：JS 侧不写 YAML、改写 JSON，
+差分按结构相等比）—— `opener.mjs` / `scaffold.mjs` 已这么做。
+`content.restore()` 里两处 `from . import opener as OP` 走的是**惰性导入**，`opener.mjs` 落地后没回填，
+等命令层合拢时一起接。
 
 **行数以 Python 实测为准**（2026-10-16 用 `pathlib` 数的，`forge/` 合计 **13,134 行**）：
 

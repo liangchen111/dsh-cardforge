@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（8/27 个模块逐字节绿）
+## 现状（12/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -25,6 +25,12 @@
 | YAML 子集读取器 | `forgejs\lib\yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
 | `sandbox` | `forgejs\lib\sandbox.mjs` | ✔ 5,397 字节（模式关／开各跑一遍） |
 | `content` | `forgejs\lib\content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵工程树） |
+| `opener` | `forgejs\lib\opener.mjs` | ✔ 228,776 字节（105 步 · 10 个夹具工程） |
+| `scaffold` | `forgejs\lib\scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵工程树） |
+| `draft` | `forgejs\lib\draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
+| `mods` | `forgejs\lib\mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
+
+**在跑**：`coach`（1,353 行）＋ `bridge`（707 行）。
 
 ## 怎么跑
 
@@ -43,17 +49,25 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. 按计划 §四 的批次顺序走：**`draft`(815)** → `coach`(1,353) →
-   `scaffold`(600)/`theme`(592)/`mods`(682)/`hud`(693) → `png`/`preset`/`dist`/`bundle`/`export`/`opener`/`bridge`/`manual`/`plan`/`guard`/`lint` → 辅助 →
-   命令层（33 条命令，名字一个不改）。`content`（2,158 行）已经吃掉最肥的一块。
+1. **在跑**：`coach`(1,353) ＋ `bridge`(707)，两个子代理并排。
+2. 之后按剩下来的**大小**排（别按计划 §四 那份旧批次表，它写的时候还没搬掉 `content`）：
+   `coach`(1,353 · 最肥的一块) → `bridge`(707)／`hud`(693)／`theme`(592)／`manual`(556)／`preset`(500)
+   → `export`(396)／`png`(384)／`dist`(373)／`lint`(293)／`plan`(262)／`bundle`(119)／`guard`(71)
+   → 命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
+   **`hud`(693) 要提前** —— `opener` 的 3 条分支（`写回` / 改正文时 `写回=true` / `补齐`界面档）与
+   `scaffold` 的 `build_hud` 都因为它没搬而留成抛错，差分覆盖率缺口全卡在这。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
-2. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 要等 `opener.mjs`；
-   需要写 YAML 的调用点都得把 `M.ydump` 改成 `M.jdump`。
-   `draft.py` 还 import 了 `scaffold`（`scaffold.new_card`）与 `opener`（`OPENER.改正文`）。
+3. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 是**惰性导入**，
+   `opener.mjs` 已落地但没回填，等命令层合拢时一起接；需要写 YAML 的调用点都得把 `M.ydump`
+   改成 `M.jdump`（`opener.mjs` / `scaffold.mjs` 已这么做）。
+4. **子代理派工单必须写死**：验收标准是 `python 差分\跑.py` **全绿**（不是「我那个模块绿就行」）；
+   临时目录建在 `差分\` 底下（系统 temp 可能是 8.3 短名，路径归一对不上）；不许改 `forge\` 下任何 Python。
+   **父级收工前必须自己复核**：`git status --short -- forge forge.py` 空 · 差分目录无残留 ·
+   `git diff -U0` 只看得到该看的行 · `--刷` 重刷后**旧黄金一个字节没动**。
 
 
-## 七条纪律（差分台已经证明有用）
+## 十一条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
@@ -66,6 +80,20 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
    （`012` → 10，PyYAML 不认 `0o`）。另外**流式标量要折行**：单个换行折成空格、连续 n 个换行折成 `n-1` 个
    （真 spec 里 `content: '第一段。`／空行／空行／`第二段'` 到处都是，折错就多／少一个换行）。
    `yaml.mjs` 的文件头记着「哪些语法**故意不认**」（锚点/别名/标签/多文档/裸时间戳/六十进制数），**遇到抛错，不猜**。
+8. **差分台自己也有状态**（2026-10-16 两处修正；改完复核过「`--刷` 重刷后旧黄金一个字节没动」）：
+   `_动()` 要认 **tuple** —— Python `opener.定位()` 返回 tuple，原来整个跳过归一，而 JS 侧 Array 照样归一，必红；
+   回收站判定 `rel.startswith(".forge/回收站/")` 要放宽成「路径里出现 `/.forge/回收站/`」—— 多夹具并排时 rel 是 `甲界面/.forge/回收站/…`。
+   **沙箱开关是进程级状态**：`算_sandbox` 跑完把它留在「开」⇒ 依赖它的模块会随「单跑 / 全套跑」给出两种结果；
+   新写 `算_X` 若碰沙箱，进门 `SB.enable(False)`、出门还原。
+9. **`M.ydump` 在 JS 侧是明确抛错**（计划 §二① 备案的唯一差异：不写 YAML、改写 JSON）⇒
+   凡原文调 `M.ydump` 的调用点一律改 `M.jdump`，差分按结构相等比。`opener.mjs` / `scaffold.mjs` / `content.mjs` 已这么做。
+10. **Python 内建 `str()` 不等于 JS 里的 `_字()`** —— `str(None)` 是**真名字** `"None"`，`_字()` 是空串。
+    `draft.mjs` 为此单开 `_strPy()`（影响 `_字段名`、`模块`、`要的分组`、报告「问题」，是被 `{"模块":[null]}` 当场抓住的）。
+    同一个坑的另一面：**Windows 的 OSError 文本只能硬抄**（Node 的错误对象里**没有 `winerror`**）——
+    `[WinError 267] 目录名称无效。` · `[WinError 3] 系统找不到指定的路径。`（**是 3 不是 2**）· `[WinError 5] 拒绝访问。`
+11. **跑差分前确认工具根没有 `_tmp_*` 残目录** —— `scaffold` 语料第 27 条 `取内容层("", 工作区)` 走的是
+    `abspath("")`/`resolve("")`（＝当前工作目录＝工具根），它会去扫根下最浅的 `.spec.yaml`，结果**取决于根里当时有什么**。
+    干净时固定命中 `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`（`_` 排在 `a` 前）。这不是移植错，是语料依赖工作树形状（待改显式路径）。
 
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）

@@ -126,15 +126,35 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：8/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
-  YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）**。
-  下一块按计划 §四 走 **`draft`（815 行）**，它还要 `scaffold`（600）与 `opener`（325）。
+- **进度：12/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+  YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
+  **`opener`（228,776 字节）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** · **`mods`（303,578 字节）**。
+  下一波在跑：**`coach`（1,353 行）** ＋ **`bridge`（707 行）**。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
+- **差分台的两处既有代码修正**（2026-10-16 · 复核过：`--刷` 重刷后旧黄金一个字节没动）：
+  ① `_动()` 认 `tuple` —— Python `opener.定位()` 返回 tuple，原来整个跳过归一而 JS 侧 Array 照样归一，必红；
+  ② 回收站判定 `rel.startswith(".forge/回收站/")` 放宽到「路径里出现 `/.forge/回收站/`」—— 多夹具并排时
+  rel 是 `甲界面/.forge/回收站/…`。
+- **差分台顺序陷阱**：沙箱开关是**进程级**状态，`算_sandbox` 跑完把它留在「开」⇒ 依赖它的模块会随
+  「单跑 / 全套跑」给出两种结果。`算_scaffold` 已在进门 `SB.enable(False)`、出门还原。
+  **新写 `算_X` 若碰沙箱，照此办理。**
 - **两个环境地雷**：**`cpSync(..., {recursive:true})` 会把 Node 进程打崩**（本机 v24.14.0，
   退出码 `0xC0000409`，一行输出都不给）—— 递归拷目录自己用 `readdirSync + copyFileSync + utimesSync` 写；
   **`JSON.stringify` 会把 `undefined` 的键整个丢掉** —— Python 的 `None` 在 JS 侧有 `null`/`undefined`
   两个来源，记进差分结构前一律 `?? null`。
 - **别照 YAML 规范写子集解析器，要照 PyYAML**：`1e3` 是**字符串**（PyYAML 浮点正则要求必须有小数点）；
   八进制是 YAML 1.1 的「前导 0」（`012` → 10，不认 `0o`）；流式标量要折行（单换行→空格，连续 n 个→`n-1` 个换行）。
+- **`_动()` 后来又补了一处**：`hasattr(x, '__dict__')` —— Python `draft._体检()` 返回的是 `Issue` **对象**，
+  不进这个分支 `json.dumps` 直接 `TypeError`（JS 的 `动()` 本来就把任何对象递归）。
+- **Windows 的 OSError 文本只能硬抄**（Node 的错误对象里**没有 `winerror`**）：
+  `[WinError 267] 目录名称无效。` · `[WinError 3] 系统找不到指定的路径。`（**是 3 不是 2**）· `[WinError 5] 拒绝访问。`
+- **Python 内建 `str()` ≠ JS 里的 `_字()`**：`str(None)` 是真名字 `"None"`，而 `_字()` 是空串。
+  `draft.mjs` 里单开了个 `_strPy()` 走内建语义（影响 `_字段名`、`模块`、`要的分组`、报告「问题」）。
+- **`scaffold` 语料第 27 条依赖工作树形状**：`取内容层("", 工作区)` 里 `abspath("")`/`resolve("")` 都落回
+  **当前工作目录（＝工具根）**，于是去扫根下最浅的 `.spec.yaml`。干净的根下固定命中
+  `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`；**根里多一个 `_tmp_*` 残目录就会换结果**。
+  跑差分前先确认工具根没有残目录（待改成显式路径）。
+- **`mods` 的指纹要冻时钟**：语料里把台账步骤的 `接于` 换成 `时间`，并把时钟冻结在
+  `2026-01-01T00:00:00.000000+08:00`（细节写在 `差分\语料\mods.json` 的「说明」里）。
 

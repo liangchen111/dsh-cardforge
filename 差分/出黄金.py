@@ -298,6 +298,12 @@ def _动(x, 键=None):
         # ★ tuple 也要走：`json.dumps` 本来就把 tuple 写成数组，JS 那边 Array 一直走的就是这条。
         #   少这一条，Python 侧 tuple 里的字符串就**整个跳过归一**，而 JS 侧照样归一 —— 差分必红。
         return [_动(v, 键) for v in x]
+    if hasattr(x, "__dict__"):
+        # ★ 带属性的对象 —— `draft._体检()` 交回来的 `model.Issue` 就是这一类。
+        #   JS 那边的 `动()`（比一比.mjs:281）本来就把**任何**对象递归成键值对；Python 这边少了这一条，
+        #   `json.dumps` 会在写黄金那一步直接 `TypeError: Object of type Issue is not JSON serializable`。
+        #   键序与 `Issue.__init__` 的赋值序一致，与 JS 的 `Object.entries()` 同一个序。
+        return {_文本8.sub("<hex8>", str(k)): _动(v, str(k)) for k, v in vars(x).items()}
     return x
 
 
@@ -572,6 +578,241 @@ def 算_scaffold(料: dict) -> dict:
 
 
 算式["scaffold"] = 算_scaffold
+
+
+def 算_draft(料: dict) -> dict:
+    """顺序跑一串 draft 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    语料分「预置」（建目录 / 写文件）与「操作」（按序调 draft 的函数）两段。
+
+    ★ 工作目录**建在工具根底下**（同 算_scaffold / 算_opener）：Windows 的 temp 可能是 8.3
+      短名（`C:\\Users\\ADMINI~1\\...`），Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+      Node 的 `path.resolve` 只做字符串规范化 —— 同一目录两边算出两个写法，`<工作>` 替换失配。
+    ★ 语料里没有「落卡成功落出一张卡」的用例：`draft.落卡` 的第一步就是
+      `scaffold.new_card(..., build_hud=True)`（Python 原件的默认值），JS 侧 scaffold.mjs 的
+      `_要(HUD,'hud')` 会明确抛错（hud.mjs 还没搬）⇒ 语料只覆盖 scaffold.new_card 之前的
+      早期分支。清单与理由写在 差分/语料/draft.json 的「说明」里。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import draft as D
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_draft-", dir=str(根)))
+    # ★ 与 JS 侧一一对应（比一比.mjs 算_draft）：把当前目录切进工作目录，跑完在 finally 里
+    #   切回来 —— 必须先切回来再 rmtree，Windows 上删不掉自己的 cwd。理由见那边的注释：
+    #   稿里的 `到` / `落点` / `to` 三个键，以及「一个 到 都不给」时 `or os.getcwd()` 那条
+    #   支路，都靠当前目录解析；cwd 停在工程根会让 `目标 = <cwd>/卡名` 不存在而走进主路径
+    #   （Python 有 hud，真会在工程根里落出一张卡 —— 实测污染过一次）。
+    原目录 = os.getcwd()
+    os.chdir(str(工作))
+    try:
+        for 件 in 料["预置"]:
+            if "目录" in 件:
+                (工作 / 件["目录"]).mkdir(parents=True, exist_ok=True)
+                continue
+            p = 工作 / 件["文件"]
+            p.parent.mkdir(parents=True, exist_ok=True)
+            # ★ 写文件一律落到字节上（newline="\n"），`对象` 的 JSON 形状与分隔符也要跟 JS 侧
+            #   `JSON.stringify(x, null, 2)` 逐字节对齐（末尾各加一个 \n）。
+            if "对象" in 件:
+                文 = json.dumps(
+                    _换路径(件["对象"], [("@工作@", str(工作)), ("@根@", str(根))]),
+                    ensure_ascii=False, indent=2,
+                ) + "\n"
+            else:
+                文 = _换路径(件["文本"], [("@工作@", str(工作)), ("@根@", str(根))])
+            p.write_text(文, encoding="utf-8", newline="\n")
+
+        出: dict = {"步": []}
+        for 步 in 料["操作"]:
+            # dict / list 里的字符串也换（稿的 `到` 就藏在参数里的嵌套对象里）。
+            参数 = _换路径(步.get("参数", []), [("@工作@", str(工作)), ("@根@", str(根))])
+            buf = io.StringIO()
+            rec: dict = {"调用": 步["调用"], "参数": 参数}
+            try:
+                with contextlib.redirect_stdout(buf):
+                    # 有的名字是**常量**不是函数（`_条目特殊` 是 tuple、`_别名` 是 dict）
+                    # ⇒ 语料给一步 `"常量": true`，两侧都只取值、不调用。
+                    回 = getattr(D, 步["调用"]) if 步.get("常量") else getattr(D, 步["调用"])(*参数)
+                rec["回"] = _动(list(回) if isinstance(回, tuple) else 回)
+                rec["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                rec["回"] = None
+                rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+            rec["出"] = _净文本(buf.getvalue())
+            出["步"].append(rec)
+        出["树"] = _树(工作)
+    finally:
+        # 先切回来再删：Windows 上删不掉自己的 cwd。
+        os.chdir(原目录)
+        shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(出, 对)
+
+
+算式["draft"] = 算_draft
+
+
+def 算_mods(料: dict) -> dict:
+    """逐个调 mods 的入口，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    ★ 工作目录**建在工具根底下**（同 算_scaffold / 算_opener / 算_draft）：Windows 的 temp 可能是
+      8.3 短名（`C:\\Users\\ADMINI~1\\...`），Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+      Node 的 `path.resolve` 只做字符串规范化 —— 同一目录两边算出两个写法，`<工作>` 替换失配。
+    ★ 夹具全部在这里硬编码（甲/乙/丙/丁/戊/己/库无/零条目/坏账本/数账本/落版本），语料只给
+      「换」（改文件）与「调用」两类步子；**两侧建法必须一字不差**。
+    ★ 「接于」是时间戳，而公共 `_动()` 的 ISO 归一在值上只认 `created_at` / `updated_at` / `时间`，
+      账本那个键不在口径里 ⇒ 收尾时把每份 `模块账本.json` 里的 ISO 形状文本换成 `<时间>`
+      （两侧同做），否则 `_树` 的 sha1 必红。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import mods as MM
+
+    def 写文本(p, 文: str):
+        p = Path(p)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(文, encoding="utf-8", newline="\n")
+
+    def 改文本(p, 对):
+        文 = Path(p).read_text(encoding="utf-8")
+        for 旧, 新 in 对:
+            文 = 文.replace(旧, 新)
+        写文本(p, 文)
+
+    def 账本(表) -> str:
+        # 跟 save_ledger 落盘一个形状（ensure_ascii=False · indent=2 · 末尾一个换行），
+        # 这样 JS 侧 `JSON.stringify(表, null, 2) + "\n"` 与它逐字节同。
+        return json.dumps(
+            {"_说明": MM.LEDGER_NOTE, "格式": 1, "模块": 表}, ensure_ascii=False, indent=2
+        ) + "\n"
+
+    def 账本值(x):
+        """把账本里的「接于」改名成「时间」，再交给公共 `_动()`。
+
+        `_动()` 的 ISO 归一在**值**上只认 `created_at` / `updated_at` / `时间`，账本那个键
+        不在口径里 —— 直接丢进去，两侧会把各自的真实时间戳原样写进黄金，必红。
+        改名之后再走 `_动`，`时间` 那一支就会换成 `<时间>`（落盘的那份文件另外有收尾一遍
+        正则替换，见下）。
+        """
+        if isinstance(x, dict):
+            return {("时间" if k == "接于" else k): 账本值(v) for k, v in x.items()}
+        if isinstance(x, (list, tuple)):
+            return [账本值(v) for v in x]
+        return x
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_mods-", dir=str(根)))
+    # ★ 把时钟钉死。`_fingerprint()` 是 `sha1(json.dumps(条目, sort_keys=True))`，而条目里
+    #   带着 `created_at` / `updated_at`（`_clone_from` 现取 `M.now_iso()`）⇒ 不钉死的话
+    #   两侧指纹必然不同，黄金自己两次跑都不一样（实测：连跑两遍黄金 md5 就不同）。
+    #   钉死之后指纹才真的在比 `_pyJson` 的键序/分隔符/引号与整条条目的结构。
+    from forge import model as MMODEL
+
+    冻结 = "2026-01-01T00:00:00.000000+08:00"
+    原now = MMODEL.now_iso
+    MMODEL.now_iso = lambda: 冻结
+    try:
+        骨架 = 根 / "assets" / "骨架"
+
+        def 拷(名: str) -> Path:
+            目的 = 工作 / 名
+            shutil.copytree(str(骨架), str(目的))
+            return 目的
+
+        甲 = 拷("工程甲")
+
+        乙 = 拷("工程乙")
+        (乙 / "hud" / "hud.conf.json").unlink()  # 没 hud 层的工程
+
+        丙 = 拷("工程丙")  # 前缀不是 skel：走 infer_prefix 的 -grp- / -entry- 两支
+        改文本(丙 / "source" / "骨架.spec.yaml", [("grp-skel-", "moonlight-grp-"), ("skel-", "moonlight-")])
+
+        丁 = 拷("工程丁")  # 前缀 card ＋ 目标条目已存在（_clone_from 的撞名分支）
+        改文本(
+            丁 / "source" / "骨架.spec.yaml",
+            [("skel-rule-check", "card-entry-rule-check"), ("skel-world-core", "card-mod-backup")],
+        )
+
+        戊 = 拷("工程戊")  # 参照条目被改名 ⇒ 找不到参照条目
+        改文本(戊 / "source" / "骨架.spec.yaml", [("skel-rule-check", "skel-sentinel")])
+
+        己 = 拷("工程己")  # 账本说接过『代笔』，但 spec 里没有 ⇒ 撤时不还原、也不删
+        _接于 = "2020-01-01T00:00:00.000000+08:00"
+        写文本(
+            己 / "模块账本.json",
+            账本({"代笔": {"id": "ai", "版本": "1.0.0", "接于": _接于,
+                          "条目": {"替换": [], "新增": []}, "正则": [], "界面": []}}),
+        )
+
+        坏账本 = 拷("坏账本")
+        写文本(坏账本 / "模块账本.json", "{这不是 JSON")
+
+        数账本 = 拷("数账本")
+        写文本(数账本 / "模块账本.json", "[]")
+
+        落版本 = 拷("落版本")  # 账本里 v0.9.0 ⇒ print_modules 走「落后 ● ▲」那支
+        写文本(
+            落版本 / "模块账本.json",
+            账本({"骰子": {"id": "dice", "版本": "0.9.0", "接于": _接于,
+                          "条目": {"替换": [], "新增": []}, "正则": [], "界面": []}}),
+        )
+
+        写文本(工作 / "库无" / "source" / "空.spec.yaml", "library: {}\n")
+        写文本(工作 / "零条目" / "source" / "零.spec.yaml", "library:\n  entries: []\n")
+
+        出: dict = {
+            "常量": {
+                "ROOT": str(MM.ROOT),
+                "MODS_DIR": str(MM.MODS_DIR),
+                "LEDGER_NAME": MM.LEDGER_NAME,
+                "LEDGER_NOTE": MM.LEDGER_NOTE,
+                "RESERVED": list(MM.RESERVED),
+                "DIRECTIVE": list(MM.DIRECTIVE),
+            },
+            "操作": [],
+        }
+
+        for 步 in 料["操作"]:
+            if "换" in 步:
+                路径 = _换路径(步["换"]["路径"], [("@工作@", str(工作)), ("@根@", str(根))])
+                改文本(路径, [(步["换"]["旧"], 步["换"]["新"])])
+                出["操作"].append({"做": "换", "参数": [路径], "回": None, "错": None, "出": ""})
+                continue
+            参数 = _换路径(步.get("参数", []), [("@工作@", str(工作)), ("@根@", str(根))])
+            buf = io.StringIO()
+            rec: dict = {"调用": 步["调用"], "参数": 参数}
+            try:
+                with contextlib.redirect_stdout(buf):
+                    回 = getattr(MM, 步["调用"])(*参数)
+                rec["回"] = _动(账本值(回))
+                rec["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                rec["回"] = None
+                rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+            rec["出"] = _净文本(buf.getvalue())
+            出["操作"].append(rec)
+
+        # 账本里的「接于」不在 _动 的口径里 ⇒ 两侧都把 ISO 形状的文本换成 <时间>
+        for p in sorted(工作.rglob("模块账本.json")):
+            写文本(p, _ISO.sub("<时间>", p.read_text(encoding="utf-8")))
+
+        出["树"] = _树(工作)
+    finally:
+        MMODEL.now_iso = 原now
+        shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(出, 对)
+
+
+算式["mods"] = 算_mods
 
 
 def main(argv):

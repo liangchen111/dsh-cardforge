@@ -45,6 +45,25 @@ try {
   O = null
 }
 
+// draft 同理：它是把七个兄弟**全用上**的那一个（content / domain / model / opener /
+// pack / scaffold / validate；mods 只在预检里惰性导入），落卡主路径还要 scaffold 里再要
+// hud。它没落地时，别的模块照样能比。名字用 DR：D 已经是静态导入的 domain。
+let DR = null
+try {
+  DR = await import('../forgejs/lib/draft.mjs')
+} catch (e) {
+  DR = null
+}
+
+// mods 同理：它只 import model / sandbox 两个兄弟，但同样不该因为自己没落地就牵连别人。
+// 名字用 MO：M 已经是静态导入的 model。
+let MO = null
+try {
+  MO = await import('../forgejs/lib/mods.mjs')
+} catch (e) {
+  MO = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -557,6 +576,252 @@ function 算_opener(料) {
 }
 
 算式.opener = 算_opener
+
+// -------------------------------------------------------------------- draft
+//
+// 又是同一个架构（预置夹具 → 逐步记 stdout／返回值／异常消息 → 最后比整棵工作树），
+// 三处不一样：
+//   ① 语料分「预置」与「操作」两段：预置建目录／写文件，操作才调 draft 的函数。
+//   ② 落卡的稿子是**文件**，路径由语料给 ⇒ 预置里把稿写出来，操作只传路径。
+//   ③ ★ 落卡**成功**那条主路径进不了语料：draft.落卡 第一步是
+//      scaffold.new_card(..., build_hud=True)（Python 原件的默认值），JS 侧 scaffold.mjs
+//      的 `_要(HUD,'hud')` 会明确抛错（hud.mjs 还没搬）。语料只覆盖 scaffold 之前的
+//      早期分支；等 hud.mjs 落地，把「好稿 + --试／--覆盖／清空条目」补进操作即可。
+//      理由与清单写在 差分/语料/draft.json 的「说明」里。
+function 算_draft(料) {
+  if (!DR) throw new Error('forgejs/lib/draft.mjs 没导入成功，先把它落地再跑 draft')
+  // ★ 工作目录**建在工具根底下**（同 算_scaffold / 算_opener）：Windows 的 temp 可能是
+  //   8.3 短名（`C:\Users\ADMINI~1\...`），Python 的 `os.path.abspath` 走
+  //   `GetFullPathNameW`、Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出
+  //   两个写法，归一用的 `<工作>` 替换当场失配。
+  const 工作 = mkdtempSync(join(根, '_tmp_draft-'))
+  // ★ 把**当前目录切进工作目录**（跑完切回来）：稿文件里的 `到` / `落点` / `to` 三个键，
+  //   以及「一个 到 都不给」时 `os.path.abspath(None) or os.getcwd()` 那条支路，都拿相对
+  //   路径 / 当前目录去解析。若让 cwd 停在工程根，`目标 = <cwd>/卡名` 不存在就会**走进主
+  //   路径** —— Python 有 hud，真会当场在工程根里落出一张卡（实测污染过一次），而 JS 侧
+  //   主路径被 hud.mjs 挡着。切进工作目录后 `目标` 落在我自己预置的夹具上，两侧都停在
+  //   早期报错分支里，一个字节都不写。
+  const 原目录 = process.cwd()
+  process.chdir(工作)
+  const 出 = { 步: [] }
+  try {
+    for (const 件 of 料.预置) {
+      if (件.目录 !== undefined) {
+        mkdirSync(join(工作, 件.目录), { recursive: true })
+        continue
+      }
+      const p = join(工作, 件.文件)
+      mkdirSync(dirname(p), { recursive: true })
+      // 写文件一律落到字节上：两侧都不做换行翻译（Python 那边是 write_text(newline="\n")）。
+      // `对象` 的形状与分隔符也要逐字节对齐：Python `json.dumps(ensure_ascii=False, indent=2)`
+      // 与 JS `JSON.stringify(x, null, 2)` 对同一份数据给出同一串（末尾各加一个 \n）。
+      let 文
+      if (件.对象 !== undefined) {
+        文 = JSON.stringify(换路径(件.对象, [['@工作@', 工作], ['@根@', 根]]), null, 2) + '\n'
+      } else {
+        文 = 换路径(件.文本, [['@工作@', 工作], ['@根@', 根]])
+      }
+      writeFileSync(p, 文, 'utf8')
+    }
+    for (const 步 of 料.操作) {
+      // 与 Python 侧 `_换路径(参数, [("@工作@", str(工作)), ("@根@", str(根))])` 逐字对应：
+      // dict / list 里的字符串也换（稿的 `到` 就藏在参数里的嵌套对象里）。
+      const 参数 = 换路径(步.参数 ?? [], [['@工作@', 工作], ['@根@', 根]])
+      const rec = { 调用: 步.调用, 参数 }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        // 有的名字是**常量**不是函数（Python 侧 `_条目特殊` 是 tuple、`_别名` 是 dict）
+        // ⇒ 语料给一步 `"常量": true`，两侧都只取值、不调用。
+        const 回 = 步.常量 ? DR[步.调用] : DR[步.调用](...参数)
+        rec.回 = 动(回 ?? null)
+        rec.错 = null
+      } catch (e) {
+        rec.回 = null
+        rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.步.push(rec)
+    }
+    出.树 = 走树(工作)
+  } finally {
+    // 先切回来再删：Windows 上删不掉自己的 cwd。
+    process.chdir(原目录)
+    rmSync(工作, { recursive: true, force: true })
+  }
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(出, 对)
+}
+
+算式.draft = 算_draft
+
+// -------------------------------------------------------------------- mods
+//
+// 又是同一个架构（夹具硬编码 → 逐步记 stdout／返回值／异常消息 → 最后比整棵工作树），
+// 与 算_scaffold / 算_draft 三处不一样：
+//   ① 夹具（工程甲…工程己／库无／零条目／坏账本／数账本／落版本）全在下面硬编码，
+//      **两侧建法必须一字不差** —— 语料只给「换」（改文件）与「调用」两类步子。
+//   ② 账本里的「接于」是时间戳，而 `动()` 的 ISO 归一在**值**上只认 created_at /
+//      updated_at / 时间 ⇒ 拍树之前要把每份 模块账本.json 里 ISO 形状的文本换成
+//      `<时间>`（两侧同做；Python 侧 `_ISO.sub`，这边同一个正则），否则整棵树必红。
+//   ③ 落盘形状：Python 侧 `json.dump(..., ensure_ascii=False, indent=2)`
+//      **不补尾换行**（`forge/mods.py:269` / `:309`），所以 `mods.mjs` 的 `_写Json`
+//      也不补 —— 夹具（`账本()`／`写文本()`）反过来两侧都补一个 `\n`，逐字节对齐。
+function 算_mods(料) {
+  if (!MO) throw new Error('forgejs/lib/mods.mjs 没导入成功，先把它落地再跑 mods')
+  // ★ 工作目录**建在工具根底下**（同 算_scaffold / 算_opener / 算_draft）：Windows 的 temp 可能是
+  //   8.3 短名（`C:\Users\ADMINI~1\...`），Python 的 `os.path.abspath` 走
+  //   `GetFullPathNameW`、Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出
+  //   两个写法，归一用的 `<工作>` 替换当场失配。
+  const 工作 = mkdtempSync(join(根, '_tmp_mods-'))
+  // ★ 把时钟钉死（与 Python 侧 `MMODEL.now_iso = lambda: 冻结` 对齐）。
+  //   `_fingerprint()` 是 `sha1(条目)`，条目里带 `created_at` / `updated_at`
+  //   （`_clone_from` 现取 `M.nowIso()`）⇒ 不钉死两侧指纹必然不同，黄金自己两次跑都不同。
+  //   钉死用**本地** 2026-01-01T00:00:00（`new Date(...)` 各参数是本地时间），这样
+  //   `nowIso()` 拼出来的就是 `2026-01-01T00:00:00.000000+08:00`。
+  const 冻结毫秒 = new Date(2026, 0, 1, 0, 0, 0, 0).getTime()
+  class 冻结Date extends Date {
+    constructor(...a) { super(...(a.length ? a : [冻结毫秒])) }
+    static now() { return 冻结毫秒 }
+  }
+  const 原Date = globalThis.Date
+  globalThis.Date = 冻结Date
+
+  const 写文本 = (p, 文) => {
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(p, 文, 'utf8')
+  }
+  // 与 Python 侧 `改文本` 同形：文本模式读（折 CRLF）→ 逐对替换 → 按 \n 写。
+  // Python 的 `str.replace` 是**全替换**，JS 的 `String.replace` 只换第一个 ⇒ 用 split/join。
+  const 改文本 = (p, 对) => {
+    let 文 = readFileSync(p, 'utf8').replace(/\r\n|\r/g, '\n')
+    for (const [旧, 新] of 对) 文 = 文.split(旧).join(新)
+    写文本(p, 文)
+  }
+  const 账本 = (表) => JSON.stringify({ _说明: MO.LEDGER_NOTE, 格式: 1, 模块: 表 }, null, 2) + '\n'
+  // 与 Python 侧 `账本值` 同形：把「接于」改名成「时间」再走 `动()`。
+  // `动()` 的 ISO 归一在**值**上只认 created_at / updated_at / 时间，账本那个键不在口径里 ——
+  // 改名之后 `时间` 那一支才会换成 `<时间>`（落盘的那份文件另外有收尾一遍正则替换，见下）。
+  const 账本值 = (x) => {
+    if (Array.isArray(x)) return x.map(账本值)
+    if (x && typeof x === 'object') {
+      const o = {}
+      for (const [k, v] of Object.entries(x)) o[k === '接于' ? '时间' : k] = 账本值(v)
+      return o
+    }
+    return x
+  }
+
+  const 出 = {
+    常量: {
+      ROOT: MO.ROOT,
+      MODS_DIR: MO.MODS_DIR,
+      LEDGER_NAME: MO.LEDGER_NAME,
+      LEDGER_NOTE: MO.LEDGER_NOTE,
+      RESERVED: [...MO.RESERVED],
+      DIRECTIVE: [...MO.DIRECTIVE],
+    },
+    操作: [],
+  }
+  try {
+    const 骨架 = join(根, 'assets', '骨架')
+    const 拷 = (名) => { const 目的 = join(工作, 名); 拷目录(骨架, 目的); return 目的 }
+
+    const 工程甲 = 拷('工程甲')
+
+    const 工程乙 = 拷('工程乙')
+    unlinkSync(join(工程乙, 'hud', 'hud.conf.json')) // 没 hud 层的工程
+
+    // 前缀不是 skel：走 infer_prefix 的 -grp- / -entry- 两支
+    const 工程丙 = 拷('工程丙')
+    改文本(join(工程丙, 'source', '骨架.spec.yaml'), [['grp-skel-', 'moonlight-grp-'], ['skel-', 'moonlight-']])
+
+    // 前缀 card ＋ 目标条目已存在（_clone_from 的撞名分支）
+    const 工程丁 = 拷('工程丁')
+    改文本(join(工程丁, 'source', '骨架.spec.yaml'),
+      [['skel-rule-check', 'card-entry-rule-check'], ['skel-world-core', 'card-mod-backup']])
+
+    // 参照条目被改名 ⇒ 找不到参照条目
+    const 工程戊 = 拷('工程戊')
+    改文本(join(工程戊, 'source', '骨架.spec.yaml'), [['skel-rule-check', 'skel-sentinel']])
+
+    // 账本说接过『代笔』，但 spec 里没有 ⇒ 撤时不还原、也不删
+    const 接于 = '2020-01-01T00:00:00.000000+08:00'
+    const 工程己 = 拷('工程己')
+    写文本(join(工程己, '模块账本.json'),
+      账本({ 代笔: { id: 'ai', 版本: '1.0.0', 接于, 条目: { 替换: [], 新增: [] }, 正则: [], 界面: [] } }))
+
+    const 坏账本 = 拷('坏账本')
+    写文本(join(坏账本, '模块账本.json'), '{这不是 JSON')
+
+    const 数账本 = 拷('数账本')
+    写文本(join(数账本, '模块账本.json'), '[]')
+
+    // 账本里 v0.9.0 ⇒ print_modules 走「落后 ● ▲」那支
+    const 落版本 = 拷('落版本')
+    写文本(join(落版本, '模块账本.json'),
+      账本({ 骰子: { id: 'dice', 版本: '0.9.0', 接于, 条目: { 替换: [], 新增: [] }, 正则: [], 界面: [] } }))
+
+    写文本(join(工作, '库无', 'source', '空.spec.yaml'), 'library: {}\n')
+    写文本(join(工作, '零条目', 'source', '零.spec.yaml'), 'library:\n  entries: []\n')
+
+    for (const 步 of 料.操作) {
+      if (步.换 !== undefined) {
+        const p = 换路径(步.换.路径, [['@工作@', 工作], ['@根@', 根]])
+        改文本(p, [[步.换.旧, 步.换.新]])
+        出.操作.push({ 做: '换', 参数: [p], 回: null, 错: null, 出: '' })
+        continue
+      }
+      // 与 Python 侧 `_换路径(参数, [("@工作@", str(工作)), ("@根@", str(根))])` 逐字对应。
+      const 参数 = 换路径(步.参数 ?? [], [['@工作@', 工作], ['@根@', 根]])
+      const rec = { 调用: 步.调用, 参数 }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        const 回 = MO[步.调用](...参数)
+        rec.回 = 动(账本值(回 ?? null))
+        rec.错 = null
+      } catch (e) {
+        rec.回 = null
+        rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.操作.push(rec)
+    }
+
+    // 账本里的「接于」不在 `动()` 的口径里 ⇒ 两侧都把 ISO 形状的文本换成 <时间>。
+    // 顺序不影响结果（每个文件各换各的），排序只为两边步调一致、好读。
+    const 账本们 = []
+    const 收 = (base) => {
+      let ents
+      try { ents = readdirSync(base, { withFileTypes: true }) } catch { return }
+      for (const e of ents) {
+        const p = join(base, e.name)
+        if (e.isDirectory()) 收(p)
+        else if (e.name === '模块账本.json') 账本们.push(p)
+      }
+    }
+    收(工作)
+    for (const p of 账本们.sort()) 写文本(p, readFileSync(p, 'utf8').replace(_ISO, '<时间>'))
+
+    出.树 = 走树(工作)
+  } finally {
+    globalThis.Date = 原Date
+    rmSync(工作, { recursive: true, force: true })
+  }
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(出, 对)
+}
+
+算式.mods = 算_mods
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {
