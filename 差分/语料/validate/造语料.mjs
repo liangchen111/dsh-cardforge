@@ -122,12 +122,40 @@ const 问题卡 = {
 })
 
 // ------------------------------------------------------------------ 工程甲
-// 界面层全查一遍 + 工程层不碰 yload 的那些分支（source/ 缺席 ⇒ specs=[]）
+// 界面层全查一遍 + **工程层里要读 source/*.spec.yaml 的那些分支**
+// （YAML 子集读取器落地后，这一面才点得亮）
+写('工程甲/source/甲.spec.yaml',
+  'format: eleckoi.test-snapshot\n' +
+  'version: 1\n' +
+  'character:\n' +
+  '  name: 甲（spec 名）\n' +
+  'library:\n' +
+  '  entries:\n' +
+  '  - id: opening-1\n' +
+  '    title: 开场白\n' +
+  '    kind: opening\n' +
+  "    content: '没有建卡器标记的正文'\n" +
+  '  - id: e-y\n' +
+  '    title: 新增的\n' +
+  "    content: '没被改过的正文'\n" +
+  '  - id: e-z\n' +
+  '    title: 被改过的\n' +
+  "    content: '改过了'\n" +
+  'regex_rules:\n' +
+  '  - id: r-y\n' +
+  '    name: 别的正则\n' +
+  '    pattern: /x/\n')
+写('工程甲/source/别的.txt', '夹具：这个文件不该影响任何判断\n')
 写j('工程甲/hud/hud.conf.json', {
   卡名: '甲',
   模块: ['缺的模块', '在的模块'],
   开场白: { 条目: 'opening-1', 正文: '@开场@' },
-  正则: [{ name: '界面注入', view: 'view_create.html', pattern: '/\\u200B{3}/' }],
+  正则: [
+    // 名字不在 spec 的正则里 ⇒ PROJ-HUD-UNWRITTEN
+    { name: '界面注入', view: 'view_create.html', pattern: '/\\u200B{3}/' },
+    // 名字在 spec 里、但模式对不上 ⇒ PROJ-HUD-PATTERN
+    { name: '别的正则', view: 'view_other.html', pattern: '/不一样/' },
+  ],
 })
 写('工程甲/hud/hud.core.js',
   '/* 界面核心（夹具） */\n' +
@@ -141,7 +169,8 @@ const 问题卡 = {
   '.x { position:fixed; top: 0 }\n')
 写('工程甲/hud/模块/在的模块/样式.css', '.hud-模块 { color: blue }\n')
 写('工程甲/hud/模块/没登记的/没登记的.js', '/* 空模块：一条都不该报 */\n')
-写j('工程甲/成品/甲.card.json', {})
+// 成品 的 mtime 钉到 2000-01-01 ⇒ 比 source/甲.spec.yaml 旧 ⇒ PROJ-STALE-CARD 必响
+utimesSync(写('工程甲/成品/甲.card.json', '{}\n'), new Date('2000-01-01T00:00:00Z'), new Date('2000-01-01T00:00:00Z'))
 // 预览.html 的 mtime 钉到 2000-01-01 ⇒ 永远比 hud/ 下的文件旧 ⇒ PROJ-STALE-PREVIEW 必响
 // （不能用「先生成预览、后生成 hud」——同一次生成里 mtime 分不出先后）
 utimesSync(写('工程甲/预览.html', '<!DOCTYPE html><title>甲</title>\n'), new Date('2000-01-01T00:00:00Z'), new Date('2000-01-01T00:00:00Z'))
@@ -150,7 +179,14 @@ utimesSync(写('工程甲/预览.html', '<!DOCTYPE html><title>甲</title>\n'), 
     在的模块: {
       条目: {
         替换: [{ id: 'e-x', title: '被替换的' }],
-        新增: [{ id: 'e-y', title: '新增的', 指纹: 'deadbeef' }],
+        新增: [
+          // e-y 的指纹是**真值**（见 差分/_指纹.py 算出来的）⇒ 两边都得不出 DRIFT。
+          // 这一条是在**验指纹算法本身**：JS 的 _fingerprint 要是与 Python 差一个字节，
+          // 它就会多报一条 PROJ-LEDGER-DRIFT，差分当场红。
+          { id: 'e-y', title: '新增的', 指纹: '4da31c9f1146' },
+          // e-z 的指纹是**假的** ⇒ 两边都该报 PROJ-LEDGER-DRIFT
+          { id: 'e-z', title: '被改过的', 指纹: 'ffffffffffff' },
+        ],
       },
       正则: ['r-x'],
       界面: ['hud/模块/在的模块/没了.js'],
@@ -173,3 +209,18 @@ utimesSync(写('工程甲/预览.html', '<!DOCTYPE html><title>甲</title>\n'), 
 // ------------------------------------------------------------------ 工程丙
 // hud.conf.json 读不出来 ⇒ 只有 HUD-CONF 一条（两边解析器的报错原文不同，差分里做归一）
 写('工程丙/hud/hud.conf.json', '{ 这不是 JSON\n')
+
+// ------------------------------------------------------------------ 工程丁
+// 有成品、有唯一一份 spec，但 spec 里没有 conf 记的那个开场白条目 ⇒ HUD-OPENER-GONE
+写('工程丁/source/丁.spec.yaml',
+  'format: eleckoi.test-snapshot\n' +
+  'version: 1\n' +
+  'library:\n' +
+  '  entries: []\n')
+写j('工程丁/hud/hud.conf.json', {
+  卡名: '丁',
+  模块: [],
+  开场白: { 条目: 'opening-1' },
+  正则: [],
+})
+utimesSync(写('工程丁/成品/丁.card.json', '{}\n'), new Date('2000-01-01T00:00:00Z'), new Date('2000-01-01T00:00:00Z'))

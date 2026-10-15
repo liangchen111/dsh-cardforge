@@ -12,7 +12,12 @@
           {
             "id": "e-y",
             "title": "新增的",
-            "指纹": "deadbeef"
+            "指纹": "4da31c9f1146"
+          },
+          {
+            "id": "e-z",
+            "title": "被改过的",
+            "指纹": "ffffffffffff"
           }
         ]
       },

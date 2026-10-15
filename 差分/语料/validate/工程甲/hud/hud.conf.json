@@ -13,6 +13,11 @@
       "name": "界面注入",
       "view": "view_create.html",
       "pattern": "/\\u200B{3}/"
+    },
+    {
+      "name": "别的正则",
+      "view": "view_other.html",
+      "pattern": "/不一样/"
     }
   ]
 }

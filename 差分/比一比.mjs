@@ -187,6 +187,30 @@ function 算_validate(料) {
 
 算式.validate = 算_validate
 
+/** 与 Python 侧 `_净化` 同一套：非有限数换成带类型名的标记，谁也别想悄悄当成字符串。 */
+function 净化(x) {
+  if (Array.isArray(x)) return x.map(净化)
+  if (x && typeof x === 'object' && !(x instanceof Date)) {
+    const out = {}
+    for (const [k, v] of Object.entries(x)) out[String(k)] = 净化(v)
+    return out
+  }
+  if (typeof x === 'number' && !Number.isFinite(x)) {
+    return { __python类型__: 'float', __repr__: String(x) }
+  }
+  return x
+}
+
+function 算_yaml(料) {
+  const 出 = { 文件: [] }
+  for (const 相对 of 料.文件) {
+    出.文件.push({ 输入: 相对, 结构: 净化(M.yload(join(根, 相对))) })
+  }
+  return 出
+}
+
+算式.yaml = 算_yaml
+
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {
   const n = Math.min(a.length, b.length)

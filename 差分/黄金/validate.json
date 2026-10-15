@@ -380,9 +380,30 @@
           "where": "hud/模块/在的模块/在的模块.js",
           "message": "出现了 内联 position:fixed —— 会脱离宿主的消息流",
           "fix": "换一种写法；这条是跟宿主共用一个页面才有的约束。"
+        },
+        {
+          "level": "ERROR",
+          "code": "HUD-OPENER-MARK",
+          "where": "source/甲.spec.yaml",
+          "message": "开场白正文里少了建卡器标记（3 个零宽空格 U+200B）",
+          "fix": "**导入 ElecKoi 后建卡界面不会出现，而且不报错。** 这个标记肉眼看不见 —— 别手改这条正文：改 `hud/hud.conf.json` 的「开场白.正文」，再跑 `python forge.py hud <工程> --写回`。"
+        },
+        {
+          "level": "WARN",
+          "code": "HUD-OPENER-DRIFT",
+          "where": "source/甲.spec.yaml",
+          "message": "spec 里的开场白与 hud/hud.conf.json 里的对不上",
+          "fix": "**开场白的源头是 hud.conf.json**，spec 里这条是派生物 —— 你改的是派生物，下次 `forge hud --写回` 会把它冲掉（改了白改）。要改就改 conf，再写回。"
         }
       ],
       "工程": [
+        {
+          "level": "WARN",
+          "code": "PROJ-NAME-DRIFT",
+          "where": "source/甲.spec.yaml",
+          "message": "界面配置叫「甲」，spec 里却叫「甲（spec 名）」",
+          "fix": "导进 ElecKoi 显示的是 spec 里那个名字，会跟工程目录对不上。改成同一个：python forge.py name <工程> --改 \"甲\""
+        },
         {
           "level": "ERROR",
           "code": "PROJ-MOD-UNLISTED",
@@ -406,10 +427,10 @@
         },
         {
           "level": "INFO",
-          "code": "PROJ-LEDGER-GONE",
+          "code": "PROJ-LEDGER-DRIFT",
           "where": "模块账本.json",
-          "message": "「在的模块」记着它新加了条目「新增的」，spec 里已经没有这条",
-          "fix": "撤的时候会跳过它，不影响别的。"
+          "message": "「在的模块」加的条目「被改过的」你改过",
+          "fix": "撤这个模块时它**照删**（账本记着它归模块）—— 舍不得就先把它从账本里摘掉。"
         },
         {
           "level": "INFO",
@@ -424,6 +445,27 @@
           "where": "模块账本.json",
           "message": "「在的模块」记着界面文件 hud/模块/在的模块/没了.js，它不在了",
           "fix": "撤模块时会删不干净，或者 conf 与目录从此对不上 —— 手工补回来，或把这一条从账本里摘掉。"
+        },
+        {
+          "level": "WARN",
+          "code": "PROJ-HUD-UNWRITTEN",
+          "where": "source/甲.spec.yaml",
+          "message": "hud.conf.json 里那条「界面注入」不在 spec 的正则里",
+          "fix": "卡里就靠这条正则把界面注进去 —— 少它，导入 ElecKoi 之后界面根本不会出现。跑一次 `forge hud <工程> --写回`。"
+        },
+        {
+          "level": "INFO",
+          "code": "PROJ-HUD-PATTERN",
+          "where": "source/甲.spec.yaml",
+          "message": "正则「别的正则」的模式与 conf 里那份不一样",
+          "fix": "下次 `forge hud --写回` 会按 conf 覆盖它 —— 若有意改在这里，请把 conf 也改了。"
+        },
+        {
+          "level": "WARN",
+          "code": "PROJ-STALE-CARD",
+          "where": "成品/",
+          "message": "甲.card.json 比 spec 旧",
+          "fix": "**交付给 ElecKoi 的是成品，不是 spec** —— 现在导进去的还是改之前那一版。跑一次 `forge build` 重新生成。"
         },
         {
           "level": "INFO",
@@ -459,6 +501,27 @@
         }
       ],
       "工程": []
+    },
+    {
+      "输入": "差分/语料/validate/工程丁",
+      "界面": [
+        {
+          "level": "INFO",
+          "code": "HUD-OPENER-GONE",
+          "where": "source/丁.spec.yaml",
+          "message": "spec 里没有开场白条目「opening-1」",
+          "fix": "这条是 `forge hud --写回` 写进去的 —— 现在开场的正文由宿主自己填。"
+        }
+      ],
+      "工程": [
+        {
+          "level": "WARN",
+          "code": "PROJ-STALE-CARD",
+          "where": "成品/",
+          "message": "丁.card.json 比 spec 旧",
+          "fix": "**交付给 ElecKoi 的是成品，不是 spec** —— 现在导进去的还是改之前那一版。跑一次 `forge build` 重新生成。"
+        }
+      ]
     },
     {
       "输入": "差分/语料/validate/不存在的工程",

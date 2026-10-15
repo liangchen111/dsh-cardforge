@@ -226,6 +226,42 @@ def 算_validate(料: dict) -> dict:
 算式["validate"] = 算_validate
 
 
+def _净化(x):
+    """把 PyYAML 解析出来的东西变成**两边可比**的形状。
+
+    `safe_load` 会给出 `datetime` / `date` / 非有限 float 这类 JSON 塞不进去的值 ——
+    这里把它们换成带类型名的标记对象，**让差分当场炸出来**，而不是悄悄当成字符串。
+    （引擎写出的 spec 里时间戳一律带单引号，所以正常路径撞不上；撞上就是手写文件。）
+    """
+    if isinstance(x, dict):
+        return {str(k): _净化(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_净化(v) for v in x]
+    if isinstance(x, bool) or x is None or isinstance(x, int):
+        return x
+    if isinstance(x, float):
+        if x != x or x in (float("inf"), float("-inf")):
+            return {"__python类型__": "float", "__repr__": repr(x)}
+        return x
+    if isinstance(x, str):
+        return x
+    return {"__python类型__": type(x).__name__, "__repr__": repr(x)}
+
+
+def 算_yaml(料: dict) -> dict:
+    """YAML：比**结构**，不比排版（唯一备案过的例外）。"""
+    import yaml as Y
+
+    出: dict = {"文件": []}
+    for 相对 in 料["文件"]:
+        文 = (根 / 相对).read_text(encoding="utf-8")
+        出["文件"].append({"输入": 相对, "结构": _净化(Y.safe_load(文))})
+    return 出
+
+
+算式["yaml"] = 算_yaml
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

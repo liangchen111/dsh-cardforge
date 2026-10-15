@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（5/27 个模块逐字节绿）
+## 现状（6/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -21,7 +21,8 @@
 | `domain` | `forgejs\lib\domain.mjs` | ✔ 7,975 字节 |
 | `zod` | `forgejs\lib\zod.mjs` | ✔ 2,661 字节 |
 | `pack` | `forgejs\lib\pack.mjs` | ✔ 136,436 字节（3 份语料） |
-| `validate` | `forgejs\lib\validate.mjs` | ✔ 25,970 字节（**39/47 种诊断 code**，余 8 种卡在 YAML） |
+| `validate` | `forgejs\lib\validate.mjs` | ✔ 29,091 字节（**47/47 种诊断 code 全覆盖**） |
+| YAML 子集读取器 | `forgejs\lib\yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
 
 ## 怎么跑
 
@@ -40,19 +41,23 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **搬 YAML 子集读取器**（落进 `forgejs\lib\model.mjs`）—— 它是唯一挡在
-   `validate` 剩下 8 种 code、以及后面整条 `spec.yaml` 链前面的东西。
-   口径：**读得懂 `.spec.yaml`、新产出默认写 `.spec.json`；比对用 PyYAML 解析回来做结构相等，
-   不逐字节比排版**（计划 §二①）。
-2. 把 `validate` 的语料补上 `source/*.spec.yaml` 那一面（那 8 种 code 就能点亮）。
-3. 之后按计划 §四 的批次顺序走：`content`(2159) → `draft`(816) → `coach`(1301) → `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export` → 辅助 → 命令层（33 条命令，名字一个不改）。
+1. 按计划 §四 的批次顺序走：**`content`(2159)** → `draft`(816) → `coach`(1301) →
+   `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export` → 辅助 →
+   命令层（33 条命令，名字一个不改）。
+2. `content.py` 是最大的一块，**建议单独占一轮**：先看它引用了哪些已搬模块、把语料铺开再动笔。
 
 
-## 三条纪律（差分台已经证明有用）
+## 四条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-3. **抓到的两个坑**：Python `round()` 是**银行家舍入**（`.5` 进偶数，token 估算会撞上）；Python `repr()` 会**递归**（`repr(['normal'])` 是 `['normal']`）。宽度表是从 `unicodedata` **生成**的（`差分\生成宽度表.py` → `forgejs\lib\east_asian_width.mjs`），不手抄。
+3. **抓到的坑**：Python `round()` 是**银行家舍入**（`.5` 进偶数，token 估算会撞上）；Python `repr()` 会**递归**（`repr(['normal'])` 是 `['normal']`）。宽度表是从 `unicodedata` **生成**的（`差分\生成宽度表.py` → `forgejs\lib\east_asian_width.mjs`），不手抄。
+4. **YAML 要照抄 PyYAML，不是照抄 YAML 规范**（两者不一样，差分当场逮到两处）：
+   **`1e3` 在 PyYAML 眼里是字符串**（它的浮点正则要求必须有小数点）；**八进制是 YAML 1.1 的「前导 0」**
+   （`012` → 10，PyYAML 不认 `0o`）。另外**流式标量要折行**：单个换行折成空格、连续 n 个换行折成 `n-1` 个
+   （真 spec 里 `content: '第一段。`／空行／空行／`第二段'` 到处都是，折错就多／少一个换行）。
+   `yaml.mjs` 的文件头记着「哪些语法**故意不认**」（锚点/别名/标签/多文档/裸时间戳/六十进制数），**遇到抛错，不猜**。
+
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）
 

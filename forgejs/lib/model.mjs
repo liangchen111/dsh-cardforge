@@ -15,6 +15,7 @@ import { mkdtempSync, writeFileSync, readFileSync, openSync, closeSync } from 'n
 import { tmpdir } from 'node:os'
 import { join, extname } from 'node:path'
 import { 显示宽度 as _显示宽度 } from './east_asian_width.mjs'
+import { 解析YAML } from './yaml.mjs'
 
 export const CARD_FORMAT = 'eleckoi.character-card'
 export const LIB_FORMAT = 'eleckoi.setting-library-snapshot'
@@ -133,13 +134,19 @@ export function jdump(obj, path, indent = 2) {
   writeFileSync(path, text, { encoding: 'utf8' })
 }
 
-/** YAML：这一批还没搬，遇到就明说，别悄悄当成 JSON 读。 */
-export function yload() {
-  throw new Error('forgejs 还没搬 YAML 读取（计划里排在 model 的下一步）—— 先用 .json 卡稿。')
+/** YAML 读取：走自写的**子集**解析器（`yaml.mjs`），只为读本工具自己写出来的 spec。 */
+export function yload(path) {
+  return 解析YAML(readFileSync(path, 'utf8'))
 }
 
+/**
+ * YAML 写出：JS 侧**不写 YAML**。
+ *
+ * 计划 §二① 的口径：新产出默认写 `.spec.json` —— 零依赖就复刻不了 PyYAML 的排版，
+ * 与其写出一份「看着像 YAML」的东西，不如明说不写。要 YAML 就调 Python 版。
+ */
 export function ydump() {
-  throw new Error('forgejs 还没搬 YAML 写出（计划里排在 model 的下一步）—— 先写 .json。')
+  throw new Error('forgejs 不写 YAML（计划 §二①：新产出默认写 .spec.json）—— 要 YAML 请用 Python 版。')
 }
 
 /** 按扩展名读 json / yaml。 */
