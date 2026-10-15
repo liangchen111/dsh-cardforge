@@ -142,6 +142,35 @@ def 算_zod(料: dict) -> dict:
 算式["zod"] = 算_zod
 
 
+def 算_pack(料: dict) -> dict:
+    """拿真卡走一遍 unpack → build。卡那边逐字节比，规格那边结构相等比。"""
+    import os
+    import tempfile
+
+    import yaml
+
+    from forge import pack as P
+
+    出: dict = {"卡": []}
+    for 相对 in 料["卡"]:
+        卡 = str(根 / 相对)
+        工作 = tempfile.mkdtemp(prefix="pack-")
+        规格 = os.path.join(工作, "x.spec.yaml")
+        P.unpack(卡, 规格)
+        结构 = yaml.safe_load(Path(规格).read_text(encoding="utf-8"))
+        重建 = os.path.join(工作, "x.card.json")
+        P.build(规格, 重建)
+        出["卡"].append({
+            "输入": 相对,
+            "规格": 结构,
+            "卡字节": Path(重建).read_text(encoding="utf-8"),
+        })
+    return 出
+
+
+算式["pack"] = 算_pack
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

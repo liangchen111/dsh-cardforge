@@ -163,3 +163,39 @@ node   差分/比一比.mjs         # 逐字节比，红了报第几行第几偏
   这是唯一一处「允许不是逐字节」的地方，写在这里备案。
 
 **下一批**：`pack`（298）· `validate`（834）。
+
+---
+
+## 八、当前状态（2026-10-15 深夜 · 交接用）
+
+**已搬完并逐字节绿（3/27）**
+
+| 模块 | JS 文件 | 差分 |
+|---|---|---|
+| `model` | `forgejs/lib/model.mjs` | ✔ 3,778 字节 |
+| `domain` | `forgejs/lib/domain.mjs` | ✔ 7,975 字节 |
+| `zod` | `forgejs/lib/zod.mjs` | ✔ 2,661 字节 |
+
+**在飞、还没验的**：`forgejs/lib/pack.mjs` 已按 `forge/pack.py` 写好，**差分也已跑绿** ——
+`pack` ✔ 逐字节一致 **133,338 字节**（语料 `差分/语料/pack.json` 只放了真卡
+`向导/制卡助手/成品/制卡助手.card.json` 一张；卡那边逐字节、规格那边结构相等）。
+⇒ **进度 4/27**。下一轮：给 pack 再加一张**最小卡**语料（覆盖空设定库 / 空变量），然后进
+`validate`（834 行）。
+
+```
+python 差分/出黄金.py pack     # 已跑
+node   差分/比一比.mjs pack    # 已跑，绿
+```
+
+**官方卡格式还差两件没做**（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的，已确认是真缺口）：
+
+1. **`ejs_display_templates: {enabled, templates}`** —— 卡与预设都会带；模板字段
+   `id`/`name`/`enabled`/`position`/`pattern`/`flags`/`source`/`delimiter`/`openDelimiter`/`closeDelimiter`/`rmWhitespace`，
+   `position ∈ before/after/replace/partial`，导入保持顺序、库保持停用。作者原话「尽量适配 ejs」指的就是这条。
+2. **`script_library`**（可选根字段）`{trees, variables, enabled, files}`。
+
+**已经照官方改掉的**（v0.28.8 已发）：PNG 默认不写 `chara`（`--带酒馆块` 才写）· `REGEX_KEYS` 补齐四键 ·
+插件替调用方拆「一整条命令」。`verify()` 现在会拦禁块。
+
+**本会话的一条工具故障**：`compress` 工具不可用（连续七次 `stale-ref / session highest ref=none`），
+压缩后端看不到本会话的消息 ⇒ 交接与进度只能靠这份文档，别指望摘要。

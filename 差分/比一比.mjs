@@ -8,12 +8,14 @@
  *   node 差分/比一比.mjs            # 比全部
  *   node 差分/比一比.mjs model      # 只比某一份
  */
-import { readFileSync, unlinkSync } from 'node:fs'
+import { mkdtempSync, readFileSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
 import * as Z from '../forgejs/lib/zod.mjs'
+import * as P from '../forgejs/lib/pack.mjs'
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
@@ -119,6 +121,23 @@ function 算_zod(料) {
 }
 
 算式.zod = 算_zod
+
+function 算_pack(料) {
+  const 出 = { 卡: [] }
+  for (const 相对 of 料.卡) {
+    const 卡 = join(根, 相对)
+    const 工作 = mkdtempSync(join(tmpdir(), 'packjs-'))
+    const 规格 = join(工作, 'x.spec.json')
+    P.unpack(卡, 规格)
+    const 结构 = JSON.parse(readFileSync(规格, 'utf8'))
+    const 重建 = join(工作, 'x.card.json')
+    P.build(规格, 重建)
+    出.卡.push({ 输入: 相对, 规格: 结构, 卡字节: readFileSync(重建, 'utf8') })
+  }
+  return 出
+}
+
+算式.pack = 算_pack
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {
