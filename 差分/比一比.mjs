@@ -64,6 +64,24 @@ try {
   MO = null
 }
 
+// hud 同理：它只 import model 一个兄弟（`from . import model as M`）。名字用 H：
+// 剩下的单字母里只有它没被占（C / SC / O / DR / MO / M / D / Z / P / V / SB 都在用了）。
+let H = null
+try {
+  H = await import('../forgejs/lib/hud.mjs')
+} catch (e) {
+  H = null
+}
+
+// bridge 同理：它只 import model 一个兄弟（`from . import model as M`）。名字用 BR：
+// 剩下的单字母里 B 最顺手，但 scaffold 那边已经用了 BRIDGE，取 BR 免得后面撞。
+let BR = null
+try {
+  BR = await import('../forgejs/lib/bridge.mjs')
+} catch (e) {
+  BR = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -269,7 +287,10 @@ const 净文本 = (s) => String(s).replace(_ISO, '<时间>').replace(_文本8, '
 /** 与 Python 侧 `_动` 同一套：随机 id / 时间戳 / 回收站记录的位置，全部归一。 */
 function 动(x, 键 = null) {
   if (typeof x === 'string') {
-    if (键 === 'created_at' || 键 === 'updated_at' || 键 === '时间') return x.replace(_ISO, '<时间>')
+    // ★ `*_at` 一律当时间（与出黄金.py 的 `_动` 同名分支逐字对应）：库里还有
+    //   `config_updated_at` / `config_created_at` 这类不叫 created_at/updated_at 的时间戳，
+    //   按名字枚举会漏 ⇒ 两侧各拿一次 `nowIso()`，差分必红。
+    if (键 === 'created_at' || 键 === 'updated_at' || 键 === '时间' || (typeof 键 === 'string' && 键.endsWith('_at'))) return x.replace(_ISO, '<时间>')
     if (键 === 'id' || 键 === '谁' || (typeof 键 === 'string' && 键.endsWith('_id'))) return x.replace(_UUID8, '<hex8>')
     if (键 === '_文件') return '<回收站文件名>'
     if (键 === '_路径') return '<回收站路径>'
@@ -329,6 +350,9 @@ function 走树(根) {
 }
 
 function 换路径(x, 对) {
+  // Python 侧 `_换路径` 只递归 str / dict / list —— `bytes` 原样交回。
+  // JS 的 Buffer 也是对象，不挡住会被拆成 `{0:.., 1:..}`。
+  if (Buffer.isBuffer(x)) return x
   if (typeof x === 'string') {
     let s = x
     for (const [a, b] of 对) s = s.split(a).join(b)
@@ -572,7 +596,7 @@ function 算_opener(料) {
 
   const 对 = [[工程, '<工程>'], [工作, '<临时>'],
     [工程.split('\\').join('\\\\'), '<工程>'], [工作.split('\\').join('\\\\'), '<临时>']]
-  return 换路径(出, 对)
+  return 换路径(收_uuid(出), 对)
 }
 
 算式.opener = 算_opener
@@ -822,6 +846,191 @@ function 算_mods(料) {
 }
 
 算式.mods = 算_mods
+
+/**
+ * 把语料里的参数折成真参数，逐项递归替换占位符。
+ *
+ * ★ 先 `JSON.stringify` 再 `JSON.parse`：语料里 dict / list 里的字符串（比如
+ * `{"out": "@工作@/out.txt"}`）不能漏换；而 `@工作@` 后面常紧跟着中文（`@工作@/坏开场白`），
+ * `\\b` 词边界在这种拼接上根本不可靠 —— 直接走一遍字符串化最稳，且与 `出黄金.py` 的
+ * `出参数()`（那边是 json.dumps + json.loads）一字不差地对齐。
+ */
+function 出参数(x, 工作, 根) {
+  if (typeof x === 'string') {
+    return x.split('@根@').join(根).split('@工作@').join(工作)
+      .split('@@重复x4100@@').join('x'.repeat(4100))
+  }
+  if (Array.isArray(x)) return x.map((v) => 出参数(v, 工作, 根))
+  if (x && typeof x === 'object') {
+    const 新 = {}
+    for (const [k, v] of Object.entries(x)) 新[出参数(k, 工作, 根)] = 出参数(v, 工作, 根)
+    return 新
+  }
+  return x
+}
+
+/** 返回值的额外归一（`动` 之前压一层）—— 与 出黄金.py 的 `动回()` 逐条对齐。 */
+function 动回(x) {
+  if (x instanceof RegExp) {
+    return { 来源: x.source, i: x.flags.includes('i'), m: x.flags.includes('m'), s: x.flags.includes('s') }
+  }
+  if (Array.isArray(x)) return x.map(动回)
+  return x
+}
+
+/** 异常消息归一 —— 与 出黄金.py 的 `错文本()` 逐条对齐（见那边的注释）。 */
+function 错文本(调用, e) {
+  if (调用 === 'configure' && e instanceof SyntaxError) return 'JSONDecodeError: 读不出来：<解析器原文>'
+  return 净文本(`${e.constructor.name}: ${e.message}`)
+}
+
+// `patch_spec()` 给**新增**的正则规则生成 `regex-<uuid4>`。已有的 `_UUID8`（8 位十六进制）
+// / `_文本8`（`-` 后 8 位、后面不再接十六进制）都收不住一个完整的 uuid4 —— 剩下
+// `-7a74-49d8-986e-` 这几段每次跑都不一样，黄金当场变成「只有这一次对」的假黄金。
+// 所以按**形状**再收一道（与 出黄金.py 的 `收_uuid()` 逐条对齐）。
+const _UUID4状 = /^regex-.*-[0-9a-f]{4}-[0-9a-f]{4}-/
+
+function 收_uuid(x) {
+  if (typeof x === 'string') return _UUID4状.test(x) ? 'regex-<uuid4>' : x
+  if (Array.isArray(x)) return x.map(收_uuid)
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const k of Object.keys(x)) o[k] = 收_uuid(x[k])
+    return o
+  }
+  return x
+}
+
+function 算_hud(料) {
+  if (!H) throw new Error('forgejs/lib/hud.mjs 没导入成功，先把它落地再跑 hud')
+  const 工作 = mkdtempSync(join(根, '_tmp_hud-'))
+  const 出 = { 步: [] }
+
+  // 先把夹具写盘（`预置.目录` 要在 `预置.文件` 之前建，路径里的父目录也自己建）。
+  const 预置 = 料.预置 ?? {}
+  for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 名), { recursive: true })
+  for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+    const p = join(工作, 名)
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(p, 文, 'utf8')
+  }
+
+  try {
+    for (const 步 of 料.操作) {
+      const 参数 = (步.参数 ?? []).map((a) => 出参数(a, 工作, 根))
+      const rec = { 调用: 步.调用, 参数: 动(参数) }
+      // ★ 出口**不复位**：hud.mjs 的 `_出口`（= Python 的模块级 `_P`）被 `build()` /
+      //   `render_views()` 换掉之后两边都不还原 —— Python 的 `render_views` 默认把 `_P`
+      //   换成空 lambda，JS 的默认 `out_fn` 是空函数，**后续步骤同样一个字都不出**，
+      //   这才是照抄。复位成「打印」反而会让那几步的 `出` 红掉。
+      //   收输出靠换 `process.stdout.write` —— `_print` 与那个空 lambda 之外的所有出口
+      //   都是**调用时**才取 `process.stdout`，换得掉。
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        const 回 = H[步.调用](...参数)
+        rec.回 = 动(动回(回 ?? null))
+        rec.错 = null
+      } catch (e) {
+        rec.回 = null
+        rec.错 = 错文本(步.调用, e)
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.步.push(rec)
+    }
+    出.树 = 走树(工作)
+  } finally {
+    rmSync(工作, { recursive: true, force: true })
+  }
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(收_uuid(出), 对)
+}
+
+算式.hud = 算_hud
+
+// -------------------------------------------------------------------- bridge
+//
+// 同一个架构（预置写夹具 → 逐步记 stdout／返回值／异常消息 → 最后比整棵工作树），
+// 与 `算_opener` 两处不一样：
+//   ① 夹具不是现成的工程目录，而是语料里「预置」当场写出来的 —— 里面有几份二进制
+//      （PNG / zip），用 base64 驮在 JSON 里。
+//   ② 参数里 `{"__字节__": "..."}` 还原成 Buffer（`decode_card_text` 收的就是 bytes，
+//      PNG 那条路更是把「关键词 -> bytes」的字典整个交回来）；记进差分结构之前
+//      反向包回 `{"__字节__": "..."}`，否则 Buffer 会被 `动()` 递归成
+//      `{"0": .., "1": ..}` 那种键值对，跟黄金对不上。
+function 算_bridge(料) {
+  if (!BR) throw new Error('forgejs/lib/bridge.mjs 没导入成功，先把它落地再跑 bridge')
+  // ★ 工作目录建在**差分根底下**，不用系统 temp：Windows 的 temp 路径可能是 8.3 短名
+  //   （`C:\Users\ADMINI~1\...`），而 Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+  //   Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出两个写法。
+  const 工作 = mkdtempSync(join(这里, '_tmp_bridge-'))
+
+  const 还原 = (x) => {
+    if (Array.isArray(x)) return x.map(还原)
+    if (x && typeof x === 'object') {
+      const ks = Object.keys(x)
+      if (ks.length === 1 && ks[0] === '__字节__') return Buffer.from(x.__字节__, 'base64')
+      const o = {}
+      for (const [k, v] of Object.entries(x)) o[k] = 还原(v)
+      return o
+    }
+    return x
+  }
+  const 字节化 = (x) => {
+    if (Buffer.isBuffer(x) || x instanceof Uint8Array) return { __字节__: Buffer.from(x).toString('base64') }
+    if (Array.isArray(x)) return x.map(字节化)
+    if (x && typeof x === 'object') {
+      const o = {}
+      for (const [k, v] of Object.entries(x)) o[k] = 字节化(v)
+      return o
+    }
+    return x
+  }
+
+  for (const 件 of 料.预置 ?? []) {
+    const p = join(工作, 件.路径)
+    if (件.调用 === '写文本') writeFileSync(p, 件.文本, 'utf8')
+    else writeFileSync(p, Buffer.from(件.字节, 'base64'))
+  }
+
+  const 出 = { 步: [] }
+  for (const 步 of 料.操作) {
+    // 与 Python 侧 `_换路径(还原(a), [("@工作@", str(工作))])` 逐字对应。
+    // ★ 记进差分的参数要**另外**包一层 `字节化` —— 参数本身必须是 Buffer 交进去
+    //   （`decode_card_text` 收的就是 bytes），但 Buffer 直接进 JSON 结构会被 `动()`
+    //   拆成键值对。早先两处都写了 `字节化(还原(a))`，两者相消 ⇒ 函数拿到的是
+    //   `{"__字节__": …}` 字典，Python 那边当场 `AttributeError: 'dict' object has no
+    //   attribute 'strip'`，整条「bytes 入参」的路根本走不到。
+    const 参数 = (步.参数 ?? []).map((a) => 换路径(还原(a), [['@工作@', 工作]]))
+    const rec = { 调用: 步.调用, 参数: 字节化(参数) }
+    let 出文 = ''
+    const 原写 = process.stdout.write.bind(process.stdout)
+    process.stdout.write = (s) => { 出文 += String(s); return true }
+    try {
+      const 回 = BR[步.调用](...参数)
+      rec.回 = 动(字节化(回 ?? null))
+      rec.错 = null
+    } catch (e) {
+      rec.回 = null
+      rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+    } finally {
+      process.stdout.write = 原写
+    }
+    rec.出 = 净文本(出文)
+    出.步.push(rec)
+  }
+  出.树 = 走树(工作)
+  rmSync(工作, { recursive: true, force: true })
+
+  const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+  return 换路径(出, 对)
+}
+
+算式.bridge = 算_bridge
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

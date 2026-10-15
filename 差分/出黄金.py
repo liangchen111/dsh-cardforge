@@ -281,7 +281,11 @@ def _动(x, 键=None):
     不归一就没法比 —— 两侧每一步的 uuid 与时间戳天生不同。
     """
     if isinstance(x, str):
-        if 键 in ("created_at", "updated_at", "时间"):
+        if 键 in ("created_at", "updated_at", "时间") or (isinstance(键, str) and 键.endswith("_at")):
+            # ★ `*_at` 一律当时间：bridge 产出的库里还有 `config_updated_at` /
+            #   `config_created_at` 这类**不叫 created_at/updated_at** 的时间戳，
+            #   按名字枚举会漏，两侧各拿一次 `now_iso()` ⇒ 差分必红（且黄金本身也会随
+            #   每次重出而变）。按后缀收，见 比一比.mjs 同名分支。
             return _ISO.sub("<时间>", x)
         if 键 in ("id", "谁") or (isinstance(键, str) and 键.endswith("_id")):
             return _UUID8.sub("<hex8>", x)
@@ -397,7 +401,9 @@ def 算_opener(料: dict) -> dict:
 
       · opener 的入口**有时是工程目录、有时是 spec 文件**，没有 content 那种固定的「规格」
         首位参数 ⇒ 参数全写在语料里（`@根@` 照样被换成临时工程根，dict / list 里的字符串也换）。
-      · 界面档的「写回 spec」支路要 `hud` 的 `HUD.build` —— 语料**故意不走**那条（见语料说明）。
+      · 界面档的「写回 spec」支路要 `hud` 的 `HUD.build` —— 夹具 `卯全界面` 带整份
+        `assets/骨架`，这条支路已**真跑**；`HUD.build` 每次都现生成 `regex-<uuid4>`，
+        所以出口要过一道 `收_uuid()`（见那边的注释）。
     """
     import contextlib
     import io
@@ -434,7 +440,7 @@ def 算_opener(料: dict) -> dict:
 
     对 = [(str(工程), "<工程>"), (str(工作), "<临时>"),
           (str(工程).replace("\\", "\\\\"), "<工程>"), (str(工作).replace("\\", "\\\\"), "<临时>")]
-    return _换路径(出, 对)
+    return _换路径(收_uuid(出), 对)
 
 
 算式["opener"] = 算_opener
@@ -813,6 +819,224 @@ def 算_mods(料: dict) -> dict:
 
 
 算式["mods"] = 算_mods
+
+
+def 出参数(x, 工作: Path, 根: Path):
+    """把语料里的参数折成真参数，逐项递归替换占位符。
+
+    逐项递归：dict / list 里的字符串也要换（比如 `{"out": "@工作@/out.txt"}`）。
+    另有 `@@重复x4100@@` 这一类**展开占位符** —— 语料是 JSON，写不了 `"x" * 4100`，
+    只能让两侧各自展开（比一比.mjs 那边同做）。
+    """
+    if isinstance(x, str):
+        s = x.replace("@根@", str(根)).replace("@工作@", str(工作))
+        return s.replace("@@重复x4100@@", "x" * 4100)
+    if isinstance(x, dict):
+        return {出参数(k, 工作, 根): 出参数(v, 工作, 根) for k, v in x.items()}
+    if isinstance(x, list):
+        return [出参数(v, 工作, 根) for v in x]
+    return x
+
+
+def 动回(x):
+    """返回值的额外归一（`_动` 之前压一层）。
+
+    ★ `parse_pattern()` 返回的是 `re.Pattern` 对象 —— Python 的 `repr` 里带内存地址
+      （`re.compile('a.c', re.IGNORECASE|re.DOTALL)` 这种），两边永远不可能逐字节同。
+      统一折成 `{"来源": pattern, "i": bool, "m": bool, "s": bool}`（比一比.mjs 那边
+      把 `new RegExp` 的 `.source` / `.flags` 折成同一形状）。这是**已申报差异**，
+      写在 差分/语料/hud.json 的「说明」里。
+    """
+    import re as _re
+
+    if isinstance(x, _re.Pattern):
+        f = x.flags
+        return {"来源": x.pattern,
+                "i": bool(f & _re.I), "m": bool(f & _re.M), "s": bool(f & _re.S)}
+    if isinstance(x, list):
+        return [动回(v) for v in x]
+    if isinstance(x, tuple):
+        return [动回(v) for v in x]
+    return x
+
+
+def 错文本(调用: str, exc: Exception) -> str:
+    """异常消息归一。
+
+    ★ **已申报差异**：`configure()` 读 hud.conf.json 是用 `json.load()` —— conf 不是合法
+      JSON 时抛 `json.decoder.JSONDecodeError`，而两侧 JSON 解析器的报错措辞天生不同
+      （Python 给 `Expecting ',' delimiter: line 132 column 77 (char 8418)`，Node 给
+      `Unexpected token ... in JSON at position ...`）。这条**只**在 `configure` 上发生，
+      且语料有一步专门踩它来证明「确实抛了、确实抛在这支」⇒ 消息统一收成
+      `JSONDecodeError: 读不出来：<解析器原文>`。
+    """
+    import json as _json
+
+    if 调用 == "configure" and isinstance(exc, _json.JSONDecodeError):
+        return "JSONDecodeError: 读不出来：<解析器原文>"
+    return _净文本("%s: %s" % (type(exc).__name__, exc))
+
+
+# `patch_spec()` 给**新增**的正则规则生成 `regex-<uuid4>`。已有的 `_UUID8`（8 位十六进制）
+# / `_文本8`（`-` 后 8 位、后面不再接十六进制）都收不住一个完整的 uuid4 —— 剩下
+# `-7a74-49d8-986e-` 这几段每次跑都不一样，黄金当场变成「只有这一次对」的假黄金。
+# 所以按**形状**再收一道：uuid4 的 B/C 段天生是 4 位十六进制，被判到就说明这是个新生成的 id。
+_UUID4状 = re.compile(r"^regex-.*-[0-9a-f]{4}-[0-9a-f]{4}-")
+
+
+def 收_uuid(x):
+    """把 `patch_spec()` 现生成的 `regex-<uuid4>` 按形状收成 `regex-<uuid4>`（字面）。"""
+    if isinstance(x, str):
+        return "regex-<uuid4>" if _UUID4状.match(x) else x
+    if isinstance(x, dict):
+        return {k: 收_uuid(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [收_uuid(v) for v in x]
+    return x
+
+
+def 算_hud(料: dict) -> dict:
+    """顺序跑一串 hud 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_scaffold` 同形，只有两点不同：
+
+      · 夹具是**先写盘**再跑操作（`预置` 里的 目录 / 文件），不是代码里硬编码的；
+      · 入口参数全写在语料里（`@工作@` / `@根@` 照样被换，dict / list 里的字符串也换）。
+
+    ★ 工作目录**建在工具根底下**，不用系统 temp：Windows 的 temp 可能是 8.3 短名
+      （`C:\\Users\\ADMINI~1\\…`），Python 的 `os.path.abspath` 走 `GetFullPathNameW`
+      会把它还原成长名，Node 的 `path.resolve` 只做字符串规范化 ⇒ 同一个目录在两边
+      成了两种写法，`<工作>` 归一失配。同盘、同写法才比得到一条线上。
+
+    ★ 随机量：`patch_spec()` 给**新增**的正则规则生成 `regex-<uuid4>`；语料里那份
+      spec 的结构快照走 `_动()` 收（按形状 `-` 后 8 位十六进制，键 `id` / `*_id` 收）。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import hud as H
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_hud-", dir=str(根)))
+
+    # 先把夹具写盘。目录要在文件之前建（浅的在前），文件一律 LF ——
+    # `read_text(encoding="utf-8", newline="\n")` / `write_text(..., newline="\n")` 两边对齐。
+    预置 = 料.get("预置") or {}
+    for 名 in 预置.get("目录") or []:
+        (工作 / 名).mkdir(parents=True, exist_ok=True)
+    for 名, 文 in (预置.get("文件") or {}).items():
+        p = 工作 / 名
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(文, encoding="utf-8", newline="\n")
+
+    出: dict = {"步": []}
+    try:
+        for 步 in 料["操作"]:
+            参数 = [出参数(a, 工作, 根) for a in (步.get("参数") or [])]
+            buf = io.StringIO()
+            rec: dict = {"调用": 步["调用"], "参数": _动(参数)}
+            try:
+                with contextlib.redirect_stdout(buf):
+                    回 = getattr(H, 步["调用"])(*参数)
+                # 元组不是 list，_动 不会往里递归 —— 换成 list，跟 JS 侧（那边天生是数组）对齐
+                rec["回"] = _动(动回(list(回) if isinstance(回, tuple) else 回))
+                rec["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                rec["回"] = None
+                rec["错"] = 错文本(步["调用"], exc)
+            rec["出"] = _净文本(buf.getvalue())
+            出["步"].append(rec)
+        出["树"] = _树(工作)
+    finally:
+        shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(收_uuid(出), 对)
+
+
+算式["hud"] = 算_hud
+
+
+def 算_bridge(料: dict) -> dict:
+    """顺序跑一串 bridge 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_opener` 同形，两处不一样：
+
+      · 夹具不是现成的工程目录，而是语料里「预置」当场写出来的（PNG / zip 这类二进制
+        用 base64 驮在 JSON 里）—— bridge 本来就是读这些输入的。
+      · 参数里 `{"__字节__": "..."}` 还原成 bytes（`decode_card_text` 收的就是 bytes）；
+        返回值里的 bytes 反向包回 `{"__字节__": "..."}`，否则 `json.dumps` 会在写黄金
+        那一步直接 `TypeError: Object of type bytes is not JSON serializable`
+        （`read_chunks_png` 交回来的就是一个「关键词 -> bytes」的字典）。
+
+    ★ 工作目录建在**差分根底下**（不用系统 temp）：Windows 的 temp 可能是 8.3 短名
+      （`C:\\Users\\ADMINI~1\\...`），Python 的 `os.path.abspath` 走 `GetFullPathNameW`、
+      Node 的 `path.resolve` 只做字符串规范化 —— 同一个目录两边会算出两个写法。
+    """
+    import base64
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import bridge as B
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_bridge-", dir=str(Path(__file__).resolve().parent)))
+
+    def 还原(x):
+        if isinstance(x, dict):
+            if list(x) == ["__字节__"]:
+                return base64.b64decode(x["__字节__"])
+            return {k: 还原(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [还原(v) for v in x]
+        return x
+
+    def 字节化(x):
+        if isinstance(x, (bytes, bytearray)):
+            return {"__字节__": base64.b64encode(bytes(x)).decode("ascii")}
+        if isinstance(x, dict):
+            return {k: 字节化(v) for k, v in x.items()}
+        if isinstance(x, (list, tuple)):
+            return [字节化(v) for v in x]
+        return x
+
+    for 件 in 料.get("预置", []):
+        p = 工作 / 件["路径"]
+        if 件["调用"] == "写文本":
+            with open(p, "w", encoding="utf-8", newline="") as f:
+                f.write(件["文本"])
+        else:
+            p.write_bytes(base64.b64decode(件["字节"]))
+
+    出: dict = {"步": []}
+    for 步 in 料["操作"]:
+        # 与 opener 同形：`@工作@` 换成临时工作目录，dict / list 里的字符串也换。
+        # ★ 参数交进函数前只做 `还原`（bytes 就是 bytes）；记进差分的另包一层 `字节化`
+        #   —— 早先写成 `字节化(还原(a))`，两者相消，函数拿到的是 `{"__字节__": …}`
+        #   字典，`decode_card_text` 当场 AttributeError，整条 bytes 入参的路走不到。
+        参数 = [_换路径(还原(a), [("@工作@", str(工作))]) for a in 步.get("参数", [])]
+        buf = io.StringIO()
+        rec: dict = {"调用": 步["调用"], "参数": 字节化(参数)}
+        try:
+            with contextlib.redirect_stdout(buf):
+                回 = getattr(B, 步["调用"])(*参数)
+            rec["回"] = 字节化(_动(回))
+            rec["错"] = None
+        except Exception as exc:  # noqa: BLE001
+            rec["回"] = None
+            rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+        rec["出"] = _净文本(buf.getvalue())
+        出["步"].append(rec)
+    出["树"] = _树(工作)
+    shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+    return _换路径(出, 对)
+
+
+算式["bridge"] = 算_bridge
 
 
 def main(argv):

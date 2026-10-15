@@ -94,6 +94,16 @@ def 落原名(名, 规格源=None, 配置源=None):
         shutil.copyfile(配置源, 目 / "hud" / "hud.conf.json")
 
 
+def 落整份(名, 源目录):
+    """整份目录按原始字节复制（含 hud/ 下全部文件）。
+
+    界面档要**真跑** `HUD.build` 就得凑齐 `hud/hud.core.js`、`hud.css`、两个 view_*.html、
+    `hud.conf.json` —— `落原名` 只拷了 conf，`HUD.build` 一进去就缺文件。
+    `assets/骨架` 正好是齐的（它就是工具自己生成的那份骨架）。
+    """
+    shutil.copytree(str(源目录), str(出口 / 名))
+
+
 def main():
     if 出口.exists():
         shutil.rmtree(出口)
@@ -101,6 +111,11 @@ def main():
 
     # ① 甲界面：原始字节的 spec ＋ 与它一致的 conf（写回一致 ⇒ True；标记数 3）
     落原名("甲界面", 规格源=骨架规格, 配置源=骨架配置)
+
+    # ①之二 卯全界面：整份 assets/骨架（source ＋ 完整 hud/ 五件）。
+    #   只有它能让 `写回()`（界面档·标记数 3）与 `改正文(..., 写回=True)` 真的跑到
+    #   `HUD.build`；甲界面只拷了 hud.conf.json，走进去当场缺 hud.core.js。
+    落整份("卯全界面", 根 / "assets" / "骨架")
 
     # ② 乙内容：同一份 spec，但没有 hud/ ⇒ 「内容」工程
     落原名("乙内容", 规格源=骨架规格)

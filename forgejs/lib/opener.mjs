@@ -21,14 +21,16 @@
  * 所以下面照抄了 content.mjs 那组「Python 语义小工具」（_str / 或 / 取 / _rstrip …）——
  * 少了它们，报错原文与落盘内容会在边角上悄悄跑偏，而跑偏了差分也抓不住。
  *
- * ★ 本模块有**三处已知的未覆盖边界**（不是 bug，是兄弟模块还没落地／两边语言天生不同）：
+ * ★ 本模块的**已知边界**（不是 bug，是兄弟模块落地进度／两边语言天生不同）：
  *
  *   1. 内容档的写走 `CONTENT.commit()`：forgejs 的 `content.mjs` 那句 `M.jdump(raw, tmp)`
  *      是计划 §二①**备案过的唯一差异** —— JS 侧把 spec 写成 JSON（JSON 本身是合法 YAML，
  *      PyYAML 读得回来），Python 侧写 YAML。差分比的是**结构**，所以这一支能比。
- *   2. `改正文(..., 写回=true)` 与 `写回()` 的界面档支路要 `HUD.build()`：forgejs 的
- *      `hud.mjs` **还没搬** ⇒ 走这两条支路会抛（见 `_HUD()`）。Python 那边是真的会把卡
- *      写回 spec。**其余分支全部照抄可用。**
+ *   2. `改正文(..., 写回=true)` 与 `写回()` 的界面档支路要 `HUD.build()`。`hud.mjs` 已搬
+ *      （2026-10-16）⇒ 这两条支路**现在真的会跑**，走 `_要(HUD, 'hud')`。注意
+ *      `hud.build(spec_or_project, write_back, out_fn, theme_override)` 是**逐位对齐
+ *      Python 的位置参数**，别传 `{write_back, out}` 那种对象 —— 早先这里就是那么写的，
+ *      因为语料没覆盖到这两条支路，一直没被差分抓住。
  *   3. `_读json()` 的异常类型两边天生不同（Python `json.JSONDecodeError` vs V8
  *      `SyntaxError`，措辞也不一样）—— 差分里别拿坏了 JSON 的 conf 去撞它。
  *
@@ -40,6 +42,22 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import * as M from './model.mjs'
 import * as CONTENT from './content.mjs'
+
+// ------------------------------------------------------------------ hud（延迟装载）
+//
+// Python 在 `改正文` 与 `写回` 里各写一句 `from . import hud as HUD`（**函数内**导入）。
+// JS 的 `import()` 是异步的、同步函数里等不了 —— 所以照 `scaffold.mjs` 的口径办：
+// 顶层 `await` 动态导入，缺了留 null，真要用到那一行才 `_要()` 报错。
+// （`hud.mjs` 只 import `./model.mjs` 与 node: 内建，不反向依赖 opener，不会成环。）
+const _懒 = async (名) => { try { return await import(`./${名}.mjs`) } catch { return null } }
+const HUD = await _懒('hud')
+
+function _要(mod, 名) {
+  if (!mod) {
+    throw new Error(`forgejs 还没搬 ${名}.mjs —— 这条支路暂时走不通（Python 原件里这儿的 import 照原文留着）。`)
+  }
+  return mod
+}
 
 export const 标记 = '\u200b'.repeat(3)
 
@@ -370,12 +388,12 @@ export function 改正文(target, 新文, 写回 = true, out = CONTENT._print) {
   out(_正文摘要(新)(d))
 
   if (写回) {
-    const HUD = _HUD()
+    const hud = _要(HUD, 'hud')
     out('')
     out('写回 spec（不然卡里那条还是老的）：')
     let problems
     try {
-      [problems] = HUD.build(d.工程, { write_back: true, out })
+      [problems] = hud.build(d.工程, true, out)
     } catch (exc) {
       out('')
       out(`组装失败：${CONTENT._错文(exc)}`)
@@ -383,7 +401,7 @@ export function 改正文(target, 新文, 写回 = true, out = CONTENT._print) {
       out(`  python forge.py opener "${d.工程}" --写回`)
       return { 变了: true, 详情: d, 正文: 新, 写回: false, 问题: [CONTENT._错文(exc)] }
     }
-    if (problems) {
+    if (CONTENT.pyTruthy(problems)) {
       out('')
       out('组装有校验问题，**没有**写回 —— conf 已经改了，修完界面再跑一次：')
       out(`  python forge.py opener "${d.工程}" --写回`)
@@ -441,19 +459,7 @@ export function 写回(target, out = CONTENT._print) {
       + '导入 ElecKoi 后建卡界面不会出现）。\n'
       + `  先把标记补齐：python forge.py opener "${proj}" --补齐`)
   }
-  const HUD = _HUD()
-  const problems = HUD.build(proj, { write_back: true, out })
+  const hud = _要(HUD, 'hud')
+  const [problems] = hud.build(proj, true, out)
   return problems
-}
-
-
-/**
- * ★ 移植记号：Python 在 `改正文` 里那句 `from . import hud as HUD`（延迟导入）与
- * `写回` 里开头那句，都指向**还没搬的** `hud.mjs`。
- *
- * 这里的落点与 Python 一致 —— 只在**真的要用 HUD.build 那一行**才炸：
- * `写回()` 的内容档支路会先 return（Python 那边也是先 return），所以照样能走通。
- */
-function _HUD() {
-  throw new Error('forgejs 还没搬 hud.mjs —— 界面档的「写回 spec」这一支暂时走不了。')
 }

@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（12/27 个模块逐字节绿）
+## 现状（14/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -29,8 +29,10 @@
 | `scaffold` | `forgejs\lib\scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵工程树） |
 | `draft` | `forgejs\lib\draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
 | `mods` | `forgejs\lib\mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
+| `bridge` | `forgejs\lib\bridge.mjs` | ✔ 273,900 字节（1274 行 · 51 条预置 · 198 条操作 · 27 条以异常收场） |
+| `hud` | `forgejs\lib\hud.mjs` | ✔ 70,619 字节（952 行 · 95 条操作 · 5 目录 56 文件） |
 
-**在跑**：`bridge`（707 行）＋ `hud`（693 行）。`coach` 要等 `manual`，排在后面。
+**在跑**：`manual`（556 行）＋ `theme`（592 行）。两者要的依赖都已落地；`manual` 一好，`coach`（1,353）解锁。
 
 ## 怎么跑
 
@@ -49,13 +51,13 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`bridge`(707) ＋ `hud`(693)，两个子代理并排。`coach`(1,353) 要等 `manual`(556)。
-2. 之后按剩下来的**大小**排（别按计划 §四 那份旧批次表，它写的时候还没搬掉 `content`）：
-   `coach`(1,353 · 最肥的一块) → `bridge`(707)／`hud`(693)／`theme`(592)／`manual`(556)／`preset`(500)
-   → `export`(396)／`png`(384)／`dist`(373)／`lint`(293)／`plan`(262)／`bundle`(119)／`guard`(71)
-   → 命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
-   **`hud`(693) 要提前** —— `opener` 的 3 条分支（`写回` / 改正文时 `写回=true` / `补齐`界面档）与
-   `scaffold` 的 `build_hud` 都因为它没搬而留成抛错，差分覆盖率缺口全卡在这。
+1. **在跑**：`manual`(556) ＋ `theme`(592)，两个子代理并排。`manual` 一好就上 `coach`(1,353 · 最肥的一块)。
+2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
+   已可开工：`manual`(556) · `theme`(592) · `export`(396) · `lint`(293 · 只 io/json/os/re/yaml) ·
+   `plan`(262 · 只 sandbox) · `guard`(71 · 只 os)。
+   被卡的：`coach`(1,353) 等 `manual` · `png`(384) 等 `export` · `preset`(500) 等 `png` ·
+   `dist`(373) 等 hud+bridge+validate+pack+sandbox（**已全绿 ⇒ 可开**） · `bundle`(119) 等 dist+export+manual。
+   最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 3. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 是**惰性导入**，
@@ -67,7 +69,7 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
    `git diff -U0` 只看得到该看的行 · `--刷` 重刷后**旧黄金一个字节没动**。
 
 
-## 十一条纪律（差分台已经证明有用）
+## 十二条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
@@ -94,6 +96,13 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 11. **跑差分前确认工具根没有 `_tmp_*` 残目录** —— `scaffold` 语料第 27 条 `取内容层("", 工作区)` 走的是
     `abspath("")`/`resolve("")`（＝当前工作目录＝工具根），它会去扫根下最浅的 `.spec.yaml`，结果**取决于根里当时有什么**。
     干净时固定命中 `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`（`_` 排在 `a` 前）。这不是移植错，是语料依赖工作树形状（待改显式路径）。
+12. **`if (x)` 不等于 `if x:`** —— JS 里**空数组、空对象都是真值**，Python 的 `if x:` 里 `[]` / `{}` / `""` / `0` 全是假。
+    `opener.mjs` 的 `写回()` 原先写 `if (problems)`，而 Python 是 `if problems:` ⇒ HUD 返回 `problems = []`（校验通过）时
+    JS 多走一条支路，返回值里凭空多一个 `"写回": false`（差分当场逮到）。已改走 `content.mjs` 的 `CONTENT.pyTruthy()`
+    （`content.mjs:122` 导出，`:133` 是 `export const 或 = (a,b) => pyTruthy(a) ? a : b`）。
+    **凡「Python 真值判断」的地方都走它。** 另：`regex-<uuid4>` 这种**新生成**的 id 要按形状收掉 ——
+    两侧已有 `收_uuid`（`出黄金.py:878-893` 定义、`:443`/`:955` 用；`比一比.mjs:887-902` 定义、`:599`/`:950` 用），
+    只认 `-XXXX-XXXX-` 那两段，剩下的 hex8 交给原有形状规则。
 
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）

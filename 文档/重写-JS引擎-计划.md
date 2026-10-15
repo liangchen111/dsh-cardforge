@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（12/27）**
+**已搬完并逐字节绿（14/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -287,6 +287,8 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `scaffold` | `forgejs/lib/scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵树） |
 | `draft` | `forgejs/lib/draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
 | `mods` | `forgejs/lib/mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
+| `bridge` | `forgejs/lib/bridge.mjs` | ✔ 273,900 字节（51 条预置 · 198 条操作 · 27 条异常） |
+| `hud` | `forgejs/lib/hud.mjs` | ✔ 70,619 字节（95 条操作 · 5 目录 56 文件） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -294,8 +296,14 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`bridge`（707 行）＋ `hud`（693 行），两个子代理并排跑。
-（`hud` 提前——它卡着 `opener` 的 3 条分支与 `scaffold` 的 `build_hud`；`coach` 要等 `manual`，所以排在后面。）
+**在跑**：`manual`（556）＋ `theme`（592），两个子代理并排跑。
+两者要的依赖（`model` / `pack` / `validate` / `domain` / `sandbox` / `hud`）都已落地 ⇒ 可以立刻开工。
+`manual` 一落地，`coach`（1,353 · 最肥的一块）就解锁；`png` 要等 `export`，`dist` 要等 `hud`＋`bridge`（都已绿）。
+
+**`opener` 的三条界面档支路已经真跑了**（2026-10-16）—— 新增夹具 `卯全界面`（`assets/骨架` 整份）
+后，`写回()`（界面档·标记数 3）与 `改正文(..., 写回=true)` 都进了语料（opener 黄金 228,776 → **341,131**）。
+**当场逮到一个真 bug**：JS `if (problems)` 把**空数组当真值**（Python `if problems:` 里 `[]` 是假）⇒
+`写回` 返回值多带一个 `写回: false`。已改走 `CONTENT.pyTruthy`。
 
 > ⚠️ **跑差分前别在工具根留 `_tmp_*` 残目录**：`scaffold` 语料第 27 条是
 > `取内容层("", 工作区)` —— Python `abspath("")` / Node `resolve("")` 都落回**当前工作目录**（＝工具根），
