@@ -13,7 +13,7 @@ dependencies = ["PyYAML>=6.0"]
 # 而同目录 `forge.py` 与 `forge/` 同名，它会撞上那个文件并发
 # `ImportError: cannot import name 'bridge' from 'forge'`。
 # 改版时两处一起改：这里 与 `forge/__init__.py:24`（`__version__`）。
-version = "0.28.2"
+version = "0.28.3"
 keywords = ["eleckoi", "sillytavern", "character-card", "card"]
 classifiers = [
   "Environment :: Console",

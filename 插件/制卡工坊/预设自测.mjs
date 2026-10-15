@@ -1,4 +1,7 @@
-// 自测：把「装插件时自动装创作预设」那段从 index.js 里摘出来跑一遍。
+// 自测：把 index.js 里那些「不依赖真客户端」的逻辑摘出来跑一遍（自测名沿用最早那件）。
+//
+// 覆盖：① 预设文件本身 ② 自动装预设的四条纪律（幂等/不抢/不挡路/开关）
+//      ③ 自动找 Python ④ 工作目录优先级 ⑤ 哪些命令算只读（不该为它们建目录）
 //
 // 跑法：`node 预设自测.mjs`（在插件目录里跑，或者从别处跑都行 —— 路径按本文件的位置算）。
 // 不联网、不碰真客户端：`eleckoiAgentPresetsApi` 用假的，只验我们对它的用法对不对。
@@ -16,7 +19,7 @@ let 源码 = readFileSync(真身, 'utf8')
 源码 = 源码
   .replace(/^import z from .*$/m, `const z = { object: (x) => x, string: () => ({ default: () => '' }), number: () => ({ default: () => 0 }), boolean: () => ({ default: () => true }) }`)
   .replace(/^import \{ defineTool \} from .*$/m, `const defineTool = (x) => x`)
-源码 += '\nexport { 装预设, 读预设, 取预设服务, 找解释器, 候选解释器, 定工作目录, 卡库目录 }\n'
+源码 += '\nexport { 装预设, 读预设, 取预设服务, 找解释器, 候选解释器, 定工作目录, 卡库目录, 只读命令 }\n'
 const 临时 = join(插件目录, '.预设自测.mjs')
 writeFileSync(临时, 源码, 'utf8')
 let mod
@@ -25,7 +28,7 @@ try {
 } finally {
   unlinkSync(临时)
 }
-const { 装预设, 读预设, 找解释器, 候选解释器, 定工作目录, 卡库目录 } = mod
+const { 装预设, 读预设, 找解释器, 候选解释器, 定工作目录, 卡库目录, 只读命令 } = mod
 
 let 过 = 0
 let 败 = 0
@@ -120,6 +123,12 @@ console.log('8) 卡做在哪个目录（谁优先）')
   断言(定工作目录({ cwd: 'D:/配置里' }, '') === 'D:/配置里', '其次才是插件配置里的 cwd')
   断言(定工作目录({ cwd: 'D:/配置里' }, 'E:/参数') === 'E:/参数', '参数压过配置')
   断言(卡库目录.endsWith(join('Documents', 'ElecKoi卡库')), '默认目录 = 用户目录下的 Documents（由环境变量推出来，不是写死的盘符）')
+}
+
+console.log('9) 哪些命令算只读（不该为它们造目录）')
+{
+  断言(只读命令.has('--help') && 只读命令.has('guide') && 只读命令.has('check') && 只读命令.has('lint'), '--help / guide / check / lint 都算只读')
+  断言(!只读命令.has('new') && !只读命令.has('make') && !只读命令.has('entry'), 'new / make / entry 不算（它们要写字）')
 }
 
 console.log(`\n${败 === 0 ? '全过 ✔' : '有失败 ✘'}　${过} 过 / ${败} 败`)

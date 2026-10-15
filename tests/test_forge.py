@@ -455,6 +455,19 @@ class 测出厂清单(基类):
         self.assertTrue(名.startswith("dsh-"), 名)
         self.assertRegex(名, r"^dsh-[a-z0-9][a-z0-9-]*$")
 
+    def test_工具说明只降不涨(self):
+        """`插件/制卡工坊/index.js` 里的 `工具说明` **每一轮都会进系统提示词** ——
+        所以它是这个插件的固定成本，跟卡里的「常驻条目」一个道理：只降不涨。
+        想加内容就写进规程（模型真要用时 `["guide"]` 一取就有），别摊在这儿每轮背一遍。"""
+        import re
+
+        源 = open(os.path.join(ROOT, "插件", "制卡工坊", "index.js"), encoding="utf-8").read()
+        m = re.search(r"const 工具说明 = \[(.*?)\]\.join", 源, re.S)
+        self.assertIsNotNone(m, "找不到 `工具说明`")
+        行 = [l.strip().strip("'").rstrip(",") for l in m.group(1).strip().splitlines()]
+        字数 = len("\n".join(行))
+        self.assertLessEqual(字数, 700, "工具说明涨到 %d 字了（上限 700）—— 该进规程的进规程" % 字数)
+
     def test_不许把DSH运行时钉死版本(self):
         """`@deepseek-ai/dsh-*` 的 peer 一旦写死版本号，装到别的 DSH 上会被当场拒（错误码
         incompatible-version）。本项目要能装进桌面版、ElecKoi、手机版 —— 所以一律写 `*`。"""
