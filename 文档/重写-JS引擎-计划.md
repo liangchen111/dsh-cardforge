@@ -231,17 +231,47 @@ Python 侧那几个分支会真读出来 ⇒ 两条路此刻**注定不同**。�
   （`4da31c9f1146`，见 `造语料.mjs` 注释）⇒ JS 的 `_fingerprint` 只要差一个字节，它就会多报一条
   `PROJ-LEDGER-DRIFT`，差分当场红。
 
+**第四批 ✅ 全绿**（2026-10-16）
+
+| 模块 | 产出 | 差分结果 |
+|---|---|---|
+| `content`（2,013 行 · 本工程最大的一块） | `forgejs/lib/content.mjs` | ✔ 逐字节一致 **94,122 字节**（30+ 步顺序操作 ＋ 整棵工程树） |
+| `sandbox`（165 行 · content 的依赖） | `forgejs/lib/sandbox.mjs` | ✔ 逐字节一致 **5,397 字节**（模式关／模式开各跑一遍） |
+
+- **两份语料都不是「调几个函数」那种**：
+  - `差分/语料/content.json`：把 `assets/骨架` 整份拷进临时目录，**顺序**跑 30+ 个操作
+    （增删改条目／分组／变量／对象／正则／回收站还原／克隆），每步比「stdout ＋ 返回值 ＋ 异常消息」，
+    最后比**整棵树**（普通文件比 sha1、spec 比结构、回收站记录按位次编号比结构）。
+  - `差分/语料/sandbox.json`：同一串步骤跑两遍（模式关／模式开），专门盯那三处开关差异
+    —— `land` 走改名还是直接覆盖（临时文件还在不在）· `retire` 变墓碑 · `shell` 变空壳。
+- **两处备案过的写法差异**（`content.commit` / `content.load`；§二① 的落地）：
+  `M.ydump(raw, tmp)` → **`M.jdump`**（JS 不写 YAML，新产出一律 JSON）、临时文件后缀 `.yaml` → `.json`；
+  `M.yload(spec)` → **`M.loadStructured`**（`.spec.json` 与 `.spec.yaml` 都读得动）。
+- **随机量必须归一才比得动**：id、`created_at`/`updated_at`、回收站文件名与时间戳两侧天生不同
+  ⇒ 比对前按**形状**收（`-` 后面跟 8 位十六进制、且后面不再接十六进制）＋ 按**键**收
+  （`id` / `*_id` / `谁` / `时间` / `_文件` / `_路径`），**键名也收**（`数据` 里拿 id 当键）。
+
 ```
-python 差分/跑.py            # 全绿 6/6：domain · model · pack · validate · yaml · zod
-python 差分/跑.py --刷 yaml   # 只在确认行为变更时刷黄金
+python 差分/跑.py             # 全绿 8/8：content · domain · model · pack · sandbox · validate · yaml · zod
+python 差分/跑.py --刷 yaml    # 只在确认行为变更时刷黄金
+python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 code 型诊断
 ```
+
+**新踩的两个环境地雷**（写进这里，省得下一轮再撞）：
+
+1. **`cpSync(src, dst, {recursive:true})` 会把 Node 进程打崩** —— 本机 `D:\node.exe`（v24.14.0）
+   上退出码 `-1073740791`（`0xC0000409` STATUS_STACK_BUFFER_OVERRUN），**一行输出都不给**。
+   单文件 `cpSync` 是好的，坏的是 recursive 那条路。用 `readdirSync + copyFileSync + utimesSync`
+   自己递归拷（并照 `shutil.copytree` 把 mtime 一起搬）。
+2. **`JSON.stringify` 会把 `undefined` 的键整个丢掉** —— Python 的 `None` 在 JS 侧有 `null` 与
+   `undefined` 两个来源，记进差分结构前一律 `?? null`，否则黄金里的 `"回": null` 会凭空少掉一个键。
 
 
 ---
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（6/27）**
+**已搬完并逐字节绿（8/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -251,6 +281,8 @@ python 差分/跑.py --刷 yaml   # 只在确认行为变更时刷黄金
 | `pack` | `forgejs/lib/pack.mjs` | ✔ 136,436 字节（3 份语料） |
 | `validate` | `forgejs/lib/validate.mjs` | ✔ 29,091 字节（**47/47 种 code 全覆盖**） |
 | YAML 子集读取器 | `forgejs/lib/yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
+| `sandbox` | `forgejs/lib/sandbox.mjs` | ✔ 5,397 字节（模式关／开两遍） |
+| `content` | `forgejs/lib/content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵树） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -258,10 +290,16 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**下一轮**：按计划 §四 的批次顺序走 —— `content`(2159) → `draft`(816) → `coach`(1301) →
-`scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export` → 辅助 →
-命令层（33 条命令，名字一个不改）。最大的一块是 **`content.py`（2,159 行）**，
-建议单独占一轮：先看它引用了哪些已搬模块、把语料铺开再动笔。
+**下一轮**：按计划 §四 的批次顺序走 —— **`draft`（649 行）** → `coach`（853） →
+`scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export`/`opener` → 辅助 →
+命令层（33 条命令，名字一个不改）。`content` 已经吃掉最肥的一块（2,013 行），
+接下来这几块都只有它的一半左右，可以一块一轮。
+
+**已知还欠着的两处**（content 里那两个 import 的兄弟模块还没搬）：
+
+- `content.restore()` 里两处 `from . import opener as OP`（延迟导入）⇒ `opener.mjs` 没搬，
+  「还原开场白 / 还原卡名」两条支路会撞上，其余全部照抄可用。
+- 全库 `M.ydump` 仍抛错（JS 不写 YAML）—— 需要写 YAML 的调用点都得改成 `M.jdump`。
 
 **官方卡格式还差两件没做**（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的，已确认是真缺口）：
 
@@ -273,7 +311,8 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 **已经照官方改掉的**（v0.28.8 已发）：PNG 默认不写 `chara`（`--带酒馆块` 才写）· `REGEX_KEYS` 补齐四键 ·
 插件替调用方拆「一整条命令」。`verify()` 现在会拦禁块。
 
-**一条工具故障（跨会话仍在）**：`compress` 工具不可用 —— 报
-`stale-ref / session highest ref=none`，最后触发 **CIRCUIT BREAKER（连续 3 次失败后禁掉 compress）**。
-压缩后端看不到本会话的消息 ⇒ **交接与进度只能靠这份文档**，别指望摘要。
+**`compress` 工具（2026-10-16 复诊：已恢复，别当它坏了）**：之前报的
+`stale-ref / session highest ref=none` ＋ CIRCUIT BREAKER 是**暂时现象**，不是「后端看不到本会话」。
+实测结论与做法写在默认工作区 `bili-压缩失效-诊断-20261016.md`：**先 `acp_status` 拿当前可折叠区间，
+照它给的 ref 折一次** —— 一次成功即清断路器（阈值 3 次，且静默 10 分钟自动消）。
 

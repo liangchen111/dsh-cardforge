@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import tempfile
@@ -260,6 +261,181 @@ def 算_yaml(料: dict) -> dict:
 
 
 算式["yaml"] = 算_yaml
+
+
+# ------------------------------------------------------------------ content
+_UUID8 = re.compile(r"[0-9a-f]{8}")
+_ISO = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}")
+# 打在**人话里**的随机 id（`id      skel-entry-6912e0a8` 这种）：紧跟在 `-` 后面、且后面不再接
+# 十六进制字符的 8 位十六进制才算 —— 免得把 12 位的指纹（sha1 前 12 位）咬掉一截。
+_文本8 = re.compile(r"(?<=-)[0-9a-f]{8}(?![0-9a-f])")
+
+
+def _净文本(s: str) -> str:
+    return _ISO.sub("<时间>", _文本8.sub("<hex8>", s))
+
+
+def _动(x, 键=None):
+    """把随机/时间那一类东西归一：id 里的 8 位十六进制、created_at/updated_at/回收站时间。
+
+    不归一就没法比 —— 两侧每一步的 uuid 与时间戳天生不同。
+    """
+    if isinstance(x, str):
+        if 键 in ("created_at", "updated_at", "时间"):
+            return _ISO.sub("<时间>", x)
+        if 键 in ("id", "谁") or (isinstance(键, str) and 键.endswith("_id")):
+            return _UUID8.sub("<hex8>", x)
+        if 键 == "_文件":
+            return "<回收站文件名>"
+        if 键 == "_路径":
+            return "<回收站路径>"
+        # 兜底：任何**值**里那种「`-` 后面跟 8 位十六进制」的随机 id 尾巴（键名五花八门，
+        # `变量id` / `对象 id` / 数据里当键用的 id 都见过）—— 与其逐个键名去猜，不如按形状收。
+        return _文本8.sub("<hex8>", x)
+    if isinstance(x, dict):
+        return {_文本8.sub("<hex8>", str(k)): _动(v, str(k)) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_动(v, 键) for v in x]
+    return x
+
+
+def _树(根):
+    """整棵树的快照：普通文件比 sha1；spec 比**结构**；回收站记录按位次编号比结构。"""
+    import hashlib
+
+    from forge import model as MM
+
+    项 = []
+    第几条 = 0
+    for base, dirs, files in os.walk(根):
+        dirs[:] = sorted(d for d in dirs if d != "__pycache__")
+        for f in sorted(files):
+            p = os.path.join(base, f)
+            rel = os.path.relpath(p, 根).replace("\\", "/")
+            if rel.startswith(".forge/回收站/") and f.endswith(".json"):
+                第几条 += 1
+                try:
+                    记录: object = json.loads(Path(p).read_text(encoding="utf-8"))
+                except Exception as exc:  # noqa: BLE001
+                    记录 = {"读不出来": str(exc)}
+                项.append({"路径": ".forge/回收站/<第 %d 条>.json" % 第几条, "记录": _动(记录)})
+                continue
+            if ".spec." in f:
+                项.append({"路径": rel, "结构": _动(MM.load_structured(p))})
+                continue
+            项.append({"路径": rel, "sha1": hashlib.sha1(Path(p).read_bytes()).hexdigest()})
+    return 项
+
+
+def _换路径(x, 对):
+    if isinstance(x, str):
+        for a, b in 对:
+            x = x.replace(a, b)
+        return x
+    if isinstance(x, dict):
+        return {_换路径(k, 对): _换路径(v, 对) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_换路径(v, 对) for v in x]
+    return x
+
+
+def 算_content(料: dict) -> dict:
+    """顺序跑一串内容操作，每步比 stdout / 返回值 / 异常消息，最后比整棵树。"""
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import content as C
+
+    工作 = Path(tempfile.mkdtemp(prefix="content-"))
+    工程 = 工作 / "工程"
+    shutil.copytree(根 / 料["工程"], 工程)
+    规格 = str(工程 / 料["规格"])
+
+    出: dict = {"步": []}
+    for 步 in 料["操作"]:
+        参数 = [a.replace("@根@", str(工程)) if isinstance(a, str) else a for a in 步.get("参数", [])]
+        buf = io.StringIO()
+        rec: dict = {"调用": 步["调用"], "参数": 参数}
+        try:
+            with contextlib.redirect_stdout(buf):
+                回 = getattr(C, 步["调用"])(规格, *参数)
+            rec["回"] = _动(回)
+            rec["错"] = None
+        except Exception as exc:  # noqa: BLE001
+            rec["回"] = None
+            rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+        rec["出"] = _净文本(buf.getvalue())
+        出["步"].append(rec)
+    出["树"] = _树(工程)
+    shutil.rmtree(工作, ignore_errors=True)
+
+    对 = [(str(工程), "<工程>"), (str(工作), "<临时>"),
+          (str(工程).replace("\\", "\\\\"), "<工程>"), (str(工作).replace("\\", "\\\\"), "<临时>")]
+    return _换路径(出, 对)
+
+
+算式["content"] = 算_content
+
+
+def 算_sandbox(料: dict) -> dict:
+    """同一串步骤跑两遍：模式关 / 模式开。开与关的差别只落在 land / retire / shell 上。"""
+    import shutil
+    import tempfile
+
+    from forge import sandbox as SB
+
+    工作 = Path(tempfile.mkdtemp(prefix="sandbox-"))
+
+    def 跑一遍(标签: str, 开关: bool):
+        SB.enable(开关)
+        词根 = 工作 / 标签
+        词根.mkdir(parents=True, exist_ok=True)
+
+        def 路(k):
+            return str(词根 / k[4:].lstrip("/")) if k.startswith("@根@/") else k
+
+        def 路相对(k):
+            """写 / 读 / 问在不在 —— 这几处的路径**一律相对词根**（夹具不该落到工作目录里）。"""
+            return str(词根 / k[4:].lstrip("/")) if k.startswith("@根@/") else str(词根 / k)
+
+        def 写文本(p, s):
+            Path(p).parent.mkdir(parents=True, exist_ok=True)
+            with open(p, "w", encoding="utf-8", newline="\n") as f:
+                f.write(s)
+
+        步 = []
+        for s in 料["步骤"]:
+            做 = s["做"]
+            if 做 == "写":
+                写文本(路相对(s["路径"]), s["内容"])
+                步.append({"做": 做, "路径": s["路径"]})
+            elif 做 == "目录":
+                Path(路相对(s["路径"])).mkdir(parents=True, exist_ok=True)
+                步.append({"做": 做, "路径": s["路径"]})
+            elif 做 == "在":
+                步.append({"做": 做, "路径": s["路径"], "回": Path(路相对(s["路径"])).exists()})
+            elif 做 == "读":
+                p = Path(路相对(s["路径"]))
+                步.append({"做": 做, "路径": s["路径"],
+                           "回": p.read_text(encoding="utf-8") if p.exists() else None})
+            else:
+                参数 = [路(a) if isinstance(a, str) else a for a in s.get("参数", [])]
+                步.append({"做": 做, "调用": s["调用"], "回": getattr(SB, s["调用"])(*参数)})
+        return 步
+
+    出: dict = {"关": 跑一遍("关", False), "开": 跑一遍("开", True)}
+    开关 = []
+    for s in 料["开关"]:
+        开关.append({"调用": s["调用"], "回": getattr(SB, s["调用"])(*s.get("参数", []))})
+    出["开关"] = 开关
+    出["enabled"] = SB.enabled()
+    shutil.rmtree(工作, ignore_errors=True)
+    return 出
+
+
+算式["sandbox"] = 算_sandbox
 
 
 def main(argv):

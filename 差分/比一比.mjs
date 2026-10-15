@@ -8,15 +8,25 @@
  *   node 差分/比一比.mjs            # 比全部
  *   node 差分/比一比.mjs model      # 只比某一份
  */
-import { mkdtempSync, readFileSync, unlinkSync } from 'node:fs'
+import { mkdtempSync, readFileSync, unlinkSync, readdirSync, rmSync, mkdirSync, existsSync, writeFileSync, copyFileSync, statSync, utimesSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
 import * as Z from '../forgejs/lib/zod.mjs'
 import * as P from '../forgejs/lib/pack.mjs'
 import * as V from '../forgejs/lib/validate.mjs'
+import * as SB from '../forgejs/lib/sandbox.mjs'
+
+// content 是这一批里最大的一个，先用**动态导入**：它还没落地时，别的模块照样能比。
+let C = null
+try {
+  C = await import('../forgejs/lib/content.mjs')
+} catch (e) {
+  C = null
+}
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
@@ -210,6 +220,194 @@ function 算_yaml(料) {
 }
 
 算式.yaml = 算_yaml
+
+// ------------------------------------------------------------------ content
+const _UUID8 = /[0-9a-f]{8}/g
+const _ISO = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}[+-]\d{2}:\d{2}/g
+// 打在**人话里**的随机 id（`id      skel-entry-6912e0a8` 这种）：紧跟在 `-` 后面、且后面不再接
+// 十六进制字符的 8 位十六进制才算 —— 免得把 12 位的指纹（sha1 前 12 位）咬掉一截。
+const _文本8 = /(?<=-)[0-9a-f]{8}(?![0-9a-f])/g
+
+const 净文本 = (s) => String(s).replace(_ISO, '<时间>').replace(_文本8, '<hex8>')
+
+/** 与 Python 侧 `_动` 同一套：随机 id / 时间戳 / 回收站记录的位置，全部归一。 */
+function 动(x, 键 = null) {
+  if (typeof x === 'string') {
+    if (键 === 'created_at' || 键 === 'updated_at' || 键 === '时间') return x.replace(_ISO, '<时间>')
+    if (键 === 'id' || 键 === '谁' || (typeof 键 === 'string' && 键.endsWith('_id'))) return x.replace(_UUID8, '<hex8>')
+    if (键 === '_文件') return '<回收站文件名>'
+    if (键 === '_路径') return '<回收站路径>'
+    // 兜底：任何**值**里那种「`-` 后面跟 8 位十六进制」的随机 id 尾巴（键名五花八门，
+    // `变量id` / 数据里当键用的 id 都见过）—— 与其逐个键名去猜，不如按形状收。
+    return x.replace(_文本8, '<hex8>')
+  }
+  if (Array.isArray(x)) return x.map((v) => 动(v, 键))
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const [k, v] of Object.entries(x)) o[String(k).replace(_文本8, '<hex8>')] = 动(v, k)
+    return o
+  }
+  return x
+}
+
+/** 整棵树的快照：普通文件比 sha1；spec 比**结构**；回收站记录按位次编号比结构。 */
+function 走树(根) {
+  const 项 = []
+  let 第几条 = 0
+  const 走 = (base) => {
+    let ents
+    try {
+      ents = readdirSync(base, { withFileTypes: true })
+    } catch {
+      return
+    }
+    const dirs = ents.filter((e) => e.isDirectory()).map((e) => e.name).filter((d) => d !== '__pycache__').sort()
+    const files = ents.filter((e) => e.isFile()).map((e) => e.name).sort()
+    for (const f of files) {
+      const p = join(base, f)
+      const rel = relative(根, p).split('\\').join('/')
+      if (rel.startsWith('.forge/回收站/') && f.endsWith('.json')) {
+        第几条 += 1
+        let 记录
+        try {
+          记录 = JSON.parse(readFileSync(p, 'utf8'))
+        } catch (e) {
+          记录 = { 读不出来: String(e.message) }
+        }
+        项.push({ 路径: `.forge/回收站/<第 ${第几条} 条>.json`, 记录: 动(记录) })
+        continue
+      }
+      if (f.includes('.spec.')) {
+        项.push({ 路径: rel, 结构: 动(M.loadStructured(p)) })
+        continue
+      }
+      项.push({ 路径: rel, sha1: createHash('sha1').update(readFileSync(p)).digest('hex') })
+    }
+    for (const d of dirs) 走(join(base, d))
+  }
+  走(根)
+  return 项
+}
+
+function 换路径(x, 对) {
+  if (typeof x === 'string') {
+    let s = x
+    for (const [a, b] of 对) s = s.split(a).join(b)
+    return s
+  }
+  if (Array.isArray(x)) return x.map((v) => 换路径(v, 对))
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const [k, v] of Object.entries(x)) o[换路径(k, 对)] = 换路径(v, 对)
+    return o
+  }
+  return x
+}
+
+/**
+ * 递归拷一棵目录树。
+ *
+ * ★ 别用 `cpSync(src, dst, {recursive:true})` —— 实测在本机这个 Node（v24.14.0）上，
+ *   递归版**会把整个进程打崩**（退出码 `-1073740791` = 0xC0000409 STATUS_STACK_BUFFER_OVERRUN，
+ *   连一行输出都不给）。单文件 `cpSync` 是好的，坏的是 recursive 那条路。
+ *   Python 侧对应 `shutil.copytree`（它连 mtime 一起搬，这里也照做，免得两边对不上）。
+ */
+function 拷目录(src, dst) {
+  const st = statSync(src)
+  mkdirSync(dst, { recursive: true })
+  for (const e of readdirSync(src, { withFileTypes: true })) {
+    const s = join(src, e.name)
+    const d = join(dst, e.name)
+    if (e.isDirectory()) 拷目录(s, d)
+    else if (e.isFile()) {
+      copyFileSync(s, d)
+      utimesSync(d, st.atime, st.mtime)
+    }
+  }
+  utimesSync(dst, st.atime, st.mtime)
+}
+
+function 算_content(料) {
+  const 源 = join(根, 料.工程)
+  const 工作 = mkdtempSync(join(tmpdir(), 'content-'))
+  const 工程 = join(工作, '工程')
+  拷目录(源, 工程)
+  const 规格 = join(工程, 料.规格)
+
+  const 出 = { 步: [] }
+  for (const 步 of 料.操作) {
+    const 参数 = (步.参数 ?? []).map((a) => (typeof a === 'string' ? a.replace('@根@', 工程) : a))
+    const rec = { 调用: 步.调用, 参数 }
+    let 出文 = ''
+    const 原写 = process.stdout.write.bind(process.stdout)
+    process.stdout.write = (s) => { 出文 += String(s); return true }
+    try {
+      const 回 = C[步.调用](规格, ...参数)
+      rec.回 = 动(回 ?? null)
+      rec.错 = null
+    } catch (e) {
+      rec.回 = null
+      rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+    } finally {
+      process.stdout.write = 原写
+    }
+    rec.出 = 净文本(出文)
+    出.步.push(rec)
+  }
+  出.树 = 走树(工程)
+  rmSync(工作, { recursive: true, force: true })
+
+  const 对 = [[工程, '<工程>'], [工作, '<临时>'],
+    [工程.split('\\').join('\\\\'), '<工程>'], [工作.split('\\').join('\\\\'), '<临时>']]
+  return 换路径(出, 对)
+}
+
+算式.content = 算_content
+
+function 算_sandbox(料) {
+  const 工作 = mkdtempSync(join(tmpdir(), 'sandbox-'))
+  const 跑一遍 = (标签, 开关) => {
+    SB.enable(开关)
+    const 词根 = join(工作, 标签)
+    mkdirSync(词根, { recursive: true })
+    const 路 = (k) => (k.startsWith('@根@/') ? join(词根, k.slice(4)) : k)
+    // 写 / 读 / 问在不在 —— 这几处的路径**一律相对词根**（夹具不该落到工作目录里）
+    const 路相对 = (k) => (k.startsWith('@根@/') ? join(词根, k.slice(4)) : join(词根, k))
+    const 步 = []
+    for (const s of 料.步骤) {
+      const 做 = s.做
+      if (做 === '写') {
+        const p = 路相对(s.路径)
+        mkdirSync(dirname(p), { recursive: true })
+        writeFileSync(p, s.内容, 'utf8')
+        步.push({ 做, 路径: s.路径 })
+      } else if (做 === '目录') {
+        mkdirSync(路相对(s.路径), { recursive: true })
+        步.push({ 做, 路径: s.路径 })
+      } else if (做 === '在') {
+        步.push({ 做, 路径: s.路径, 回: existsSync(路相对(s.路径)) })
+      } else if (做 === '读') {
+        const p = 路相对(s.路径)
+        步.push({ 做, 路径: s.路径, 回: existsSync(p) ? readFileSync(p, 'utf8') : null })
+      } else {
+        const 参数 = (s.参数 ?? []).map((a) => (typeof a === 'string' ? 路(a) : a))
+        // ★ `?? null`：Python 的 None 在 JS 里两侧都有（`null` 与 `undefined`）；
+        //   `JSON.stringify` 会把 `undefined` 的键**整个丢掉**，与黄金的 `null` 就对不上了。
+        步.push({ 做, 调用: s.调用, 回: SB[s.调用](...参数) ?? null })
+      }
+    }
+    return 步
+  }
+  const 出 = { 关: 跑一遍('关', false), 开: 跑一遍('开', true) }
+  const 开关 = []
+  for (const s of 料.开关) 开关.push({ 调用: s.调用, 回: SB[s.调用](...(s.参数 ?? [])) })
+  出.开关 = 开关
+  出.enabled = SB.enabled()
+  rmSync(工作, { recursive: true, force: true })
+  return 出
+}
+
+算式.sandbox = 算_sandbox
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

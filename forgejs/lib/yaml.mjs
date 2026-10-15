@@ -207,6 +207,12 @@ function 解析节点(s, 父缩进) {
   const body = 正文(s.行[s.i])
   if (body === '-' || body.startsWith('- ')) return 解析序列(s, ind)
   if (切键(body)) return 解析映射(s, ind)
+  // 流集合**起在自己一行上**（`{` / `[` 单独占一行、内容在后面几行）——
+  // 这条路正是「JSON 文本落到 `.yaml` 名字下」时走的那条（forgejs 的 spec 就是 JSON）。
+  if (body[0] === '[' || body[0] === '{') {
+    s.i += 1
+    return 解析流(s, body)
+  }
   // 一个光秃秃的标量占一行（顶层或作为集合的值）
   s.i += 1
   return 解析普通标量(body)

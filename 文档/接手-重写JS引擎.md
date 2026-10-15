@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（6/27 个模块逐字节绿）
+## 现状（8/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -23,6 +23,8 @@
 | `pack` | `forgejs\lib\pack.mjs` | ✔ 136,436 字节（3 份语料） |
 | `validate` | `forgejs\lib\validate.mjs` | ✔ 29,091 字节（**47/47 种诊断 code 全覆盖**） |
 | YAML 子集读取器 | `forgejs\lib\yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
+| `sandbox` | `forgejs\lib\sandbox.mjs` | ✔ 5,397 字节（模式关／开各跑一遍） |
+| `content` | `forgejs\lib\content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵工程树） |
 
 ## 怎么跑
 
@@ -41,18 +43,22 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. 按计划 §四 的批次顺序走：**`content`(2159)** → `draft`(816) → `coach`(1301) →
-   `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export` → 辅助 →
-   命令层（33 条命令，名字一个不改）。
-2. `content.py` 是最大的一块，**建议单独占一轮**：先看它引用了哪些已搬模块、把语料铺开再动笔。
+1. 按计划 §四 的批次顺序走：**`draft`(649)** → `coach`(853) →
+   `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export`/`opener` → 辅助 →
+   命令层（33 条命令，名字一个不改）。`content`（2,013 行）已经吃掉最肥的一块，剩下这几块一块一轮。
+2. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 要等 `opener.mjs`；
+   需要写 YAML 的调用点都得把 `M.ydump` 改成 `M.jdump`。
 
 
-## 四条纪律（差分台已经证明有用）
+## 七条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
 3. **抓到的坑**：Python `round()` 是**银行家舍入**（`.5` 进偶数，token 估算会撞上）；Python `repr()` 会**递归**（`repr(['normal'])` 是 `['normal']`）。宽度表是从 `unicodedata` **生成**的（`差分\生成宽度表.py` → `forgejs\lib\east_asian_width.mjs`），不手抄。
-4. **YAML 要照抄 PyYAML，不是照抄 YAML 规范**（两者不一样，差分当场逮到两处）：
+4. **`cpSync(..., {recursive:true})` 会把 Node 进程打崩**（本机 v24.14.0，退出码 `0xC0000409`，连一行输出都不给）—— 递归拷目录用 `readdirSync + copyFileSync + utimesSync` 自己写。单文件 `cpSync` 是好的。
+5. **`JSON.stringify` 会把 `undefined` 的键整个丢掉** —— Python 的 `None` 在 JS 侧有 `null` 与 `undefined` 两个来源，记进差分结构前一律 `?? null`，否则黄金里的 `"回": null` 会凭空少一个键。
+6. **随机量必须先归一才比得动** —— id、时间戳、回收站文件名两侧天生不同：按**形状**收（`-` 后跟 8 位十六进制、后面不再接十六进制）＋ 按**键**收（`id` / `*_id` / `谁` / `时间` / `_文件` / `_路径`），**键名也要收**。
+7. **YAML 要照抄 PyYAML，不是照抄 YAML 规范**（两者不一样，差分当场逮到两处）：
    **`1e3` 在 PyYAML 眼里是字符串**（它的浮点正则要求必须有小数点）；**八进制是 YAML 1.1 的「前导 0」**
    （`012` → 10，PyYAML 不认 `0o`）。另外**流式标量要折行**：单个换行折成空格、连续 n 个换行折成 `n-1` 个
    （真 spec 里 `content: '第一段。`／空行／空行／`第二段'` 到处都是，折错就多／少一个换行）。

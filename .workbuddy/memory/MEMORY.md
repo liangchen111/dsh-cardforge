@@ -126,8 +126,13 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：6/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）· YAML 子集读取器。
-  下一块按计划 §四 走 **`forge\content.py`（2,159 行）**。
+- **进度：8/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+  YAML 子集读取器 · `sandbox` · **`content`（2,013 行 · 本工程最大的一块）**。
+  下一块按计划 §四 走 **`draft`（649 行）**。
+- **两个环境地雷**：**`cpSync(..., {recursive:true})` 会把 Node 进程打崩**（本机 v24.14.0，
+  退出码 `0xC0000409`，一行输出都不给）—— 递归拷目录自己用 `readdirSync + copyFileSync + utimesSync` 写；
+  **`JSON.stringify` 会把 `undefined` 的键整个丢掉** —— Python 的 `None` 在 JS 侧有 `null`/`undefined`
+  两个来源，记进差分结构前一律 `?? null`。
 - **别照 YAML 规范写子集解析器，要照 PyYAML**：`1e3` 是**字符串**（PyYAML 浮点正则要求必须有小数点）；
   八进制是 YAML 1.1 的「前导 0」（`012` → 10，不认 `0o`）；流式标量要折行（单换行→空格，连续 n 个→`n-1` 个换行）。
 
