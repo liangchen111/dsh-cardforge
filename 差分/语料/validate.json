@@ -1,0 +1,14 @@
+{
+  "说明": "validate 的差分语料。卡：值域/一致性/变量/正则/开场白/护栏全段；工程：界面层全段 + 工程层**不碰 yload 的那些分支**。凡是要读 source/*.spec.yaml 的分支（HUD-OPENER-* / PROJ-NAME-DRIFT / PROJ-LEDGER-* / PROJ-HUD-UNWRITTEN / PROJ-HUD-PATTERN / PROJ-STALE-CARD）本轮**未覆盖** —— JS 侧 YAML 子集读取器还没落地，等它落地再补语料。",
+  "卡": [
+    "向导/制卡助手/成品/制卡助手.card.json",
+    "差分/语料/validate/问题卡.card.json",
+    "差分/语料/validate/无开场.card.json"
+  ],
+  "工程": [
+    "差分/语料/validate/工程甲",
+    "差分/语料/validate/工程乙",
+    "差分/语料/validate/工程丙",
+    "差分/语料/validate/不存在的工程"
+  ]
+}

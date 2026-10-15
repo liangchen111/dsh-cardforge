@@ -181,6 +181,51 @@ def 算_pack(料: dict) -> dict:
 算式["pack"] = 算_pack
 
 
+def _诊断(i) -> dict:
+    """一条诊断的差分形状。
+
+    `HUD-CONF` 的 message 里嵌着**解释器自己的 JSON 报错原文**（Python 的
+    JSONDecodeError 与 V8 的 SyntaxError 措辞天生不同）⇒ 这一条只比前缀，
+    归一成「读不出来：<解析器原文>」。这是**备案过的例外**，见 `差分/语料/validate.json`。
+    """
+    msg = "读不出来：<解析器原文>" if i.code == "HUD-CONF" else i.message
+    return {"level": i.level, "code": i.code, "where": i.where, "message": msg, "fix": i.fix}
+
+
+def 算_validate(料: dict) -> dict:
+    """卡层：validate_card + summarize + print_report（抓 stdout 逐字节比）。"""
+    import contextlib
+    import io
+
+    from forge import validate as V
+
+    出: dict = {"卡": [], "工程": []}
+    for 相对 in 料["卡"]:
+        card = M.jload(str(根 / 相对))
+        issues = V.validate_card(card)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            errs = V.print_report(card, 相对, issues)
+        出["卡"].append({
+            "输入": 相对,
+            "诊断": [_诊断(i) for i in issues],
+            "摘要": V.summarize(card),
+            "报告": buf.getvalue(),
+            "错误数": errs,
+        })
+    for 相对 in 料["工程"]:
+        p = str(根 / 相对)
+        出["工程"].append({
+            "输入": 相对,
+            "界面": [_诊断(i) for i in V.validate_hud(p)],
+            "工程": [_诊断(i) for i in V.validate_project(p)],
+        })
+    return 出
+
+
+算式["validate"] = 算_validate
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

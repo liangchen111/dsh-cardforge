@@ -162,30 +162,54 @@ node   差分/比一比.mjs         # 逐字节比，红了报第几行第几偏
   写默认走 JSON；比对时把 JS 产出的 YAML 用 PyYAML 解析回来做**结构相等**比较。
   这是唯一一处「允许不是逐字节」的地方，写在这里备案。
 
-**下一批**：`pack`（298）· `validate`（834）。
+**第二批 ✅ 全绿**（2026-10-15 深夜 → 2026-10-16）
+
+| 模块 | 产出 | 差分结果 |
+|---|---|---|
+| `pack` | `forgejs/lib/pack.mjs` | ✔ 卡那边逐字节一致 **136,436 字节**（3 份语料：真卡 · 最小卡 · 不是 ElecKoi 卡） |
+| `validate` | `forgejs/lib/validate.mjs` | ✔ 逐字节一致 **25,970 字节**（3 张卡 ＋ 4 个工程夹具） |
+
+**`validate` 这一块要特别注意它的边界**：`forge/validate.py` 里写死了 **47 种**诊断 code，
+差分语料走到了 **39 种**；没走到的 8 种**全部**是「要读 `source/*.spec.yaml`」的那几支 ——
+
+```
+HUD-OPENER-MARK · HUD-OPENER-DRIFT · HUD-OPENER-GONE
+PROJ-NAME-DRIFT · PROJ-LEDGER-DRIFT · PROJ-HUD-UNWRITTEN · PROJ-HUD-PATTERN · PROJ-STALE-CARD
+```
+
+原因：JS 侧的 **YAML 子集读取器还没落地**（`model.mjs` 的 `yload()` 现在直接抛错），
+Python 侧那几个分支会真读出来 ⇒ 两条路此刻**注定不同**。代码已经照抄一份放在
+`validate.mjs` 里，等读取器落地**自动点亮**，那时再补语料。
+
+**新加的一条工具**：`python 差分/数覆盖.py [模块名]` —— 数「源码里写死的 code vs 黄金走到过
+的 code」。**差分的绿只证明语料走到过的那几条路一致**，绕开的分支照样绿；这份脚本把
+「绕开了哪些」摆到台面上，免得好消息被当成全功。
 
 ---
 
-## 八、当前状态（2026-10-15 深夜 · 交接用）
+## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（3/27）**
+**已搬完并逐字节绿（5/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
-| `model` | `forgejs/lib/model.mjs` | ✔ 3,778 字节 |
+| `model` | `forgejs/lib/model.mjs` | ✔ 3,864 字节 |
 | `domain` | `forgejs/lib/domain.mjs` | ✔ 7,975 字节 |
 | `zod` | `forgejs/lib/zod.mjs` | ✔ 2,661 字节 |
-
-**在飞、还没验的**：`forgejs/lib/pack.mjs` 已按 `forge/pack.py` 写好，**差分也已跑绿** ——
-`pack` ✔ 逐字节一致 **133,338 字节**（语料 `差分/语料/pack.json` 只放了真卡
-`向导/制卡助手/成品/制卡助手.card.json` 一张；卡那边逐字节、规格那边结构相等）。
-⇒ **进度 4/27**。下一轮：给 pack 再加一张**最小卡**语料（覆盖空设定库 / 空变量），然后进
-`validate`（834 行）。
+| `pack` | `forgejs/lib/pack.mjs` | ✔ 136,436 字节（3 份语料） |
+| `validate` | `forgejs/lib/validate.mjs` | ✔ 25,970 字节（**39/47 种 code；余 8 种卡在 YAML**，见 §七） |
 
 ```
-python 差分/出黄金.py pack     # 已跑
-node   差分/比一比.mjs pack    # 已跑，绿
+python 差分/跑.py              # 一条命令跑全套（比一比）
+python 差分/跑.py --刷 validate # 只在确认行为变更时刷黄金
+python 差分/数覆盖.py           # 数「语料走到了哪些诊断」
 ```
+
+**下一轮的第一件事：搬 YAML 子集读取器（进 `model.mjs`）** —— 它现在是唯一挡在
+`validate` 那 8 种 code、以及后面 `content`/`scaffold`/`preset` 整条链前面的东西
+（任何 `.spec.yaml` 都要它）。落地点与口径见 §二①：**读得懂 `.spec.yaml`、新产出默认写
+`.spec.json`；比对用 PyYAML 解析回来做结构相等，不逐字节比排版**。
+做完顺手把 `validate` 的语料补上 `source/*.spec.yaml` 那一面。
 
 **官方卡格式还差两件没做**（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的，已确认是真缺口）：
 
@@ -197,5 +221,7 @@ node   差分/比一比.mjs pack    # 已跑，绿
 **已经照官方改掉的**（v0.28.8 已发）：PNG 默认不写 `chara`（`--带酒馆块` 才写）· `REGEX_KEYS` 补齐四键 ·
 插件替调用方拆「一整条命令」。`verify()` 现在会拦禁块。
 
-**本会话的一条工具故障**：`compress` 工具不可用（连续七次 `stale-ref / session highest ref=none`），
-压缩后端看不到本会话的消息 ⇒ 交接与进度只能靠这份文档，别指望摘要。
+**一条工具故障（跨会话仍在）**：`compress` 工具不可用 —— 报
+`stale-ref / session highest ref=none`，最后触发 **CIRCUIT BREAKER（连续 3 次失败后禁掉 compress）**。
+压缩后端看不到本会话的消息 ⇒ **交接与进度只能靠这份文档**，别指望摘要。
+

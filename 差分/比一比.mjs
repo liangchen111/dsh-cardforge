@@ -16,6 +16,7 @@ import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
 import * as Z from '../forgejs/lib/zod.mjs'
 import * as P from '../forgejs/lib/pack.mjs'
+import * as V from '../forgejs/lib/validate.mjs'
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
@@ -150,6 +151,41 @@ function 算_pack(料) {
 }
 
 算式.pack = 算_pack
+
+/** 一条诊断的差分形状（`HUD-CONF` 的报错原文两边天生不同，归一 —— 见 差分/语料/validate.json）。 */
+const 诊断形状 = (i) => ({
+  level: i.level,
+  code: i.code,
+  where: i.where,
+  message: i.code === 'HUD-CONF' ? '读不出来：<解析器原文>' : i.message,
+  fix: i.fix,
+})
+
+function 算_validate(料) {
+  const 出 = { 卡: [], 工程: [] }
+  for (const 相对 of 料.卡) {
+    const card = M.jload(join(根, 相对))
+    const issues = V.validate_card(card)
+    出.卡.push({
+      输入: 相对,
+      诊断: issues.map(诊断形状),
+      摘要: V.summarize(card),
+      报告: V.report_text(card, 相对, issues),
+      错误数: issues.filter((i) => i.level === 'ERROR').length,
+    })
+  }
+  for (const 相对 of 料.工程) {
+    const p = join(根, 相对)
+    出.工程.push({
+      输入: 相对,
+      界面: V.validate_hud(p).map(诊断形状),
+      工程: V.validate_project(p).map(诊断形状),
+    })
+  }
+  return 出
+}
+
+算式.validate = 算_validate
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

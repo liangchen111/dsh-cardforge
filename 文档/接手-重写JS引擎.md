@@ -13,32 +13,40 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（4/27 个模块逐字节绿）
+## 现状（5/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
 | `model` | `forgejs\lib\model.mjs` | ✔ 3,864 字节 |
 | `domain` | `forgejs\lib\domain.mjs` | ✔ 7,975 字节 |
 | `zod` | `forgejs\lib\zod.mjs` | ✔ 2,661 字节 |
-| `pack` | `forgejs\lib\pack.mjs` | ✔ 136,062 字节 |
+| `pack` | `forgejs\lib\pack.mjs` | ✔ 136,436 字节（3 份语料） |
+| `validate` | `forgejs\lib\validate.mjs` | ✔ 25,970 字节（**39/47 种诊断 code**，余 8 种卡在 YAML） |
 
 ## 怎么跑
 
 ```
 cd E:\workGZQ\制卡工具
-python 差分\出黄金.py           # 用 Python 版刷黄金（只在确认行为变更时才跑）
-node   差分\比一比.mjs          # 用 JS 版跑，逐字节比，红了报第几行第几偏移
+python 差分\跑.py               # 一条命令跑全套逐字节比
+python 差分\跑.py --刷          # 先用 Python 版刷黄金（只在确认行为变更时才跑）
+python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
 - Python 解释器：`C:\Users\Administrator\.workbuddy\binaries\python\envs\cardforge\Scripts\python.exe`
-- Node：`D:\node.exe`
+  （3.13.14 ＋ PyYAML 6.0.3；**第一次调用可能报 `did not find executable at ...versions\3.13.12\python.exe`，
+  重跑一次就好**，venv 基解释器是好的）
+- Node：`D:\node.exe`（v24.14.0）
 - 加语料：`差分\语料\<名>.json` 写输入；`出黄金.py` / `比一比.mjs` 各加一个 `算_<名>` 函数。
 
 ## 下一步（照顺序）
 
-1. 给 `pack` 再加语料：一张**没有 character/setting_library/variable_config 的卡**（走 `forge/pack.py` 的认卡守卫，应当抛那句「这不像 ElecKoi 卡」）。
-2. 搬 `E:\workGZQ\制卡工具\forge\validate.py`（834 行）：`validate.py` 的体检项与 `model.Issue` 形状对齐，差分会比「诊断列表」。
+1. **搬 YAML 子集读取器**（落进 `forgejs\lib\model.mjs`）—— 它是唯一挡在
+   `validate` 剩下 8 种 code、以及后面整条 `spec.yaml` 链前面的东西。
+   口径：**读得懂 `.spec.yaml`、新产出默认写 `.spec.json`；比对用 PyYAML 解析回来做结构相等，
+   不逐字节比排版**（计划 §二①）。
+2. 把 `validate` 的语料补上 `source/*.spec.yaml` 那一面（那 8 种 code 就能点亮）。
 3. 之后按计划 §四 的批次顺序走：`content`(2159) → `draft`(816) → `coach`(1301) → `scaffold`/`theme`/`mods`/`hud` → `png`/`preset`/`dist`/`bundle`/`export` → 辅助 → 命令层（33 条命令，名字一个不改）。
+
 
 ## 三条纪律（差分台已经证明有用）
 
