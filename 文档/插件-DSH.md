@@ -100,3 +100,29 @@ git config --global http.https://github.com/.proxy http://127.0.0.1:17890
 另外，插件的 `inject` 只有 `['tools']` —— DSH 的 cordis 只认「字符串数组」或「服务名→配置」两种形状，
 **没有 `{ required, optional }` 这种写法**（写成那样会被当成两个叫 `required` / `optional` 的服务，
 插件永远等不到，且**不报错**）。可选依赖一律靠 `ctx.get(名字, false)`。
+
+---
+
+## 七、清单字段：我们声明了什么，以及为什么版本写 `*`
+
+| 字段 | 我们的取值 | 依据 |
+|---|---|---|
+| `name` / `version` | `eleckoi-cardforge` / `0.28.1` | 清单里**唯二强制**的字段 |
+| `dsh.bundle.patch` | `./cordis.patch.yml` | **bundle 的判定字段**。没有它也装得上，但只当普通依赖装、不激活任何层，并打一行 `dsh: warning: … declares no dsh.bundle` |
+| `dsh.manifestVersion` | `1` | 不写也行，写了就是明说「按这一版约定读」 |
+| `type` / `main` / `exports` | `module` / `插件/制卡工坊/index.js` | 官方最小包就长这样 |
+| `files` | 含 `cordis.patch.yml` | 漏了会把补丁排到包外 ⇒ 装了不激活 |
+| `engines.dsh` | `>=0.2.0-rc.2` | **只是声明**：安装器与加载器都不强制它，也不校验 SemVer 语法（`dsh-package-manifest` 的说明原文） |
+| `peerDependencies` | `@deepseek-ai/dsh-tools: "*"` 等 | 见下 |
+
+**为什么不写死版本。** 安装前的那道兼容性检查，只看 `@deepseek-ai/dsh` 和 `@deepseek-ai/dsh-*` 这些名字，
+并且是**拿运行时的 DSH 版本去卡你写的区间**（源码：`dsh-app-boot` 的 `evaluatePluginCompatibility`，
+先 `if (!Object.hasOwn(fields, "peerDependencies")) return`，然后对每个 peer 做
+`semver.satisfies(runtimeVersion, range, { includePrerelease: true })`）。不满足就报
+`incompatible-version` **拒绝安装**。所以一旦把 `@deepseek-ai/dsh-tools` 钉成某个确切版本，
+这个包就只能装在那个版本的宿主上 —— 桌面版、电子爱、手机版带的 DSH 版本不一定一样。
+我们写 `*`，意思是：**任何 DSH 版本都放行**（本插件只用 `ctx.tools.register` + `defineTool`，
+这两个接口跨版本很稳）。`@deepseek-ai/cordis` 与 `@deepseek-ai/schemastery` 不在被检查的名字里，
+写上只是为了把「我们 import 了它们」讲明白。
+
+装了之后想核对：在插件管理器里看这个包的补丁行与存活条目（CLI 侧另有一组 `dsh plugin …` 命令，见官方 plugins/install 文档）。

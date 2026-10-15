@@ -437,6 +437,37 @@ class 测出厂清单(基类):
         for 名 in m.不装:
             self.assertNotIn(名, m.要装的文件, 名)
 
+    def test_清单合DSH插件约定(self):
+        """按官方最小包的形状核一遍（`文档/插件-DSH.md` 里逐条写了出处）。"""
+        pkg = self._根包()
+        self.assertEqual(pkg["dsh"].get("manifestVersion"), 1)
+        self.assertEqual(pkg["type"], "module")
+        self.assertIn("main", pkg)
+        self.assertIn("cordis.patch.yml", pkg["files"])
+        self.assertIn("./cordis.patch.yml", pkg["exports"].values())
+        self.assertTrue(pkg.get("engines", {}).get("dsh"), "engines.dsh 是声明项，别删")
+
+    def test_不许把DSH运行时钉死版本(self):
+        """`@deepseek-ai/dsh-*` 的 peer 一旦写死版本号，装到别的 DSH 上会被当场拒（错误码
+        incompatible-version）。本项目要能装进桌面版、ElecKoi、手机版 —— 所以一律写 `*`。"""
+        dsh范围 = {
+            名: 范围
+            for 名, 范围 in self._根包().get("peerDependencies", {}).items()
+            if 名 == "@deepseek-ai/dsh" or 名.startswith("@deepseek-ai/dsh-")
+        }
+        self.assertIn("@deepseek-ai/dsh-tools", dsh范围, "至少要声明我们唯一注入的那个服务")
+        for 名, 范围 in dsh范围.items():
+            self.assertEqual(范围, "*", "%s 被钉成 %s 了" % (名, 范围))
+
+    def test_插件目录那份清单同一套约定(self):
+        根 = self._根包()
+        with open(os.path.join(ROOT, "插件", "制卡工坊", "package.json"), encoding="utf-8") as f:
+            内 = json.load(f)
+        self.assertEqual(内["dsh"].get("manifestVersion"), 1)
+        self.assertIn("cordis.patch.yml", 内["files"])
+        self.assertEqual(内["peerDependencies"], 根["peerDependencies"])
+        self.assertEqual(内["engines"], 根["engines"])
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

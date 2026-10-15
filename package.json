@@ -7,6 +7,7 @@
   "main": "插件/制卡工坊/index.js",
   "exports": {
     ".": "./插件/制卡工坊/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json",
     "./locale/*.json": "./插件/制卡工坊/locale/*.json"
   },
@@ -20,13 +21,24 @@
     "tests/",
     "门禁.py",
     "文档/使用说明.md",
+    "文档/插件-DSH.md",
+    "文档/插件-ElecKoi.md",
     "cordis.patch.yml",
     "pyproject.toml",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
+  "engines": {
+    "dsh": ">=0.2.0-rc.2"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/schemastery": "*"
+  },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
