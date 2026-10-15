@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（16/27 个模块逐字节绿）
+## 现状（18/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -33,8 +33,10 @@
 | `hud` | `forgejs\lib\hud.mjs` | ✔ 70,619 字节（952 行 · 95 条操作 · 5 目录 56 文件） |
 | `manual` | `forgejs\lib\manual.mjs` | ✔ 73,272 字节（870 行 · 39 步 · 3 份夹具） |
 | `theme` | `forgejs\lib\theme.mjs` | ✔ 58,911 字节（886 行 · 8 情形 / 124 步） |
+| `coach` | `forgejs\lib\coach.mjs` | ✔ 709,969 字节（1,510 行 · 6 情形 · 37 步 · 18 个长常量逐字节核过） |
+| `export` | `forgejs\lib\export.mjs` | ✔ 115,144 字节（616 行 · 14 情形 / 14 次调用） |
 
-**在跑**：`coach`（1,353 行 · 最肥的一块）＋ `export`（396 行）。
+**在跑**：`png`（384 行）＋ `dist`（373 行）。
 
 ## 怎么跑
 
@@ -53,11 +55,10 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`coach`(1,353 · 最肥的一块) ＋ `export`(396)，两个子代理并排。`export` 一好就上 `png`(384)。
+1. **在跑**：`png`(384) ＋ `dist`(373)，两个子代理并排。`png` 一好就上 `preset`(500)。
 2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
-   已可开工：`lint`(293 · 只 io/json/os/re/sys/yaml) · `plan`(262 · 只 sandbox) · `guard`(71 · 只 os) ·
-   `dist`(373 · 要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`，**这些都已全绿 ⇒ 可开**)。
-   被卡的：`png`(384) 等 `export` · `preset`(500) 等 `png` · `bundle`(119) 等 dist+export+manual。
+   已可开工：`lint`(293 · 只 io/json/os/re/sys/yaml) · `plan`(262 · 只 sandbox) · `guard`(71 · 只 os)。
+   被卡的：`preset`(500) 等 `png` · `bundle`(119) 等 dist+export+manual。
    最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。

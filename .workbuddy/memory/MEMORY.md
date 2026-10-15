@@ -126,14 +126,14 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：16/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+- **进度：18/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（341,131 字节 · 界面档三条支路已真跑）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** ·
   **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）** ·
-  **`manual`（73,272 字节 · `manual.mjs` 870 行）** · **`theme`（58,911 字节 · `theme.mjs` 886 行）**。
-  下一波在跑：**`coach`（1,353 行 · 最肥的一块）** ＋ **`export`（396 行）**；`export` 一好就上 `png`（384）。
-  依实测 grep 的依赖链：`dist`（要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`）· `lint` · `plan` · `guard`
-  **现在就能开**；`preset` 等 `png`；`bundle` 等 dist＋export＋manual。
+  **`manual`（73,272 字节 · `manual.mjs` 870 行）** · **`theme`（58,911 字节 · `theme.mjs` 886 行）** ·
+  **`coach`（709,969 字节 · `coach.mjs` 1,510 行）** · **`export`（115,144 字节 · `export.mjs` 616 行）**。
+  下一波在跑：**`png`（384 行）** ＋ **`dist`（373 行）**；`png` 一好就上 `preset`（500）。
+  依实测 grep 的依赖链：`lint` · `plan` · `guard` **现在就能开**；`preset` 等 `png`；`bundle` 等 dist＋export＋manual。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 - **差分台的两处既有代码修正**（2026-10-16 · 复核过：`--刷` 重刷后旧黄金一个字节没动）：

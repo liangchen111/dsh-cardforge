@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（16/27）**
+**已搬完并逐字节绿（18/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -291,6 +291,8 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `hud` | `forgejs/lib/hud.mjs` | ✔ 70,619 字节（95 条操作 · 5 目录 56 文件） |
 | `manual` | `forgejs/lib/manual.mjs` | ✔ 73,272 字节（39 步 · 3 份夹具） |
 | `theme` | `forgejs/lib/theme.mjs` | ✔ 58,911 字节（8 情形 / 124 步） |
+| `coach` | `forgejs/lib/coach.mjs` | ✔ 709,969 字节（6 情形 · 37 步 · 18 个长常量逐字节核过） |
+| `export` | `forgejs/lib/export.mjs` | ✔ 115,144 字节（14 情形 · 14 次调用） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -298,10 +300,9 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`coach`（1,353 · 最肥的一块）＋ `export`（396），两个子代理并排跑。
-`manual` 已经落地 ⇒ `coach` 解锁；`export` 一落地，`png`（384）就跟着解锁。
-`dist`（373）的依赖（hud＋bridge＋validate＋pack＋sandbox）已全绿 ⇒ 随时可开。
-`lint`（293）/ `plan`（262）/ `guard`（71）依赖最轻，也随时可开。
+**在跑**：`png`（384）＋ `dist`（373），两个子代理并排跑。
+`png` 要的 `export` 已绿；`dist` 要的 model/pack/sandbox/hud/bridge/validate 也全绿。
+之后：`preset`（500）要 `png`；`bundle`（119）要 dist＋export＋manual；`lint`（293）/ `plan`（262）/ `guard`（71）依赖最轻，随时可开。
 
 **`opener` 的三条界面档支路已经真跑了**（2026-10-16）—— 新增夹具 `卯全界面`（`assets/骨架` 整份）
 后，`写回()`（界面档·标记数 3）与 `改正文(..., 写回=true)` 都进了语料（opener 黄金 228,776 → **341,131**）。

@@ -1,0 +1,418 @@
+{
+  "说明": "export.to_tavern 的差分语料。每个情形把「卡」写成 工作/<卡名>（缺省 卡.json），调 to_tavern(卡路径, 出路径, keep_raw, 行.append)，记 回／错／参数／行／出（=默认出口时的 stdout）／写出来的文件原文（「文」不做归一，当逐字节强校验）。情形写 \"用默认出口\": true 时**不传** out，走 to_tavern 自己的 out=print 默认值。",
+  "情形": [
+    {
+      "名": "全分支",
+      "卡名": "全分支.card.json",
+      "出名": "全分支.out.json",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "version": 1,
+        "character": {
+          "name": "  银月  ",
+          "group": "奇幻、冒险、 都市 ",
+          "opening": "兜底开场白",
+          "profile_age": "24",
+          "profile_sex": "女",
+          "profile_height": "  ",
+          "profile_birthday": "冬月初七",
+          "profile_like": "  看月亮 ",
+          "origin": "北境",
+          "legacy": { "a": [1, 2] }
+        },
+        "setting_library": {
+          "format": "eleckoi.setting-library",
+          "version": 1,
+          "active_version_id": "v2",
+          "versions": [
+            {
+              "id": "v1",
+              "name": "旧版",
+              "groups": [{ "id": "g0", "name": "旧分组" }],
+              "entries": [{ "id": "old", "title": "旧版条目", "content": "不该出现", "kind": "normal" }]
+            },
+            {
+              "id": "v2",
+              "name": "主线",
+              "list_all_expanded": false,
+              "expanded_group_ids": ["g1"],
+              "prompt_positions": [{ "after": "x" }],
+              "groups": [{ "id": "g1", "name": "开场" }, { "id": "g2", "name": "设定" }],
+              "entries": [
+                {
+                  "id": "e-open",
+                  "kind": "opening",
+                  "title": "开场白",
+                  "content": "开场条目正文，这一行不该出现在设定库里",
+                  "enabled": true,
+                  "default_opening_message_id": "m2",
+                  "opening_messages": [
+                    { "id": "m1", "title": "第一套", "content": "  第一套开场  ", "initial_variable_state": { "a": 1 } },
+                    { "id": "m2", "title": "第二套", "content": "第二套开场\n第二行", "initial_variable_state": {} },
+                    { "id": "m3", "title": "第三套", "content": "   ", "initial_variable_state": { "b": 2 } },
+                    { "id": "m4", "title": "第四套", "content": "第四套开场" }
+                  ],
+                  "agent_read_strategy": "normal",
+                  "trigger_mode": "always",
+                  "insert_role": "assistant"
+                },
+                {
+                  "id": "e-desc",
+                  "title": "世界规则",
+                  "content": "这是一条世界规则。",
+                  "trigger_mode": "always",
+                  "insert_role": "system",
+                  "enabled": true,
+                  "keywords": ["忽略"],
+                  "order": 1,
+                  "group_id": "g2",
+                  "view_order": 3,
+                  "group_view_order": 1,
+                  "tree_view_order": 0,
+                  "position": "",
+                  "position_role": "system",
+                  "position_depth": 2,
+                  "position_order": 7,
+                  "icon_id": "i-desc",
+                  "agent_read_strategy": "keyword",
+                  "agent_selection_hint": "提示一下",
+                  "keyword_condition": "all",
+                  "keyword_use_regex": true,
+                  "keyword_ignore_case": false,
+                  "keyword_whole_word": true,
+                  "keyword_recursion_depth": 0,
+                  "keyword_scan_depth": 2,
+                  "dynamic_mode": "dynamic"
+                },
+                {
+                  "id": "e-const",
+                  "title": "常驻人设",
+                  "content": "常驻内容",
+                  "trigger_mode": "always",
+                  "insert_role": "user",
+                  "order": 0
+                },
+                {
+                  "id": "e-kw",
+                  "title": "关键词条目",
+                  "content": "关键词内容🐉龙语",
+                  "trigger_mode": "keyword",
+                  "insert_role": "assistant",
+                  "keywords": ["龙", "  ", "月亮", 5],
+                  "condition_keywords": ["条件1", 7],
+                  "order": "5",
+                  "keyword_condition": "all",
+                  "keyword_use_regex": false,
+                  "keyword_ignore_case": true,
+                  "keyword_whole_word": false,
+                  "keyword_recursion_depth": 1,
+                  "keyword_scan_depth": 0,
+                  "enabled": true,
+                  "group_id": "g1"
+                },
+                {
+                  "id": "e-no",
+                  "title": "没关键词",
+                  "content": "没关键词的内容",
+                  "trigger_mode": "keyword",
+                  "insert_role": "user",
+                  "keywords": [],
+                  "order": 2
+                },
+                {
+                  "id": "e-off",
+                  "title": "停用条目",
+                  "content": "不该出现",
+                  "enabled": false
+                },
+                {
+                  "id": "e-empty",
+                  "title": "空正文",
+                  "content": "   \n  "
+                },
+                {
+                  "id": "e-notitle",
+                  "content": "没有标题的条目内容",
+                  "trigger_mode": "keyword",
+                  "insert_role": "user",
+                  "keywords": ["甲"],
+                  "order": 3
+                },
+                {
+                  "id": "e-ex",
+                  "title": "对话示例：龙与月亮",
+                  "content": "  示例正文  ",
+                  "trigger_mode": "keyword",
+                  "keywords": ["示例"],
+                  "order": 4
+                },
+                {
+                  "id": "e-notany",
+                  "title": "排除式",
+                  "content": "排除式内容",
+                  "trigger_mode": "keyword",
+                  "insert_role": "system",
+                  "keywords": ["乙"],
+                  "keyword_condition": "not_any",
+                  "order": 6
+                },
+                {
+                  "id": "e-badrole",
+                  "title": "怪角色",
+                  "content": "怪角色内容",
+                  "trigger_mode": "keyword",
+                  "insert_role": "tool",
+                  "keywords": ["丙"],
+                  "order": 7
+                },
+                {
+                  "id": "e-default",
+                  "title": "默认触发",
+                  "content": "默认触发内容",
+                  "insert_role": "user",
+                  "order": 8
+                },
+                {
+                  "id": "e-case",
+                  "title": "大小写条目",
+                  "content": "大小写内容",
+                  "trigger_mode": "keyword",
+                  "keywords": ["丁"],
+                  "keyword_ignore_case": false,
+                  "keyword_whole_word": true,
+                  "keyword_recursion_depth": null,
+                  "keyword_condition": "unknown_value",
+                  "order": 9
+                },
+                {
+                  "id": "e-num",
+                  "title": "正文是数字",
+                  "content": 5,
+                  "trigger_mode": "keyword",
+                  "keywords": ["戊"],
+                  "order": 10
+                },
+                {
+                  "id": "e-numtitle",
+                  "title": 7,
+                  "content": "标题是数字",
+                  "trigger_mode": "keyword",
+                  "keywords": ["己"],
+                  "order": 11
+                },
+                {
+                  "id": "e-float",
+                  "title": "顺序是小数",
+                  "content": "顺序是小数内容",
+                  "trigger_mode": "keyword",
+                  "keywords": ["庚"],
+                  "order": 3.7
+                },
+                {
+                  "id": "e-bool",
+                  "title": "顺序是布尔",
+                  "content": "顺序是布尔内容",
+                  "trigger_mode": "keyword",
+                  "keywords": ["辛"],
+                  "order": true
+                },
+                {
+                  "id": "e-nocontent",
+                  "title": "没正文",
+                  "trigger_mode": "keyword",
+                  "keywords": ["壬"]
+                }
+              ]
+            }
+          ]
+        },
+        "variable_config": {
+          "active_version_id": "vv2",
+          "versions": [
+            { "id": "vv1", "name": "旧变量", "objects": [{ "x": 1 }], "variables": [{ "a": 1 }] },
+            { "id": "vv2", "name": "现行变量", "objects": [{ "y": 1 }, { "z": 2 }], "variables": [{ "a": 1 }] }
+          ]
+        },
+        "regex_rules": [
+          { "id": "r1", "name": "无目标", "pattern": "a", "replacement": "b", "targets": [], "enabled": true, "order": 0 },
+          { "id": "r2", "name": "用户输入", "pattern": "b", "replacement": "c", "targets": ["UserInput"], "enabled": true },
+          { "id": "r3", "name": "两样都有重复", "pattern": "c", "replacement": "d", "targets": ["AiOutput", "UserInput", "AiOutput", "UserInput"], "display_only": true, "prompt_only": true, "run_on_edit": true, "enabled": false },
+          { "id": "r4", "name": "未知目标", "pattern": "d", "replacement": "e", "targets": ["X"], "enabled": true, "order": 9 },
+          { "name": "无名无id", "targets": ["AiOutput"] },
+          { "id": 5, "name": 7, "pattern": null, "replacement": 3, "targets": null, "enabled": null, "display_only": 1, "prompt_only": 0, "run_on_edit": "yes" }
+        ]
+      }
+    },
+    {
+      "名": "未触发满屏",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "character": { "name": "满屏" },
+        "setting_library": {
+          "versions": [
+            {
+              "id": "v",
+              "entries": [
+                { "id": "u1", "title": "条目1", "content": "1", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u2", "title": "条目2", "content": "2", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u3", "title": "条目3", "content": "3", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u4", "title": "条目4", "content": "4", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u5", "title": "条目5", "content": "5", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u6", "title": "条目6", "content": "6", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u7", "title": "条目7", "content": "7", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u8", "title": "条目8", "content": "8", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u9", "title": "条目9", "content": "9", "trigger_mode": "keyword", "keywords": [] },
+                { "id": "u10", "title": "条目10", "content": "10", "trigger_mode": "keyword", "keywords": null }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "名": "极简卡",
+      "卡名": "极简卡.a.b.card.json",
+      "卡": { "format": "eleckoi.character-card", "character": { "name": "极简" } }
+    },
+    {
+      "名": "无名字",
+      "卡名": "无名字.k1.k2.card.json",
+      "卡": { "format": "eleckoi.character-card", "version": 1, "character": null }
+    },
+    {
+      "名": "原样存档",
+      "卡名": "存根.card.json",
+      "keep_raw": true,
+      "卡": {
+        "format": "eleckoi.character-card",
+        "version": 2,
+        "character": { "name": "存根", "profile_age": 31 },
+        "regex_rules": [
+          { "id": "r1", "name": "规则一", "pattern": "a.c", "replacement": "x", "targets": ["UserInput", "AiOutput"], "enabled": true, "order": 5 }
+        ]
+      }
+    },
+    {
+      "名": "不是ElecKoi-缺format",
+      "卡": { "spec": "chara_card_v2", "data": {} }
+    },
+    {
+      "名": "不是ElecKoi-酒馆格式",
+      "卡": { "format": "chara_card_v2", "data": { "name": "酒馆卡" } }
+    },
+    {
+      "名": "format是数字",
+      "卡": { "format": 3, "character": { "name": "数字格式" } }
+    },
+    {
+      "名": "eleckoi前缀别的",
+      "卡": { "format": "eleckoi.x", "character": { "name": "前缀" } }
+    },
+    {
+      "名": "开场白特例",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "character": { "name": "开场" },
+        "setting_library": {
+          "versions": [
+            {
+              "id": "v",
+              "entries": [
+                {
+                  "id": "o1",
+                  "kind": "opening",
+                  "title": "空开场",
+                  "content": "开场条目正文",
+                  "opening_messages": []
+                },
+                {
+                  "id": "o2",
+                  "kind": "opening",
+                  "title": "真开场",
+                  "trigger_mode": "always",
+                  "insert_role": "assistant",
+                  "agent_read_strategy": "tool",
+                  "group_id": "g9",
+                  "icon_id": "i9",
+                  "order": 2,
+                  "view_order": 1,
+                  "group_view_order": 2,
+                  "tree_view_order": 3,
+                  "default_opening_message_id": "zz",
+                  "opening_messages": [
+                    { "id": "a", "content": "  默认  " },
+                    { "id": "b", "content": "备选一" },
+                    { "id": "c", "content": "" },
+                    { "id": "d", "content": null }
+                  ]
+                },
+                {
+                  "id": "o3",
+                  "kind": "opening",
+                  "title": "第三条开场",
+                  "opening_messages": [{ "id": "x", "content": "不该用到" }]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "名": "字符串容器",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "character": { "name": "字符串容器" },
+        "setting_library": "{\"active_version_id\":\"s\",\"versions\":[{\"id\":\"s\",\"name\":\"字符串库\",\"groups\":[{\"id\":\"sg\",\"name\":\"字符串分组\"}],\"entries\":[{\"id\":\"se\",\"title\":\"字符串条目\",\"content\":\"字符串内容\",\"trigger_mode\":\"keyword\",\"insert_role\":\"system\",\"keywords\":[\"k\"],\"order\":1}]}]}",
+        "variable_config": "{\"active_version_id\":\"sv\",\"versions\":[{\"id\":\"sv\",\"objects\":[{\"o\":1}],\"variables\":[{\"v\":1},{\"v\":2},{\"v\":3}]}]}"
+      }
+    },
+    {
+      "名": "坏字符串容器",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "character": { "name": "坏容器" },
+        "setting_library": "{这不是 json",
+        "variable_config": "也不是 json",
+        "regex_rules": [{ "id": "r", "name": "规则", "targets": [] }]
+      }
+    },
+    {
+      "名": "空版本表",
+      "卡": {
+        "format": "eleckoi.character-card",
+        "character": { "name": "空版本" },
+        "setting_library": { "versions": [] },
+        "variable_config": { "versions": [] },
+        "regex_rules": null
+      }
+    },
+    {
+      "名": "默认出口",
+      "卡名": "默认.card.json",
+      "出名": "默认.out.json",
+      "用默认出口": true,
+      "卡": {
+        "format": "eleckoi.character-card",
+        "version": 1,
+        "character": { "name": "默认出口" },
+        "setting_library": {
+          "versions": [
+            {
+              "id": "v",
+              "name": "库",
+              "groups": [],
+              "entries": [
+                { "id": "a", "title": "常驻系统", "content": "常驻。", "trigger_mode": "always", "insert_role": "system" },
+                { "id": "b", "title": "关键词条", "content": "关键词。", "trigger_mode": "keyword", "keywords": ["k"] }
+              ]
+            }
+          ]
+        },
+        "regex_rules": [
+          { "id": "r", "name": "规则", "pattern": "p", "replacement": "q", "targets": ["UserInput"], "enabled": true }
+        ]
+      }
+    }
+  ]
+}

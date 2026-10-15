@@ -101,6 +101,24 @@ try {
   TH = null
 }
 
+// export 同理：它只 import model / pack 两个兄弟。名字用 EX：单字母 E 还没被占，
+// 但 EX 与 `export` 对得上，也不跟将来的台子撞。
+let EX = null
+try {
+  EX = await import('../forgejs/lib/export.mjs')
+} catch (e) {
+  EX = null
+}
+
+// coach 同理：它 import 六个兄弟（content / draft / manual / model / pack / validate），
+// 别的模块都不 import 它（draft 也不），没有环。名字用 CO —— C 被 content 占了。
+let CO = null
+try {
+  CO = await import('../forgejs/lib/coach.mjs')
+} catch (e) {
+  CO = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -1342,6 +1360,151 @@ function 算_theme(料) {
 }
 
 算式.theme = 算_theme
+
+// ------------------------------------------------------------------- coach
+//
+// 又是情形制（同 算_theme），三点不一样：
+//   ① **进门关沙箱、出门还原**：`出()` 走 `C.add_entry` / `pack.build`，路过的兄弟模块会看
+//      `sandbox.enabled()`；沙箱开关是**进程级**状态，而 `算_sandbox`（字母序排在 coach 前）
+//      跑完会把它留在「开」上 ⇒ 不钉住就会「单跑绿、整套红」。
+//   ② 工作目录建在**差分目录**底下（**不是工具根**）：`CO._出卡()` 里的 abspath 会碰它，
+//      系统 temp 可能是 8.3 短名，两边会算出两种写法。★ 更不能建在工具根 —— scaffold
+//      语料第 27 条走 `abspath("")`＝工具根，工具根底下的任何 `_tmp_*` 都会被它照进快照
+//      里，直接把它顶红（本轮真踩过：两个 `_tmp_coach-*` 残留 ⇒ scaffold 报
+//      `"name": "制卡助手"` ≠ 黄金 `"name": "前缀卡"`）。
+//   ③ **已申报差异**：`_出卡()` / `_认回身份()` 写 spec 时 Python 走 `M.ydump`（YAML）、
+//      JS 侧 `M.ydump` 明确抛错 ⇒ 走 `M.jdump`（JSON）—— 文件名不变，由 `走树()` 里的
+//      `.spec.` 分支按 `loadStructured()` **结构**比，不比字节。
+function 算_coach(料) {
+  if (!CO) throw new Error('forgejs/lib/coach.mjs 没导入成功，先把它落地再跑 coach')
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+
+  // `走树()` 加一道本地归一：`成品/*.card.json` 与 `文档/*.索引.md` 里带**每次新发的
+  // uuid 与时间戳**（实测：原文不同、`净文本` 后逐字同、`动` 收不住 —— 卡是酒馆形状，
+  // id 不叫 `id`）⇒ 按净文本比。
+  // ★ 不动共享的 `走树()`：别的模块树里的 `.md` / `.card.json` 都是确定的，
+  //   改成净文本比会白松一道闸。
+  const 树带卡 = (工作) => {
+    const 树 = 走树(工作)
+    for (const 项 of 树) {
+      if (项.路径.endsWith('.card.json') || 项.路径.endsWith('.索引.md')) {
+        delete 项.sha1
+        项.文本 = 净文本(readFileSync(join(工作, 项.路径), 'utf8'))
+      }
+    }
+    return 树
+  }
+
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(这里, '_tmp_coach-'))
+      let 出 = null
+      try {
+        const 预置 = 情形.预置 ?? {}
+        for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 名), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+          const p = join(工作, 名)
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, 文, 'utf8')
+        }
+
+        出 = { 名: 情形.名 ?? null, 步: [] }
+        for (const 步 of 情形.操作) {
+          const 参数 = (步.参数 ?? []).map((a) => 出参数(a, 工作, 根))
+          const rec = { 调用: 步.调用, 参数: 动(参数) }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            const 回 = CO[步.调用](...参数)
+            rec.回 = 动(动回(回 ?? null))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = 错文本(步.调用, e)
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.出 = 净文本(出文)
+          出.步.push(rec)
+        }
+        出.树 = 树带卡(工作)
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+      const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+      情形们.push(换路径(折读不出来(折浮(收_uuid(出))), 对))
+    }
+  } finally {
+    SB.enable(原沙箱)
+  }
+  return { 情形: 情形们, 沙箱还原: SB.enabled() === 原沙箱 }
+}
+
+算式.coach = 算_coach
+
+// ------------------------------------------------------------------- export
+//
+// 又是情形制（同 算_theme），三处不一样：
+//   ① 卡是语料里当场写盘的：`JSON.stringify(卡, null, 2)` 与 Python 侧
+//      `json.dumps(卡, ensure_ascii=False, indent=2)` 逐字节同（**都不补尾换行**）。
+//      ★ 语料里别放整数值的浮点（21.0 / 21 两边的写法不一样）。
+//   ② `out` 默认传收集器；情形写 `"用默认出口": true` 时**不传**，走 `to_tavern` 自己的
+//      `out=print` 默认值 ⇒ 报告进 stdout，用换 `process.stdout.write` 的那一招收进
+//      `出.出`（与 Python 侧 `contextlib.redirect_stdout` 逐字对应）。
+//   ③ 「文」是导出文件读回来的**原文**，不做任何归一 —— 文件由 `M.jdump` 写，
+//      两边逐字节比，这是本模块最硬的一条，别为了好过而把「文」拆成结构。
+// ★ 工作目录建在**差分目录**底下（同 算_bridge，不是工具根）：语料里的路径要拿
+//   `@工作@` 拼，同盘、同写法才比得到一条线上。
+function 算_export(料) {
+  if (!EX) throw new Error('forgejs/lib/export.mjs 没导入成功，先把它落地再跑 export')
+  const 情形们 = []
+  for (const 情 of 料.情形) {
+    const 工作 = mkdtempSync(join(这里, '_tmp_export-'))
+    const 卡路径 = join(工作, 情.卡名 || '卡.json')
+    const 出路径 = join(工作, 情.出名 || '导出.json')
+    const keep_raw = Boolean(情.keep_raw ?? false)
+    const 用默认出口 = Boolean(情.用默认出口 ?? false)
+    const 出 = { 名: 情.名 }
+    try {
+      writeFileSync(卡路径, JSON.stringify(情.卡, null, 2), 'utf8')
+      const 行 = []
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => {
+        出文 += String(s)
+        return true
+      }
+      try {
+        // Python 侧是 `E.to_tavern(str(卡路径), str(出路径), keep_raw, 行.append)`；
+        // 返回值就是出路径字符串，直接进结构 —— 路径本身由下面的 换路径 归一。
+        出.回 = 动((用默认出口
+          ? EX.to_tavern(卡路径, 出路径, keep_raw)
+          : EX.to_tavern(卡路径, 出路径, keep_raw, (x) => 行.push(x))) ?? null)
+        出.错 = null
+      } catch (e) {
+        出.回 = null
+        出.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+      } finally {
+        process.stdout.write = 原写
+      }
+      出.参数 = 动([卡路径, 出路径, keep_raw])
+      出.行 = 行.map((x) => 动(x))
+      出.出 = 净文本(出文)
+      出.文 = existsSync(出路径) ? 读(出路径) : null
+      出.树 = 走树(工作)
+    } finally {
+      rmSync(工作, { recursive: true, force: true })
+    }
+    const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+    情形们.push(换路径(收_uuid(出), 对))
+  }
+  return { 情形: 情形们 }
+}
+
+算式.export = 算_export
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

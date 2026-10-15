@@ -1280,6 +1280,156 @@ def 算_theme(料: dict) -> dict:
 算式["theme"] = 算_theme
 
 
+def 算_coach(料: dict) -> dict:
+    """顺序跑一串 coach 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_theme` 同形（情形制），三点不一样：
+
+      · **进门关沙箱、出门还原**：`coach.出()` 走 `C.add_entry` / `pack.build`，路过的
+        兄弟模块会看 `sandbox.enabled()`；沙箱开关是进程级状态，而 `算_sandbox`（字母序
+        排在 coach 前）跑完会把它留在「开」上 ⇒ 不钉住就会「单跑绿、整套红」。
+      · 工作目录建在**差分目录**底下（**不是工具根**）：`_出卡()` 里的 `os.path.abspath`
+        会碰它，系统 temp 可能是 8.3 短名，Python `abspath` 与 Node `resolve` 会算出两种
+        写法。★ 更不能建在工具根 —— scaffold 语料第 27 条走 `abspath("")`＝工具根，
+        工具根底下的任何 `_tmp_*` 都会被它照进快照里，直接把它顶红（本轮真踩过）。
+      · **已申报差异**：`_出卡()` / `_认回身份()` 写 spec 走 `M.ydump`（YAML），JS 侧
+        `M.ydump` 明确抛错 ⇒ 走 `M.jdump`（JSON）—— 文件名不变，由 `_树()` 里的
+        `.spec.` 分支按 `load_structured()` **结构**比，不比字节。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import sandbox as _SB
+    from forge import coach as CO
+
+    def _树带卡(工作):
+        """`_树()` 加一道本地归一：`成品/*.card.json` 与 `文档/*.索引.md` 里带
+        **每次新发的 uuid 与时间戳**（实测：原文不同、`_净文本` 后逐字同、`_动` 收不住
+        ——卡是酒馆形状，id 不叫 `id`），所以按净文本比。
+
+        ★ 不动共享的 `_树()`：别的模块树里的 `.md` / `.card.json` 都是确定的，
+        改成净文本比会白松一道闸。
+        """
+        树 = _树(工作)
+        for 项 in 树:
+            if 项["路径"].endswith(".card.json") or 项["路径"].endswith(".索引.md"):
+                项.pop("sha1", None)
+                p = os.path.join(str(工作), 项["路径"])
+                项["文本"] = _净文本(io.open(p, encoding="utf-8", newline="").read())
+        return 树
+
+    原沙箱 = _SB.enabled()
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_coach-", dir=str(根 / "差分")))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                预置 = 情形.get("预置") or {}
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 名).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 名
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_text(文, encoding="utf-8", newline="\n")
+
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in 情形["操作"]:
+                    # 「参数」可以写单个值，也可以写数组；没有这个键就是无参。
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参数 = [出参数(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": _动(参数)}
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = getattr(CO, 步["调用"])(*参数)
+                        rec["回"] = _动(动回(list(回) if isinstance(回, tuple) else 回))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = 错文本(步["调用"], exc)
+                    rec["出"] = _净文本(buf.getvalue())
+                    出["步"].append(rec)
+                出["树"] = _树带卡(工作)
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+            情形们.append(_换路径(_折读不出来(_折浮(收_uuid(出))), 对))
+    finally:
+        _SB.enable(原沙箱)
+    return {"情形": 情形们, "沙箱还原": _SB.enabled() == 原沙箱}
+
+
+算式["coach"] = 算_coach
+
+
+def 算_export(料: dict) -> dict:
+    """逐个情形跑 `export.to_tavern`：比返回值 / 异常消息 / out 收集到的行 / 写出来的文件原文 / 整棵工作树。
+
+    与 `算_theme` 同形（情形制），三处不一样：
+
+      · 卡是语料里当场写盘的（`json.dumps(ensure_ascii=False, indent=2)`，与 JS 侧
+        `JSON.stringify(卡, null, 2)` 逐字节同；所以语料里**别放整数值的浮点**，
+        Python 写 `21.0`、JS 写 `21`）；
+      · `out` 默认传收集器（`行.append`）；情形写 `"用默认出口": true` 时**不传**，
+        走 `to_tavern` 自己的 `out=print` 默认值 ⇒ 报告进 stdout，用 redirect_stdout 收进
+        `出["出"]`（不传 out 的情形这条恒为空串）；
+      · 「文」是导出文件读回来的**原文**，不做任何归一 —— 文件由 `M.jdump` 写，两边
+        逐字节比，这是本模块最硬的一条。
+
+    ★ 工作目录**建在差分目录底下**（与 算_bridge 同）：语料里要拿 `@工作@` 拼路径时，
+      同盘、同写法才比得到一条线上。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import export as E
+
+    差分 = Path(__file__).resolve().parent
+    情形们 = []
+    for 情 in 料["情形"]:
+        工作 = Path(tempfile.mkdtemp(prefix="_tmp_export-", dir=str(差分)))
+        卡路径 = 工作 / (情.get("卡名") or "卡.json")
+        出路径 = 工作 / (情.get("出名") or "导出.json")
+        keep_raw = bool(情.get("keep_raw", False))
+        用默认出口 = bool(情.get("用默认出口", False))
+        出: dict = {"名": 情["名"]}
+        try:
+            卡路径.write_text(
+                json.dumps(情["卡"], ensure_ascii=False, indent=2), encoding="utf-8", newline="\n"
+            )
+            行: list = []
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    if 用默认出口:
+                        回 = E.to_tavern(str(卡路径), str(出路径), keep_raw)
+                    else:
+                        回 = E.to_tavern(str(卡路径), str(出路径), keep_raw, 行.append)
+                出["回"] = _动(动回(回))
+                出["错"] = None
+            except Exception as exc:  # noqa: BLE001
+                出["回"] = None
+                出["错"] = 错文本("to_tavern", exc)
+            出["参数"] = _动([str(卡路径), str(出路径), keep_raw])
+            出["行"] = [_动(x) for x in 行]
+            出["出"] = _净文本(buf.getvalue())
+            出["文"] = 出路径.read_text(encoding="utf-8") if 出路径.exists() else None
+            出["树"] = _树(工作)
+        finally:
+            shutil.rmtree(工作, ignore_errors=True)
+        对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+        情形们.append(_换路径(收_uuid(出), 对))
+    return {"情形": 情形们}
+
+
+算式["export"] = 算_export
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)
