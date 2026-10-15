@@ -1,6 +1,6 @@
 {
   "name": "dsh-cardforge",
-  "version": "0.28.4",
+  "version": "0.28.5",
   "description": "ElecKoi 制卡工具（forge）：教 AI 做卡的命令行工具，外加一个让 ElecKoi 里的 AI 直接跑它的宿主插件。",
   "license": "MIT",
   "type": "module",
@@ -23,6 +23,7 @@
     "文档/使用说明.md",
     "文档/插件-DSH.md",
     "文档/插件-ElecKoi.md",
+    "文档/装完怎么验.md",
     "cordis.patch.yml",
     "pyproject.toml",
     "README.md",

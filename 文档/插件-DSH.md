@@ -107,7 +107,7 @@ dsh-cardforge
 
 | 字段 | 我们的取值 | 依据 |
 |---|---|---|
-| `name` / `version` | `dsh-cardforge` / `0.28.4` | 清单里**唯二强制**的字段；名字按生态惯例带 `dsh-` 前缀 |
+| `name` / `version` | `dsh-cardforge` / `0.28.5` | 清单里**唯二强制**的字段；名字按生态惯例带 `dsh-` 前缀 |
 | `dsh.bundle.patch` | `./cordis.patch.yml` | **bundle 的判定字段**。没有它也装得上，但只当普通依赖装、不激活任何层，并打一行 `dsh: warning: … declares no dsh.bundle` |
 | `dsh.manifestVersion` | `1` | 不写也行，写了就是明说「按这一版约定读」 |
 | `type` / `main` / `exports` | `module` / `插件/制卡工坊/index.js` | 官方最小包就长这样 |

@@ -455,6 +455,17 @@ class 测出厂清单(基类):
         self.assertTrue(名.startswith("dsh-"), 名)
         self.assertRegex(名, r"^dsh-[a-z0-9][a-z0-9-]*$")
 
+    def test_三份插件文档两边都要带上(self):
+        """文档是给人看的：npm 包里要有（`package.json` 的 `files`），出厂包里也要有（`出厂.py`）。
+        只带一边就会出现「装了插件却找不到怎么验」或者「zip 里少了那一页」。"""
+        文档 = ["文档/插件-DSH.md", "文档/插件-ElecKoi.md", "文档/装完怎么验.md"]
+        pkg = self._根包()
+        m = self._出厂模块()
+        for 名 in 文档:
+            self.assertTrue(os.path.exists(os.path.join(ROOT, 名)), "文件不存在：" + 名)
+            self.assertIn(名, pkg["files"], "npm 的 files 里没有 " + 名)
+            self.assertIn(名, m.要装的文件, "出厂清单里没有 " + 名)
+
     def test_工具说明只降不涨(self):
         """`插件/制卡工坊/index.js` 里的 `工具说明` **每一轮都会进系统提示词** ——
         所以它是这个插件的固定成本，跟卡里的「常驻条目」一个道理：只降不涨。
