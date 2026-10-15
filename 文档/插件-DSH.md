@@ -28,7 +28,17 @@
 
 ## 二、装
 
-**DSH → 插件 → 添加插件 → 贴仓库地址 → 安装 → ★ 重启一次宿主。**
+**DSH → 插件 → 添加插件 → 贴包名 → 安装 → ★ 重启一次宿主。**
+
+```
+dsh-cardforge
+```
+
+包名按插件生态的惯例用 `dsh-` 前缀（本机已装的 `dsh-pocket` / `dsh-context` / `dsh-bookmarks` /
+`dsh-whale-widget` 都是这个规矩）。贴包名装的好处：对方只拿到一个几 MB 的包，
+**不碰仓库、不拉历史**，仓库可以是私有的。
+
+贴仓库地址也行（源码树就在那儿，谁都能翻）：
 
 ```
 https://github.com/liangchen111/eleckoi-cardforge
@@ -107,7 +117,7 @@ git config --global http.https://github.com/.proxy http://127.0.0.1:17890
 
 | 字段 | 我们的取值 | 依据 |
 |---|---|---|
-| `name` / `version` | `eleckoi-cardforge` / `0.28.1` | 清单里**唯二强制**的字段 |
+| `name` / `version` | `dsh-cardforge` / `0.28.1` | 清单里**唯二强制**的字段；名字按生态惯例带 `dsh-` 前缀 |
 | `dsh.bundle.patch` | `./cordis.patch.yml` | **bundle 的判定字段**。没有它也装得上，但只当普通依赖装、不激活任何层，并打一行 `dsh: warning: … declares no dsh.bundle` |
 | `dsh.manifestVersion` | `1` | 不写也行，写了就是明说「按这一版约定读」 |
 | `type` / `main` / `exports` | `module` / `插件/制卡工坊/index.js` | 官方最小包就长这样 |

@@ -447,6 +447,14 @@ class 测出厂清单(基类):
         self.assertIn("./cordis.patch.yml", pkg["exports"].values())
         self.assertTrue(pkg.get("engines", {}).get("dsh"), "engines.dsh 是声明项，别删")
 
+    def test_包名按生态惯例带dsh前缀(self):
+        """插件商店里社区包都是 `dsh-` 开头（本机已装的：`dsh-pocket` / `dsh-context` /
+        `dsh-bookmarks` / `dsh-whale-widget` / `dsh-ask-guard` …）。这个名字是对外的第一印象，
+        也是别人「贴包名安装」时敲的那一串，别改成别的形状。"""
+        名 = self._根包()["name"]
+        self.assertTrue(名.startswith("dsh-"), 名)
+        self.assertRegex(名, r"^dsh-[a-z0-9][a-z0-9-]*$")
+
     def test_不许把DSH运行时钉死版本(self):
         """`@deepseek-ai/dsh-*` 的 peer 一旦写死版本号，装到别的 DSH 上会被当场拒（错误码
         incompatible-version）。本项目要能装进桌面版、ElecKoi、手机版 —— 所以一律写 `*`。"""

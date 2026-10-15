@@ -18,7 +18,7 @@
 # 自动找挑错了（机器上有好几个 Python）才需要在 python 那一行写死完整路径。
 - insert:
     - id: cardforge
-      name: 'eleckoi-cardforge'
+      name: 'dsh-cardforge'
       config:
         python: ''
         pythonPath: ''
