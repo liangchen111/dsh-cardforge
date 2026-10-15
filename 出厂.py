@@ -49,7 +49,8 @@ for _流 in (sys.stdout, sys.stderr):
 #: 单件照搬
 要装的文件 = ["forge.py", "README.md", "CHANGELOG.md", "LICENSE", "pyproject.toml",
               "package.json", "cordis.patch.yml",
-              ".gitignore", "门禁.py", "文档/使用说明.md"]
+              ".gitignore", "门禁.py", "文档/使用说明.md",
+              "文档/插件-DSH.md", "文档/插件-ElecKoi.md"]
 
 #: 明确不装（写在代码里是为了让 --自检 能断言它们真的没被装）
 不装 = ["文档/制卡助手-拆解（2026-10-15）.md",
