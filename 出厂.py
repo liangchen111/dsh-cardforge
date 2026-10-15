@@ -31,6 +31,10 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 出厂目录 = "出厂"
 
+#: 记下出厂仓库地址的小文件（`--远端 <地址>` 写它，`--仓库` 读它自动挂 origin）。
+#: 放git 忽略的范围外没意义，它含的是公开仓库地址，但也不值得进版本库 —— 见 .gitignore。
+远端记录 = os.path.join(HERE, 出厂目录, "远端.txt")
+
 # 中文 Windows 上子进程/管道的默认编码是 GBK，中文与 ✔/✘ 会当场炸
 for _流 in (sys.stdout, sys.stderr):
     try:
@@ -318,6 +322,17 @@ def main(argv=None):
     print("✔ 打包：%s · %d 字节 · sha256 %s"
           % (os.path.relpath(z, HERE), os.path.getsize(z), _sha256(z)))
 
+    if "--远端" in argv:
+        i = argv.index("--远端")
+        地址 = (argv[i + 1] if i + 1 < len(argv) else "").strip()
+        if not 地址:
+            print("✘ --远端 后面要给仓库地址，例如：--远端 https://github.com/你/仓库.git")
+            return 1
+        os.makedirs(os.path.dirname(远端记录), exist_ok=True)
+        with open(远端记录, "w", encoding="utf-8") as f:
+            f.write(地址 + "\n")
+        print("✔ 记下了出厂仓库地址：%s（下次 --仓库 会自动挂上 origin）" % 地址)
+
     if "--仓库" in argv:
         if os.path.isdir(os.path.join(出, ".git")):
             # 走 _删树：git 的对象文件在 Windows 上是只读的，裸 rmtree 会 WinError 5。
@@ -332,8 +347,24 @@ def main(argv=None):
                 print("✘ %s 失败：%s" % (" ".join(cmd), (果.stderr or "").strip()))
                 return 1
         print("✔ 已在出厂目录里建了独立仓库（单次提交、零历史）")
-        print("   推的时候：cd %s && git remote add origin <你的仓库> && git push -u origin main"
-              % os.path.relpath(出, HERE))
+        地址 = ""
+        if os.path.isfile(远端记录):
+            with open(远端记录, encoding="utf-8") as f:
+                地址 = f.read().strip()
+        if 地址:
+            果 = subprocess.run(["git", "remote", "add", "origin", 地址], cwd=出,
+                                capture_output=True, text=True, encoding="utf-8",
+                                errors="replace")
+            if 果.returncode != 0:
+                print("✘ 挂 origin 失败：%s" % (果.stderr or "").strip())
+                return 1
+            print("✔ origin 已挂上 %s" % 地址)
+            print("   推：git -C %s push -u --force origin main"
+                  % os.path.relpath(出, HERE))
+        else:
+            print("   推的时候：cd %s && git remote add origin <你的仓库> && git push -u origin main"
+                  % os.path.relpath(出, HERE))
+            print("   （用 `python 出厂.py --远端 <仓库地址>` 记一次，以后就不用再手挂 origin）")
     return 0
 
 

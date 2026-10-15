@@ -1,6 +1,24 @@
 # 更新日志
 
-版本号两处一起改：`forge/__init__.py` 的 `__version__` 与 `pyproject.toml` 的 `version`。
+版本号两处一起改：`forge/__init__.py` 的 `__version__` 与 `pyproject.toml` 的 `version`
+（外加根 `package.json` 的 `version` —— 那是插件包，也要跟着走）。
+
+## 0.28.1 · 2026-10-15
+
+**修一个把人挡在门外的缺陷：装在别的机器上找不到 Python。**
+
+- `插件/制卡工坊/index.js` 不再把 `python` 当命令名直接 `spawn` —— 改成**自动找**：
+  配置指定的 → `FORGE_PYTHON` → 用户目录装的正经 Python（版本高的先试）→ `C:\Python3xx`
+  → DSH 自带那份 → `PATH` 上的 `python3` / `python` / `py -3`；**挨个真跑一次 `import yaml`**，
+  能跑通的那个才用（forge 要 PyYAML）。结果在同一进程里只找一次。
+  - 为什么要这么麻烦：Windows 上「装了 Python」不等于「`python` 在 PATH 上」，
+    而商店版那个 `python.exe` 只是个转发器。作者机器上实测症状是
+    **`spawn python ENOENT`，`forge.py` 一次都没执行过**（工具自己会报成「这台机器上没找到 Python」）。
+  - 找不到时给的是人话，并**列清找过哪些地方**；配置里写死的解释器起不来时，
+    只记一条警告、继续自动找，不把路堵死。
+  - 环境变量 `FORGE_PYTHON` 可以盖过一切。
+- `cordis.patch.yml`（根目录与插件目录两份）的出厂默认从 `python: 'python'` 改成 `python: ''`（＝自动找）。
+- `插件/制卡工坊/预设自测.mjs` 加第 7 组断言（候选名单 / 配置写错不抛 / 本机挑中谁），**15 条 → 19 条**。
 
 ## 0.28.0 · 2026-10-15
 

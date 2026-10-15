@@ -16,7 +16,7 @@ let 源码 = readFileSync(真身, 'utf8')
 源码 = 源码
   .replace(/^import z from .*$/m, `const z = { object: (x) => x, string: () => ({ default: () => '' }), number: () => ({ default: () => 0 }), boolean: () => ({ default: () => true }) }`)
   .replace(/^import \{ defineTool \} from .*$/m, `const defineTool = (x) => x`)
-源码 += '\nexport { 装预设, 读预设, 取预设服务 }\n'
+源码 += '\nexport { 装预设, 读预设, 取预设服务, 找解释器, 候选解释器 }\n'
 const 临时 = join(插件目录, '.预设自测.mjs')
 writeFileSync(临时, 源码, 'utf8')
 let mod
@@ -25,7 +25,7 @@ try {
 } finally {
   unlinkSync(临时)
 }
-const { 装预设, 读预设 } = mod
+const { 装预设, 读预设, 找解释器, 候选解释器 } = mod
 
 let 过 = 0
 let 败 = 0
@@ -96,6 +96,21 @@ console.log('6) 宿主没这个服务（纯 DSH）→ 不抛')
     await 装预设({ logger: { info() {}, warn() {} } }, 配置())
   } catch { 抛 = true }
   断言(!抛, '安静地放弃，不抛错')
+}
+
+console.log('7) 自动找 Python（作者机器上实测踩过 `spawn python ENOENT`）')
+{
+  const 候选 = 候选解释器()
+  断言(候选.length >= 4, `候选名单 ${候选.length} 条`)
+  console.log(`     ${候选.map((c) => c.说明).join(' · ')}`)
+  断言(候选.some((c) => c.命令 === 'py'), '名单末尾有 Windows 自带的 py 启动器兜底')
+  // 配置里写了个不存在的解释器：不许抛，必须回落到自动找（或如实给 null）。
+  const 挑中 = await 找解释器({ python: '绝不可能存在的解释器-xyz' })
+  断言(挑中 === null || typeof 挑中.命令 === 'string', '配置写错也不抛，自动回落')
+  console.log(
+    `     本机挑中：${挑中 ? `${挑中.说明}（${挑中.命令}）· PyYAML ${挑中.有yaml ? '有' : '没有'}` : '没找到任何 Python'}`,
+  )
+  if (挑中) 断言(挑中.说明.length > 0 && Array.isArray(挑中.前置), '返回形状 = {命令, 前置, 说明, 有yaml}')
 }
 
 console.log(`\n${败 === 0 ? '全过 ✔' : '有失败 ✘'}　${过} 过 / ${败} 败`)

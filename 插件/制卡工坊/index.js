@@ -27,8 +27,8 @@
  * 「当前还是官方默认创作预设」时才切，任何失败都只记日志、不影响 `cardforge` 工具。
  */
 import { spawn } from 'node:child_process'
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
@@ -39,14 +39,15 @@ export const name = 'cardforge'
 /**
  * 出厂默认值 —— **不含任何本机路径**。
  *
- * - 解释器：用 `PATH` 里那个 `python`（你机器上装着 PyYAML 的那个）。
+ * - 解释器：**留空＝自己找**（见 `找解释器`）。装 DSH/ElecKoi 的地方不一定有
+ *   `PATH` 里的 `python`，写死一个名字就会 `spawn python ENOENT` —— 实测踩过。
  * - 依赖目录：留空＝不动 `PYTHONPATH`（记成 `pythonPath` 的人是拿 venv 的
  *   site-packages 喂基础解释器用的，用不上就别填）。
  * - `forge.py`：**自动认** —— 这个插件住在仓库的 `插件/制卡工坊/` 下，
  *   往上两级就是仓库根，`forge.py` 就在那儿。
  */
 const 插件目录 = dirname(fileURLToPath(import.meta.url))
-const 默认解释器 = 'python'
+const 默认解释器 = ''
 const 默认依赖目录 = ''
 const 默认工具 = resolve(插件目录, '..', '..', 'forge.py')
 
@@ -58,7 +59,12 @@ const 默认工具 = resolve(插件目录, '..', '..', 'forge.py')
  * 在宿主里都验过能跑（venv 自己的 `python.exe` 是个重定向器，受限令牌下起不来）。
  */
 export const Config = z.object({
-  /** 跑 forge.py 的解释器。 */
+  /**
+   * 跑 forge.py 的解释器。**留空＝自动找**（推荐）：先看 `FORGE_PYTHON` 环境变量，
+   * 再找你机器上装的 Python（用户目录 `Programs\Python`、`C:\Python3*`、DSH 自带那份、
+   * 最后才是 `PATH` 里的 `python3` / `python` / `py -3`），**优先挑能 `import yaml` 的**。
+   * 只有自动找挑错了（比如机器上有好几个 Python）才需要写死一个完整路径。
+   */
   python: z.string().default(默认解释器),
   /** 追加到 PYTHONPATH 的依赖目录（装着 PyYAML）。 */
   pythonPath: z.string().default(默认依赖目录),
@@ -121,6 +127,7 @@ const 工具说明 = [
   '  4) ["build","<spec.yaml>","E:/卡库/我的卡/成品/我的卡.card.json"]     出成品 —— 交给 ElecKoi 的就是这个文件',
   '先跑一次 ["--help"] 有全部命令。长正文先写成文件再用 ["entry",…,"--正文@正文.txt"]，别往引号里塞。',
   '注意：本工具由宿主进程直接执行，**不受命令行沙箱限制**，所以**不要加 `--沙箱`** —— 那是给受限沙箱里的命令用的，加了反而会丢掉原子落盘。',
+  '这台机器上找不到 Python（报 `spawn python ENOENT` 或 `No module named yaml`）＝这台机器没装，或装了没进 PATH。插件会自己挨个试常见位置，找不到时会在返回里说清找过哪些地方；装一个 Python（勾「Add to PATH」）并重启 ElecKoi 即可。',
   '返回 exitCode / stdout / stderr；exitCode 非 0 就是这步没成，按 stderr 改。',
 ].join('\n')
 
@@ -145,7 +152,7 @@ function 跑(配置, 工作目录, 参数, 信号) {
 
     let 子进程
     try {
-      子进程 = spawn(配置.python, 参数, { cwd: 工作目录, windowsHide: true, env: 环境 })
+      子进程 = spawn(配置.python, [...(配置.前置 ?? []), ...参数], { cwd: 工作目录, windowsHide: true, env: 环境 })
     } catch (错误) {
       完成({ exitCode: -1, stdout: '', stderr: `进程没起来：${错误?.message ?? 错误}` })
       return
@@ -202,6 +209,144 @@ function 跑(配置, 工作目录, 参数, 信号) {
       })
     )
   })
+}
+
+/**
+ * 找解释器 —— 「装在哪台机器上都能跑」的关键。
+ *
+ * ★ 踩过的坑（2026-10-15，作者机器）：出厂默认写成 `python` 时，ElecKoi 宿主进程
+ * 的 `PATH` 里根本没有 `python`，工具一调就 `spawn python ENOENT`。而**装了 Python
+ * 不等于它在 PATH 上**：Windows 商店版那个 `python.exe` 只是个转发器，真解释器在
+ * `%LOCALAPPDATA%\Programs\Python\Python3xx\`，DSH 自己还会带一份。
+ * 于是这里不猜名字，**挨个试，谁能 `import yaml` 就用谁**（forge 要 PyYAML）。
+ *
+ * 顺序：配置指定的 → `FORGE_PYTHON` → 用户目录装的正经 Python（版本高的先试）
+ *       → `C:\Python3xx` → DSH 自带那份 → `PATH` 上的 `python3` / `python` / `py -3`。
+ * 结果缓存一次（同一进程里不再重复试），失败不抛错、交给调用方给一句人话。
+ */
+
+/** 试一个候选能不能跑起来；能跑返回 true。 */
+function 试跑(候选, 代码, 超时毫秒 = 8000) {
+  return new Promise((完成) => {
+    let 子进程
+    try {
+      子进程 = spawn(候选.命令, [...(候选.前置 ?? []), '-c', 代码], { windowsHide: true })
+    } catch {
+      完成(false)
+      return
+    }
+    let 已定 = false
+    const 收 = (果) => {
+      if (已定) return
+      已定 = true
+      clearTimeout(计时器)
+      完成(果)
+    }
+    const 计时器 = setTimeout(() => {
+      try {
+        子进程.kill()
+      } catch {
+        /* 已经死了 */
+      }
+      收(false)
+    }, 超时毫秒)
+    子进程.on('error', () => 收(false))
+    子进程.on('exit', (码) => 收(码 === 0))
+  })
+}
+
+/** 按「最可能是对的那个」排序的候选名单。 */
+function 候选解释器() {
+  const 名单 = []
+  const 加 = (命令, 说明, 前置 = []) => {
+    if (!命令 || 名单.some((候选) => 候选.命令 === 命令 && 候选.前置.join(' ') === 前置.join(' '))) return
+    名单.push({ 命令, 前置, 说明 })
+  }
+
+  const 环境变量 = String(process.env.FORGE_PYTHON ?? '').trim()
+  if (环境变量) 加(环境变量, '环境变量 FORGE_PYTHON')
+
+  const 家 = String(process.env.USERPROFILE ?? process.env.HOME ?? '').trim()
+  const 用户级 = process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'Python') : ''
+  if (用户级 && existsSync(用户级)) {
+    let 目录们 = []
+    try {
+      目录们 = readdirSync(用户级).filter((名) => /^Python3\d+$/i.test(名)).sort().reverse()
+    } catch {
+      /* 读不了就当没有 */
+    }
+    for (const 目录 of 目录们) 加(join(用户级, 目录, 'python.exe'), `用户装的正经 Python（${目录}）`)
+  }
+
+  for (const 盘 of ['C:\\', 'D:\\']) {
+    let 目录们 = []
+    try {
+      目录们 = readdirSync(盘).filter((名) => /^Python3\d+$/i.test(名)).sort().reverse()
+    } catch {
+      /* 盘不在就没有 */
+    }
+    for (const 目录 of 目录们) 加(join(盘, 目录, 'python.exe'), `装在 ${盘} 根的 ${目录}`)
+  }
+
+  if (家) {
+    const 运行时根 = join(家, '.dsh', 'dsh-runtimes')
+    let 运行时们 = []
+    try {
+      运行时们 = readdirSync(运行时根)
+    } catch {
+      /* 没装 DSH 就没有 */
+    }
+    for (const 运行时 of 运行时们) {
+      const 命 = join(运行时根, 运行时, 'dependencies', 'python', 'python.exe')
+      if (existsSync(命)) 加(命, `DSH 自带的那份（${运行时}）`)
+    }
+  }
+
+  加('python3', 'PATH 上的 python3')
+  加('python', 'PATH 上的 python')
+  加('py', 'Windows 自带的 py 启动器（py -3）', ['-3'])
+  return 名单
+}
+
+let 解释器缓存 = null
+
+/**
+ * 挑一个能用的解释器。挑不到返回 `null`。
+ *
+ * @param {{python: string}} 配置
+ * @returns {Promise<{命令: string, 前置: string[], 说明: string, 有yaml: boolean} | null>}
+ */
+async function 找解释器(配置) {
+  if (解释器缓存) return 解释器缓存
+  const 指定 = String(配置.python ?? '').trim()
+
+  if (指定) {
+    if (await 试跑({ 命令: 指定 }, 'import yaml')) {
+      解释器缓存 = { 命令: 指定, 前置: [], 说明: '配置里指定的', 有yaml: true }
+      return 解释器缓存
+    }
+    if (await 试跑({ 命令: 指定 }, 'pass')) {
+      解释器缓存 = { 命令: 指定, 前置: [], 说明: '配置里指定的（没装 PyYAML）', 有yaml: false }
+      return 解释器缓存
+    }
+    // 配置写错了不该把路堵死：记一笔，继续自动找。
+    console.warn(`[制卡工坊] 配置里的 python 起不来：${指定} —— 改为自动找。`)
+  }
+
+  const 名单 = 候选解释器()
+  for (const 候选 of 名单) {
+    if (await 试跑(候选, 'import yaml')) {
+      解释器缓存 = { ...候选, 有yaml: true }
+      return 解释器缓存
+    }
+  }
+  for (const 候选 of 名单) {
+    if (await 试跑(候选, 'pass')) {
+      解释器缓存 = { ...候选, 有yaml: false }
+      return 解释器缓存
+    }
+  }
+  return null
 }
 
 /** 装进 ElecKoi 的那份创作预设叫什么。 */
@@ -302,7 +447,7 @@ export function apply(ctx, config) {
   }
   // 空字符串＝「用出厂默认」（配置里留空比删掉那一行更省事）。
   if (String(config.forge ?? '').trim() === '') config.forge = 默认工具
-  if (String(config.python ?? '').trim() === '') config.python = 默认解释器
+  // python 留空**不替换**：空串本身就是「自动找」的意思，交给 `找解释器` 每次现挑。
 
   // 顺手把创作预设装上；失败只记日志，绝不挡工具本身（见 `装预设` 的三条纪律）。
   void 装预设(ctx, config).catch((错) => {
@@ -357,7 +502,26 @@ export function apply(ctx, config) {
         if (工作目录 === '') {
           throw new Error('没给工作目录：请在 cwd 参数里写清把卡做在哪个目录（例如 "E:/卡库"），或在本插件配置里设 cwd。')
         }
-        return 跑(config, 工作目录, [config.forge, ...调用参数.args], exec?.signal)
+        const 解释器 = await 找解释器(config)
+        if (!解释器) {
+          throw new Error(
+            [
+              '这台机器上没找到能用的 Python（forge 要 Python ≥3.9 + PyYAML）。',
+              '装一个 Python 之后重启 ElecKoi 就好；不想装就改插件配置里的 `python`，写清解释器的完整路径。',
+              '找过这些地方：' + 候选解释器().map((候选) => 候选.说明).join('、'),
+            ].join('\n'),
+          )
+        }
+        const 结果 = await 跑(
+          { ...config, python: 解释器.命令, 前置: 解释器.前置 },
+          工作目录,
+          [config.forge, ...调用参数.args],
+          exec?.signal,
+        )
+        if (!解释器.有yaml && 结果.stderr.includes('yaml') === false) {
+          结果.stderr = `[制卡工坊] 注意：用的是「${解释器.说明}」，它没装 PyYAML —— 涉及 YAML 稿的命令会报 ModuleNotFoundError: No module named 'yaml'（装法：pip install PyYAML）。\n${结果.stderr}`
+        }
+        return 结果
       },
     })
   )

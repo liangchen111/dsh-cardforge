@@ -8,19 +8,19 @@
 # **两处的 config 默认值必须一致** —— `门禁.py` 里有一条断言盯着它，改一处不改另一处会当场红。
 #
 # 下面 config 全是**出厂默认**，一颗字都不用改就能用：
-#   python      —— 跑 forge.py 的解释器（默认用 PATH 里的 python；留空也是这个）
+#   python      —— 跑 forge.py 的解释器；**留空＝自动找**（挨个试常见位置，优先能 import yaml 的）
 #   pythonPath  —— 追加到 PYTHONPATH 的依赖目录（装着 PyYAML）；留空＝不加
 #   forge       —— forge.py 的位置；留空＝自动用插件目录往上两级的 forge.py
 #   cwd         —— 默认工作目录；留空则每次调用都必须带 cwd
 #   timeoutMs   —— 单条命令的墙钟上限
 #   installPreset  —— 装插件时顺手把「制卡助手」创作预设装进 ElecKoi；不想要就改 false
 #   activatePreset —— 装完若当前还是官方默认创作预设，就顺手切过去；你自己选过的不动
-# 你机器上 Python 不叫 python（比如是 python3），就改 python 那一行。
+# 自动找挑错了（机器上有好几个 Python）才需要在 python 那一行写死完整路径。
 - insert:
     - id: cardforge
       name: 'eleckoi-cardforge'
       config:
-        python: 'python'
+        python: ''
         pythonPath: ''
         forge: ''
         cwd: ''
