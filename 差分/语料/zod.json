@@ -1,0 +1,56 @@
+{
+  "说明": "Zod 解析/生成/改树的差分语料。每一节都跑同一批输入，比对结果（含错误原文）。",
+  "解析": [
+    { "标签": "空串", "code": "" },
+    { "标签": "最简单", "code": "z.object({ a: z.string() })" },
+    { "标签": "带分号", "code": "z.object({ a: z.string() });" },
+    { "标签": "嵌套", "code": "z.object({ a: z.object({ b: z.number() }) })" },
+    { "标签": "中文裸键", "code": "z.object({ 好感度: z.number(), 名字: z.string() })" },
+    { "标签": "引号键", "code": "z.object({ 'my key': z.string(), \"另一 个\": z.number() })" },
+    { "标签": "反引号键", "code": "z.object({ `tick`: z.string() })" },
+    { "标签": "逗号在调用里", "code": "z.object({ a: z.number().min(1).max(20), b: z.string() })" },
+    { "标签": "逗号在字符串里", "code": "z.object({ a: z.string().regex(/a,b/), b: z.any() })" },
+    { "标签": "passthrough 嵌套", "code": "z.object({ a: z.object({ b: z.any() }).passthrough() })" },
+    { "标签": "顶层不是 object", "code": "z.string()" },
+    { "标签": "后面还跟着东西", "code": "z.object({ a: z.any() }).strict()" },
+    { "标签": "没冒号", "code": "z.object({ a z.string() })" },
+    { "标签": "重复键", "code": "z.object({ a: z.string(), a: z.number() })" },
+    { "标签": "括号不配平", "code": "z.object({ a: z.string()" },
+    { "标签": "引号没关", "code": "z.object({ a: z.string('x) })" },
+    { "标签": "键写法认不出", "code": "z.object({ 1a: z.string() })" }
+  ],
+  "生成": [
+    { "标签": "短", "code": "z.object({ a: z.string(), b: z.number().int() })" },
+    { "标签": "空", "code": "z.object({})" },
+    { "标签": "长到要换行", "code": "z.object({ alpha: z.string(), beta: z.number(), gamma: z.array(z.any()).min(1).max(99), delta: z.boolean() })" },
+    { "标签": "嵌套换行", "code": "z.object({ 外层: z.object({ 内层甲: z.string().min(1), 内层乙: z.number().max(100) }) })" }
+  ],
+  "往返": [
+    { "code": "z.object({ a: z.string() })" },
+    { "code": "z.object({})" },
+    { "code": "z.object({ 甲: z.object({ 乙: z.number().min(1).max(20) }) })" },
+    { "code": "z.object({ 'a b': z.string(), c: z.array(z.any()) })" },
+    { "code": "z.object({ alpha: z.string(), beta: z.number(), gamma: z.array(z.any()).min(1).max(99), delta: z.boolean() })" }
+  ],
+  "顶层键": [
+    { "code": "z.object({ a: z.string(), b: z.any() })" },
+    { "code": "z.object({})" }
+  ],
+  "是对象": [
+    { "code": "z.object({ a: z.any() })" },
+    { "code": "z.string()" },
+    { "code": "z.object({ a: z.any() }).strict()" }
+  ],
+  "类型表达式": [
+    { "type": "number", "value": 1 },
+    { "type": "int", "value": 3 },
+    { "type": "", "value": true },
+    { "type": "", "value": 2 },
+    { "type": "", "value": "文" },
+    { "type": "", "value": [1, 2] },
+    { "type": "", "value": { "a": 1 } },
+    { "type": "", "value": null },
+    { "type": "布尔", "value": false }
+  ],
+  "键写法": ["abc", "_x", "$y", "中文键", "带 空格", "带-横杠", "带\"引号"]
+}

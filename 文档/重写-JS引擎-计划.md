@@ -125,3 +125,41 @@ E:\workGZQ\制卡工具\
 ```
 
 `forgejs/` 与 Python 版**并存**，先在 `forgejs` 里跑通差分，再谈换默认路径。
+
+---
+
+## 七、进度（滚动更新）
+
+**第一批 ✅ 全绿**（2026-10-15）
+
+| 模块 | 产出 | 差分结果 |
+|---|---|---|
+| `model` | `forgejs/lib/model.mjs` | ✔ 逐字节一致 **3,778 字节** |
+| `domain` | `forgejs/lib/domain.mjs` | ✔ 逐字节一致 **7,975 字节** |
+| `zod` | `forgejs/lib/zod.mjs` | ✔ 逐字节一致 **2,661 字节** |
+
+跑法：
+
+```
+python 差分/出黄金.py          # 刷新黄金（只在确认行为变更时跑）
+node   差分/比一比.mjs         # 逐字节比，红了报第几行第几偏移
+```
+
+**差分台当场抓到的两个真坑**（记下来给后面 20 多个模块当参照）：
+
+1. **Python 的 `round()` 是银行家舍入**（.5 进偶数），JS 的 `Math.round` 是 .5 进位。
+   token 估算正好会撞：非中日韩字符 9 个 ⇒ `9/3.6 = 2.5`，Python 给 **2**、JS 原本给 **3**。
+   ⇒ JS 里手写了 `银行家()`。
+2. **Python 的 `repr()` 会递归**：`repr(['normal'])` 是 `['normal']`，不是 `normal`。
+   第一版 `pyRepr` 只处理字符串，差分立刻红在 domain 第 18 行。
+
+**两个约定（后面照办）**
+
+- **`disp_width` 的宽度表从 Python 生成**，不手抄：`差分/生成宽度表.py` 用
+  `unicodedata.east_asian_width()` 吐出 `forgejs/lib/east_asian_width.mjs`
+  （120 个宽区间 · Unicode 15.1.0），再用差分证明两边一致。
+- **YAML 不做逐字节比对**：JS 不打算复刻 PyYAML 的排版。JS 侧读 YAML 用自写的子集解析器、
+  写默认走 JSON；比对时把 JS 产出的 YAML 用 PyYAML 解析回来做**结构相等**比较。
+  这是唯一一处「允许不是逐字节」的地方，写在这里备案。
+
+**下一批**：`pack`（298）· `validate`（834）。

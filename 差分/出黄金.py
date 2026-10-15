@@ -119,6 +119,29 @@ def 算_domain(料: dict) -> dict:
 算式["domain"] = 算_domain
 
 
+def 算_zod(料: dict) -> dict:
+    from forge import zod as Z
+
+    def 试(fn):
+        try:
+            return {"值": fn()}
+        except Z.ZodError as e:
+            return {"错": "ZodError", "消息": str(e)}
+
+    出: dict = {}
+    出["解析"] = [试(lambda c=项["code"]: Z.dump(Z.parse(c))) for 项 in 料["解析"]]
+    出["生成"] = [试(lambda c=项["code"]: Z.emit(Z.parse(c))) for 项 in 料["生成"]]
+    出["往返"] = [试(lambda c=项["code"]: Z.roundtrip_ok(c)) for 项 in 料["往返"]]
+    出["顶层键"] = [试(lambda c=项["code"]: Z.top_keys(c)) for 项 in 料["顶层键"]]
+    出["是对象"] = [试(lambda c=项["code"]: Z.is_object(c)) for 项 in 料["是对象"]]
+    出["类型表达式"] = [Z.expr_for(项["type"], 项["value"]) for 项 in 料["类型表达式"]]
+    出["键写法"] = [Z.key_raw(名) for 名 in 料["键写法"]]
+    return 出
+
+
+算式["zod"] = 算_zod
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

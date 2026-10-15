@@ -13,6 +13,7 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
+import * as Z from '../forgejs/lib/zod.mjs'
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
@@ -96,6 +97,28 @@ function 算_domain(料) {
 }
 
 算式.domain = 算_domain
+
+function 算_zod(料) {
+  const 试 = (fn) => {
+    try {
+      return { 值: fn() }
+    } catch (错) {
+      if (错 instanceof Z.ZodError) return { 错: 'ZodError', 消息: 错.message }
+      throw 错
+    }
+  }
+  const 出 = {}
+  出.解析 = 料.解析.map((项) => 试(() => Z.dump(Z.parse(项.code))))
+  出.生成 = 料.生成.map((项) => 试(() => Z.emit(Z.parse(项.code))))
+  出.往返 = 料.往返.map((项) => 试(() => Z.roundtrip_ok(项.code)))
+  出.顶层键 = 料.顶层键.map((项) => 试(() => Z.top_keys(项.code)))
+  出.是对象 = 料.是对象.map((项) => 试(() => Z.is_object(项.code)))
+  出.类型表达式 = 料.类型表达式.map((项) => Z.expr_for(项.type, 项.value))
+  出.键写法 = 料.键写法.map((名) => Z.key_raw(名))
+  return 出
+}
+
+算式.zod = 算_zod
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {
