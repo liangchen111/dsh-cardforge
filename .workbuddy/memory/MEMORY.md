@@ -126,16 +126,24 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：18/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+- **进度：20/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（341,131 字节 · 界面档三条支路已真跑）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** ·
   **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）** ·
   **`manual`（73,272 字节 · `manual.mjs` 870 行）** · **`theme`（58,911 字节 · `theme.mjs` 886 行）** ·
-  **`coach`（709,969 字节 · `coach.mjs` 1,510 行）** · **`export`（115,144 字节 · `export.mjs` 616 行）**。
-  下一波在跑：**`png`（384 行）** ＋ **`dist`（373 行）**；`png` 一好就上 `preset`（500）。
-  依实测 grep 的依赖链：`lint` · `plan` · `guard` **现在就能开**；`preset` 等 `png`；`bundle` 等 dist＋export＋manual。
+  **`coach`（709,969 字节 · `coach.mjs` 1,510 行）** · **`export`（115,144 字节 · `export.mjs` 616 行）** ·
+  **`png`（80,563 字节 · `png.mjs` 748 行 · 26 情形 / 83 步）** · **`dist`（56,388 字节 · `dist.mjs` 721 行 · 17 情形 / 96 步）**。
+  下一波在跑：**`preset`（500 行）** ＋ **`lint`（293 行）**。
+  依实测 grep 的依赖链：`plan` · `guard` · `bundle`（要 hud/manual/model/pack/dist/export 六件，**已全绿**）**现在就能开**；`preset` 要 `png`（已绿）。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
+- **★ 真「天生不可复现」就走「申报差异 ＋ 折法」，不许删用例**（`png` · 2026-10-16 立的规矩）：
+  整段 **deflate 体**复现不出来 —— CPython 3.13.14 用上游 zlib **`1.3.1`**，Node v24.14.0 自带的是 fork **`1.3.1-e00f703`**；
+  `memLevel 1..9 × strategy 0..4` 全矩阵扫过：`strategy 1/2/3` 逐字节相同、`0/4`（含默认）不同，**没有组合能复现 Python 的默认产物**；
+  分歧还是**数据相关**的（400×`A`、2400 B 渐变逐字节同；388 B 卡 JSON 的最短分歧前缀＝**42 字节**）。
+  差分台折成**逐块分解**（每块记「类型 + 数据 sha1」；`tEXt eleckoi-card` 那块改记「gzip 容器头 10 字节 + 容器尾 8 字节 + gunzip 后字节数/sha256」），
+  折法写进 `差分\语料\png.json` 的「说明」＋生成器 `差分\_造png语料.py`。**`preset` 写 PNG 直接照抄 `算_png`。**
+  另：`png` 子代理顺手修掉差分台一个保真度 bug —— `差分\比一比.mjs:351` 的 `动()` 开头加 `if (Buffer.isBuffer(x)) return x`（Python 侧对 `bytes` 原样放行）。
 - **差分台的两处既有代码修正**（2026-10-16 · 复核过：`--刷` 重刷后旧黄金一个字节没动）：
   ① `_动()` 认 `tuple` —— Python `opener.定位()` 返回 tuple，原来整个跳过归一而 JS 侧 Array 照样归一，必红；
   ② 回收站判定 `rel.startswith(".forge/回收站/")` 放宽到「路径里出现 `/.forge/回收站/`」—— 多夹具并排时
