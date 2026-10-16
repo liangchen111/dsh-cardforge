@@ -1,6 +1,6 @@
 {
   "name": "@local/cardforge",
-  "version": "1.0.0",
+  "version": "0.30.2",
   "private": true,
   "description": "制卡工坊：把本机的 forge.py 交给 ElecKoi 里的 AI 直接调用（宿主进程执行，不受命令行沙箱限制）。",
   "type": "module",
@@ -33,10 +33,9 @@
     },
     "client": {
       "platform": "web",
-      "immediately": true,
       "inject": [
-        "@deepseek-ai/dsh-client-ui-layout",
-        "@deepseek-ai/dsh-client-ui-sidebar"
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-locale"
       ]
     }
   }

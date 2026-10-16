@@ -1,3 +1,19 @@
+## 0.30.2 · 2026-10-16
+
+**修一个致命的自造字段 —— 装上之后整个界面会塌。**
+
+- `package.json` 的 `dsh.client.inject` 里原来写着 `@deepseek-ai/dsh-client-ui-sidebar`：
+  **这个包不存在**（DSH 里真有的是 `-ui-sidebar-right`）。客户端依赖解析不了 ⇒ 客户端那一半
+  装载失败。对照本机四个能跑的客户端插件（`dsh-context` / `dshmarket` / `dsh-pocket` /
+  `dsh-bookmarks`）用的包名，改成**确有**的 `@deepseek-ai/dsh-client-ui-slots` ＋
+  `@deepseek-ai/dsh-client-locale`；顺手删掉自造的 `immediately`。
+- `插件/制卡工坊/client.js` 的注册口径照 `dsh-context` 的真身校准：
+  `inject: ['slots','locale']` · `sidebar.panellist` 的 `label` 是**函数**（原写成 `{zh,en}` 对象）·
+  `main` 的选项是 `{name, key, locale}`（不带 `id`/`order`）· 每个槽都包 `try/catch`，
+  **一个槽挂掉不许把别的槽连坐**。
+- 教训：客户端那一半的声明（`dsh.client.inject` 的包名、每个槽的选项形状）**必须对着本机一个
+  真能跑的客户端插件抄**，不能照 ElecKoi 的产物文档猜 —— 那两份文档与 DSH 实现有出入。
+
 ## 0.30.1 · 2026-10-16
 
 **面板挂到「两套壳」上 —— 0.30.0 只挂了 ElecKoi，在 DSH 里装上照样看不见。**

@@ -287,25 +287,49 @@ window.__ModuleLoader__.load({
     /* ---------------- 注册 ---------------- */
 
     return {
-      inject: ['slots'],
+      inject: ['slots', 'locale'],
       apply(ctx) {
+        // 面板上的字走官方 locale 字典（`label` 是个**函数**，按当前语言取）。
+        try {
+          ctx.locale?.register?.('dsh-cardforge', {
+            zh: { 'panel.title': '制卡工坊' },
+            en: { 'panel.title': 'Card Forge' },
+          })
+        } catch {}
+        const 取名 = () => {
+          try {
+            const t = ctx.locale?.bind?.('dsh-cardforge')
+            if (t) return t('panel.title')
+          } catch {}
+          return '制卡工坊'
+        }
+        // 一个槽挂了，绝不许把别的槽（乃至整个客户端）连坐。
+        const 挂 = (槽, 选项, 组件) => {
+          try {
+            ctx.slots.inject(槽, () => {
+              try {
+                ctx.slots.register(选项, 组件)
+              } catch (错) {
+                console.warn('[制卡工坊] 注册槽失败：' + 槽, 错)
+              }
+            })
+          } catch (错) {
+            console.warn('[制卡工坊] 取槽失败：' + 槽, 错)
+          }
+        }
         // ElecKoi：输入框上方那一区。这是主入口。
-        ctx.slots.inject('eleckoi.roleplay.conversation.input.dock', () =>
-          ctx.slots.register(
-            { name: 'eleckoi.roleplay.conversation.input.dock', id: 'dsh-cardforge', order: 40, registrant: 'dsh-cardforge' },
-            () => 工坊条(ctx),
-          ),
-        );
+        挂(
+          'eleckoi.roleplay.conversation.input.dock',
+          { name: 'eleckoi.roleplay.conversation.input.dock', id: 'dsh-cardforge', order: 40 },
+          () => 工坊条(ctx),
+        )
         // DSH 自己那套壳（ElecKoi 里这两个槽不会被声明，inject 只是等着，不会报错）。
-        ctx.slots.inject('main', () =>
-          ctx.slots.register({ name: 'main', key: 'dsh-cardforge', registrant: 'dsh-cardforge' }, () => 制卡工坊(ctx)),
-        );
-        ctx.slots.inject('sidebar.panellist', () =>
-          ctx.slots.register(
-            { name: 'sidebar.panellist', id: 'dsh-cardforge', order: 30, label: { zh: '制卡工坊', en: 'Card Forge' }, registrant: 'dsh-cardforge' },
-            入口,
-          ),
-        );
+        挂('main', { name: 'main', key: 'dsh-cardforge', locale: 'dsh-cardforge' }, () => 制卡工坊(ctx))
+        挂(
+          'sidebar.panellist',
+          { name: 'sidebar.panellist', id: 'dsh-cardforge', order: 30, label: 取名, locale: 'dsh-cardforge' },
+          入口,
+        )
       },
     };
   },
