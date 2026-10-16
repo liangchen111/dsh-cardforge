@@ -34,7 +34,7 @@
  * （`catalog` / `import` / `setActive`），只在「还没有这个预设」时才写、只在
  * 「当前还是官方默认创作预设」时才切，任何失败都只记日志、不影响 `cardforge` 工具。
  */
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -76,7 +76,33 @@ const JS引擎 = resolve(插件目录, '..', '..', 'forgejs', 'forge.mjs')
  * 为什么不写死一个盘：别人的机器上不一定有那个盘。放 `Documents` 下是 Windows 上
  * 「用户自己的文档」的通用位置，跨机器都成立；调用方给了 `cwd` 参数就听调用方的。
  */
-const 卡库目录 = join(String(process.env.USERPROFILE ?? process.env.HOME ?? process.cwd()), 'Documents', 'ElecKoi卡库')
+/**
+ * 真正的「文档」目录。
+ * `<用户目录>\Documents` 不等于「文档」—— 玩家可能把文档挪到了别的盘，或交给 OneDrive 接管，
+ * 这时资源管理器里看到的「文档」跟这个路径根本不是同一处（卡做出来了却「看不见」就是这么来的）。
+ * 以注册表为准：`User Shell Folders` 的 `Personal`（REG_EXPAND_SZ，可能带 `%USERPROFILE%`）。
+ */
+function 文档目录() {
+  if (process.platform === 'win32') {
+    try {
+      const 出 = execFileSync(
+        'reg',
+        ['query', 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders', '/v', 'Personal'],
+        { encoding: 'utf8', windowsHide: true },
+      )
+      const 命中 = /Personal\s+REG_(?:EXPAND_)?SZ\s+(.+?)\s*$/m.exec(出)
+      if (命中) {
+        const 展开 = 命中[1].replace(/%([^%]+)%/g, (_, 名) => process.env[名] ?? '')
+        if (展开 && existsSync(展开)) return 展开
+      }
+    } catch {
+      /* 取不到就退回下面的老写法，不影响可用性 */
+    }
+  }
+  return join(String(process.env.USERPROFILE ?? process.env.HOME ?? process.cwd()), 'Documents')
+}
+
+const 卡库目录 = join(文档目录(), 'ElecKoi卡库')
 
 /** 定工作目录：调用方参数 > 插件配置 > 卡库默认。 */
 function 定工作目录(配置, 参数cwd) {
@@ -192,7 +218,10 @@ export const inject = ['tools']
  */
 const 工具说明 = [
   '做 ElecKoi 角色卡的本机工具（forge）：建卡 / 改卡 / 体检 / 出成品都走它。',
-  'args ＝ 传给 forge.py 的命令行参数；逐项给最好，把整条命令塞进一项也行（会替你拆开）。',
+  'args ＝ 传给引擎的命令行参数；逐项给最好，把整条命令塞进一项也行（会替你拆开）。',
+  '**使用者从不说命令** —— 他只用大白话讲想做什么（「做一张都市怪谈的卡」）。把它翻成参数是你的活：',
+  '别让他记命令、别问他「要跑哪一条」、也别把 `png`/`preset`/`build` 这些词丢回给他。',
+  '该出的成品一次出齐，该改的直接改。',
   '',
   '**先取规程，再动笔** —— 怎么问玩家、怎么写内容、哪条踩红线，全在里面：',
   '  ["guide"]  先拿目录；再按目录取具体的：["guide","--节","一"] · ["guide","--篇","预算"] · ["guide","--对话","红线"]',
@@ -206,7 +235,7 @@ const 工具说明 = [
   '',
   '不要加 `--沙箱` —— 本工具由宿主进程直接执行，不受命令行沙箱限制，加了反而丢掉原子落盘。',
   '返回 exitCode / stdout / stderr；exitCode 非 0 就是这步没成，按 stderr 改。',
-  '这台机器上找不到 Python 时，返回里会写清找过哪些地方。',
+  '引擎就在插件里（零依赖 JS，宿主进程内直接跑），**不需要 Python**；这台机器上就算装过 Python 也不会被动它。',
 ].join('\n')
 
 /**
