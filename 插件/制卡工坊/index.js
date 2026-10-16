@@ -2,8 +2,16 @@
  * 制卡工坊 · 宿主插件（Host plugin）
  * ====================================
  *
- * 干一件事：**给 ElecKoi 里的 AI 一个叫 `cardforge` 的工具**，用它跑本机的
- * `forge.py`（做卡的全套命令）。
+ * 干一件事：**给 ElecKoi 里的 AI 一个叫 `cardforge` 的工具**，用它做卡（全套 33 条命令）。
+ *
+ * 引擎有两份（0.29.0 起）：
+ *   · **`forgejs/` —— 零依赖 JS 引擎**（包里自带，27 个 `.mjs`，只吃 `node:` 内置）。**优先走它**：
+ *     在宿主进程里直接跑，不找解释器、不 `spawn`、机器上**不需要有 Python**。手机端
+ *     （ElecKoi 的 ARM64 单可执行文件里一个 `python3` 都搜不到）只有这一条路 —— 这也正是搬它的原因。
+ *   · `forge.py` ＋ `forge/` —— Python 引擎（0.29.0 之前唯一的一条路）。**原样留着做兜底**：
+ *     JS 引擎起不来（文件不在 / 模块报错 / 没有 `main`）就退回 `spawn python forge.py`，
+ *     一个 Python 用户也不会被挡在外面。
+ *   两份引擎的产物**逐字节等价**：26 个模块差分 26 绿 / 0 红。
  *
  * 为什么非得是「宿主插件」而不是让 AI 用自带的命令行工具？
  *   ElecKoi 的 `dsh-tool-pwsh` 跑在**受限令牌沙箱**里：能读、能写，但
@@ -29,7 +37,7 @@
 import { spawn } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 
@@ -50,6 +58,17 @@ const 插件目录 = dirname(fileURLToPath(import.meta.url))
 const 默认解释器 = ''
 const 默认依赖目录 = ''
 const 默认工具 = resolve(插件目录, '..', '..', 'forge.py')
+
+/**
+ * 零依赖 JS 引擎（`forgejs/forge.mjs`）—— **0.29.0 起包里多带的一份**。
+ *
+ * 它是 Python 版逐字节对拍出来的成品（27 个模块，差分 26 绿 / 0 红），只吃 `node:` 内置。
+ * 有它就先走它：不找解释器、不 spawn、不需要机器上有 Python —— 手机端（ElecKoi 的 ARM64
+ * 单可执行文件，`usr/bin/python3` 一个都搜不到）也能做卡，这正是搬它的原因。
+ * 老路（spawn `python forge.py`）**原样留着**：JS 引擎起不来就退回它，一个 Python 用户
+ * 也不能被挡在外面。
+ */
+const JS引擎 = resolve(插件目录, '..', '..', 'forgejs', 'forge.mjs')
 
 /**
  * 没给工作目录时卡做在哪儿 —— **`<你的用户目录>/Documents/ElecKoi卡库`**。
@@ -268,6 +287,98 @@ function 跑(配置, 工作目录, 参数, 信号) {
       })
     )
   })
+}
+
+/**
+ * 跑 **JS 引擎** —— 不 spawn、不找 Python，直接在宿主进程里跑 `forgejs/forge.mjs`。
+ *
+ * 为什么要劫 `stdout` / `stderr` / `console` 四个口子：引擎里有直接用 `console.log`
+ * 输出的地方（`plan.mjs` 的 `_出`、`hud.mjs` 的自检），只劫 `process.stdout.write` 会漏；
+ * 而 `process.chdir` 与这几个口子**都是进程级状态**，所以整段用一条 Promise 链串起来
+ * （见 `排队`），同一时刻只允许跑一个。
+ *
+ * 到点杀不掉 —— 引擎跟宿主同一个进程，没有子进程可以 kill。只能如实往 stderr 追一句，
+ * 并把这件事写进文档（`跑()` 那条路会真的 kill 子进程，两边的语义本来就不一样）。
+ *
+ * @returns {Promise<{exitCode: number, stdout: string, stderr: string} | null>} 引擎起不来时返回 null（调用方退回 Python）
+ */
+let 引擎缓存 = null
+let 排队 = Promise.resolve()
+
+function 载引擎(引擎路径) {
+  if (引擎缓存 === null) {
+    引擎缓存 = import(pathToFileURL(引擎路径).href).catch(() => null)
+  }
+  return 引擎缓存.then((模组) => (模组 && typeof 模组.main === 'function' ? 模组 : null))
+}
+
+function 跑JS(引擎路径, 工作目录, 实参, 超时毫秒, 信号) {
+  const 这一趟 = 排队.then(async () => {
+    if (信号?.aborted) return { exitCode: -1, stdout: '', stderr: '[制卡工坊] 调用已取消，没跑。\n' }
+    const 模组 = await 载引擎(引擎路径)
+    if (!模组) return null
+    const 原cwd = process.cwd()
+    // 存的是**函数本体的原引用**（不是 `.bind()` 出来的副本）—— 还原时要一模一样，
+    // 否则外面拿身份比较（`process.stdout.write === 原写`）会认不出来。
+    const 原标准输出 = process.stdout.write
+    const 原标准错误 = process.stderr.write
+    const 原日志 = console.log
+    const 原错误日志 = console.error
+    const 出文 = []
+    const 错文 = []
+    const 桩 = (桶) => (块) => {
+      桶.push(typeof 块 === 'string' ? 块 : String(块))
+      return true
+    }
+    try {
+      process.chdir(工作目录)
+      process.stdout.write = 桩(出文)
+      process.stderr.write = 桩(错文)
+      console.log = (...参数) => {
+        出文.push(参数.map((x) => String(x)).join(' ') + '\n')
+      }
+      console.error = (...参数) => {
+        错文.push(参数.map((x) => String(x)).join(' ') + '\n')
+      }
+      let 码 = 0
+      try {
+        码 = await 模组.main(实参)
+      } catch (错) {
+        错文.push(String(错?.stack ?? 错) + '\n')
+        码 = -1
+      }
+      return { exitCode: Number.isInteger(码) ? 码 : 0, stdout: 出文.join(''), stderr: 错文.join('') }
+    } finally {
+      process.stdout.write = 原标准输出
+      process.stderr.write = 原标准错误
+      console.log = 原日志
+      console.error = 原错误日志
+      try {
+        process.chdir(原cwd)
+      } catch {
+        /* 原目录没了就留在原地 */
+      }
+    }
+  })
+  排队 = 这一趟.then(
+    () => undefined,
+    () => undefined,
+  )
+  return Promise.race([
+    这一趟,
+    new Promise((完成) => {
+      const 计时器 = setTimeout(
+        () =>
+          完成({
+            exitCode: -1,
+            stdout: '',
+            stderr: `\n[制卡工坊] 超过 ${超时毫秒} 毫秒还没结束。JS 引擎跑在宿主进程里，到点也杀不掉 —— 请等它跑完，或把命令拆小。\n`,
+          }),
+        超时毫秒,
+      )
+      if (typeof 计时器?.unref === 'function') 计时器.unref()
+    }),
+  ])
 }
 
 /**
@@ -567,6 +678,12 @@ export function apply(ctx, config) {
           } catch (错) {
             throw new Error(`工作目录建不出来：${工作目录}（${错?.message ?? 错}）—— 在 cwd 参数里换一个能写的目录。`)
           }
+        }
+        // 有 JS 引擎就先走它：不找解释器、不需要机器上有 Python（手机端只有这一条路）。
+        // 引擎起不来（文件不在 / 模块报错 / 没有 main）→ 返回 null，原样退回下面那条 Python 老路。
+        if (existsSync(JS引擎)) {
+          const 结果 = await 跑JS(JS引擎, 跑在哪儿, 实参, config.timeoutMs, exec?.signal)
+          if (结果 !== null) return 结果
         }
         const 解释器 = await 找解释器(config)
         if (!解释器) {
