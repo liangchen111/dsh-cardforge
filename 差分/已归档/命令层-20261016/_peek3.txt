@@ -1,4 +1,0 @@
-建卡 · 只读 · 写盘 · 返工 #59 ["diff", "二号/成品/二号.card.json", "二号/成品/再打.card.json"] 回=2
-   出: !! FileNotFoundError: [Errno 2] No such file or directory: '二号/成品/二号.card.json'\n   （不是崩溃 —— 上面那句就是原因。想看调用栈：设 FORGE_TRACEBACK=1）\n
-参数毛病 #25 ["unpack", "并不存在.json"] 回=2
-   出: !! FileNotFoundError: [Errno 2] No such file or directory: '并不存在.json'\n   （不是崩溃 —— 上面那句就是原因。想看调用栈：设 FORGE_TRACEBACK=1）\n

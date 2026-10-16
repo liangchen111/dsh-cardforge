@@ -1,6 +1,0 @@
-PY(62): ArgError  COMMANDS  HELP  HERE  _canon  _canon_pair  _collect  _fresh_snapshot  _list  _need_spec  _next  _opt  _print_cardname  _print_entries  _print_entry_detail  _print_opener  _print_vars  _project_of_path  _scrub  _spec_of  _tail  _多值  _常驻字数  _打命令用法  _标签  _读文  _问用法别跑  cmd_add  cmd_analyze  cmd_build  cmd_bundle  cmd_check  cmd_coach  cmd_diff  cmd_domains  cmd_drop  cmd_entry  cmd_group  cmd_guide  cmd_hud  cmd_import  cmd_index  cmd_lint  cmd_make  cmd_manual  cmd_mods  cmd_name  cmd_new  cmd_opener  cmd_plan  cmd_png  cmd_preset  cmd_regex  cmd_selftest  cmd_theme  cmd_to_eleckoi  cmd_to_tavern  cmd_trash  cmd_unpack  cmd_var  diff_cards  main
-
-JS(65): ArgError  COMMANDS  HELP  HERE  _canon  _canon_pair  _collect  _fresh_snapshot  _list  _need_spec  _next  _opt  _pad  _print_cardname  _print_entries  _print_entry_detail  _print_opener  _print_vars  _project_of_path  _scrub  _spec_of  _tail  _多值  _常驻字数  _打命令用法  _标签  _根  _自跑  _读文  _问用法别跑  cmd_add  cmd_analyze  cmd_build  cmd_bundle  cmd_check  cmd_coach  cmd_diff  cmd_domains  cmd_drop  cmd_entry  cmd_group  cmd_guide  cmd_hud  cmd_import  cmd_index  cmd_lint  cmd_make  cmd_manual  cmd_mods  cmd_name  cmd_new  cmd_opener  cmd_plan  cmd_png  cmd_preset  cmd_regex  cmd_selftest  cmd_theme  cmd_to_eleckoi  cmd_to_tavern  cmd_trash  cmd_unpack  cmd_var  diff_cards  main
-
-缺：
-多：_pad  _根  _自跑

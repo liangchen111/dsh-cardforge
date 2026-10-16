@@ -1,9 +1,0 @@
-{
-  "spec": "chara_card_v2",
-  "spec_version": "2.0",
-  "data": {
-    "name": "酒馆卡",
-    "description": "这不是 ElecKoi 卡：没有 character / setting_library / variable_config。",
-    "first_mes": "你好。"
-  }
-}

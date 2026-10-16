@@ -1,9 +1,0 @@
-rc=1
-组装完成（卡名：探卡 · 模块：没接）：
-  out/replacement_card.txt            34713 字符
-  out/replacement_create.txt          34778 字符
-  out/view_card.html                  34696 字符
-  out/view_create.html                34761 字符
-  预览页                          188189 字符  -> E:\workGZQ\制卡工具\差分\_tmp_probe_hud-aTbWEl\探卡\预览.html
-
-校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。
