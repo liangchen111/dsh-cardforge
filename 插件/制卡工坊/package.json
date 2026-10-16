@@ -1,6 +1,6 @@
 {
   "name": "@local/cardforge",
-  "version": "0.30.4",
+  "version": "0.31.0",
   "private": true,
   "description": "制卡工坊：把本机制卡引擎交给会话里的 AI 直接调用（零依赖 JS，宿主进程内跑，不需要 Python）。",
   "type": "module",

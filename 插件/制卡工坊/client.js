@@ -121,7 +121,7 @@ window.__ModuleLoader__.load({
 
     function 塞进输入框(话) {
       const 框 = 找输入框();
-      if (!框) throw new Error('没找到输入框 —— 先打开一个聊天。');
+      if (!框) throw new Error('没找到输入框 —— 先在左边开一个聊天，再回来点。');
       写值(框, 话);
       框.dispatchEvent(像回车('keydown'));
       框.dispatchEvent(像回车('keyup'));
@@ -131,20 +131,48 @@ window.__ModuleLoader__.load({
       }, 150);
     }
 
-    /* ---------------- 人话模板 ---------------- */
+    /* ---------------- 发不出去时的兜底：把原句摆出来让你自己粘 ----------------
+       DSH 里点开就可能没有正在进行的会话，或者输入框正忙 —— 这时候光报一句
+       「没发出去」等于把新手卡死在原地。把原句原样摆出来，他复制粘贴也能开工。 */
+
+    function 可复制({ 文, 报 }) {
+      return h(
+        'div',
+        { style: { display: 'grid', gap: '8px', marginTop: '10px' } },
+        h('div', { style: { fontSize: '12px', opacity: 0.75 } }, '这句话没能自动发出去（' + 报 + '）。复制它，粘进对话里，效果一样：'),
+        h('textarea', {
+          style: { ...输入, minHeight: '92px', resize: 'vertical' },
+          readOnly: true,
+          value: 文,
+          onFocus: (e) => e.target.select(),
+        }),
+        h('button', { style: 片, onClick: () => navigator.clipboard?.writeText?.(文) }, '复制这段话'),
+      );
+    }
+
+    /* ---------------- 人话模板（DSH 专项：没有预设，所以每句话都得自带背景） ----------------
+       ElecKoi 那边有「制卡助手」创作预设，AI 一上来就知道自己是谁、手上有什么工具。
+       DSH 没有这个概念 —— 插件列表里那个 cardforge 工具，对面的 AI 不点破是看不见的。
+       所以这里的每句话都自带三件：① 你是制卡助手 ② 有 cardforge 工具、命令由你发
+       ③ 先跑 guide 取规程。少了这三件，新手点开面板只会让 AI 一脸茫然。 */
+
+    const 自我介绍 = '你是我的制卡助手。这台机器上有一个本机工具 cardforge，由你直接调用，我不用记任何命令。';
+
+    const 开头 = 自我介绍 + '请先跑 cardforge ["guide"] 把规矩读一遍（它会讲清建卡该怎么走），然后开始。';
 
     const 新建 = (名, 题材, 感觉) =>
-      '帮我做一张新卡。' +
-      (名 ? `名字先叫「${名}」。` : '') +
-      (题材 ? `它讲的是：${题材}` : '') +
+      开头() +
+      '现在做一张新卡。' +
+      (名 ? `卡名先叫「${名}」。` : '') +
+      (题材 ? `这张卡讲的是：${题材}` : '') +
       (感觉 ? `我想要的感觉是：${感觉}` : '') +
-      '你先取规程，再把要先定下来的几件事一次问完，别一条一条挤牙膏。';
+      '把要先定下来的那几件事一次问完，别一条一条挤牙膏。做完的卡放在「文档」文件夹下的 ElecKoi卡库。';
 
     const 常用 = [
-      { k: '继续', 名: '接着做', 话: '接着把这张卡做下去——我们上次停在哪儿，你先看一眼再动手。' },
-      { k: '体检', 名: '体检', 话: '给这张卡做一次体检，问题按轻重排给我，能顺手修的直接修掉。' },
-      { k: '成品', 名: '出成品', 话: '把这张卡出成成品。出完告诉我卡名，以及成品文件在哪儿。' },
-      { k: '导入', 名: '导入', 话: '把这张卡的成品导进 ElecKoi。' },
+      { k: '继续', 名: '接着做', 话: 开头() + '接着把手上这张卡做下去：先看一眼 ElecKoi卡库 里现在有哪些卡、我们上次停在哪儿，再动手，缺什么就问我。' },
+      { k: '体检', 名: '体检', 话: 开头() + '给手上这张卡做一次体检，问题按轻重排给我，能顺手修的直接修掉。' },
+      { k: '成品', 名: '出成品', 话: 开头() + '把手上这张卡出成成品，出完告诉我卡名，以及成品文件在哪儿。' },
+      { k: '导入', 名: '导入', 话: 开头() + '把手上这张卡的成品导进 ElecKoi。' },
     ];
 
     /* ---------------- 样式 ---------------- */
@@ -210,15 +238,19 @@ window.__ModuleLoader__.load({
       const [题材, 设题材] = React.useState('');
       const [感觉, 设感觉] = React.useState('');
       const [忙, 设忙] = React.useState(false);
+      const [末句, 设末句] = React.useState('');
 
       const 走 = async () => {
+        const 话 = 新建(名.trim(), 题材.trim(), 感觉.trim());
         设忙(true);
+        设末句('');
         报('');
         try {
-          await 发话(ctx, 新建(名.trim(), 题材.trim(), 感觉.trim()));
-          报('发出去了，看对话那边。');
+          await 发话(ctx, 话);
+          报('发出去了 —— 切到对话那边，看它问你什么。');
         } catch (e) {
-          报('没发出去：' + (e?.message ?? e));
+          设末句(话);
+          报(e?.message ?? String(e));
         } finally {
           设忙(false);
         }
@@ -241,6 +273,7 @@ window.__ModuleLoader__.load({
           onChange: (e) => 设感觉(e.target.value),
         }),
         h('button', { style: 主片, disabled: 忙, onClick: 走 }, 忙 ? '正在发…' : '让它开始问我'),
+        末句 ? h(可复制, { 文: 末句, 报 }) : null,
       );
     }
 
@@ -249,14 +282,17 @@ window.__ModuleLoader__.load({
     function 工坊条({ ctx }) {
       const [报, 设报] = React.useState('');
       const [开, 设开] = React.useState(false);
+      const [末句, 设末句] = React.useState('');
 
       const 点 = (话) => async () => {
         设报('');
+        设末句('');
         try {
           await 发话(ctx, 话);
           设报('发出去了');
         } catch (e) {
-          设报('没发出去：' + (e?.message ?? e));
+          设末句(话);
+          设报(e?.message ?? String(e));
         }
       };
 
@@ -267,6 +303,7 @@ window.__ModuleLoader__.load({
         ...常用.map((项) => h('button', { key: 项.k, style: 片, onClick: 点(项.话) }, 项.名)),
         报 ? h('span', { style: 报话 }, 报) : null,
         开 ? h('div', { style: 浮层 }, h(新建夹, { ctx, 报: 设报, 紧凑: true })) : null,
+        末句 ? h('div', { style: 浮层 }, h(可复制, { 文: 末句, 报 })) : null,
       );
     }
 
@@ -275,14 +312,17 @@ window.__ModuleLoader__.load({
     function 制卡工坊({ ctx }) {
       const [报, 设报] = React.useState('');
       const [展开, 设展开] = React.useState(false);
+      const [末句, 设末句] = React.useState('');
 
       const 点 = (话) => async () => {
         设报('');
+        设末句('');
         try {
           await 发话(ctx, 话);
-          设报('发出去了，看对话那边。');
+          设报('发出去了 —— 切到对话那边，看它问你什么。');
         } catch (e) {
-          设报('没发出去：' + (e?.message ?? e));
+          设末句(话);
+          设报(e?.message ?? String(e));
         }
       };
 
@@ -290,7 +330,20 @@ window.__ModuleLoader__.load({
         'div',
         { style: 页 },
         h('h1', { style: 标题 }, '制卡工坊'),
-        h('p', { style: 小字 }, '点一下就行，不用记任何命令。说的每句话都会发给你正在聊的那个 AI。'),
+        h('p', { style: 小字 }, '点一下就行，不用记任何命令。这里说的每句话都会发给你正在聊的那个 AI。'),
+
+        h(
+          'div',
+          { style: { ...浮层, marginTop: '0', marginBottom: '18px' } },
+          h(
+            'div',
+            { style: { fontSize: '13px', opacity: 0.85, lineHeight: 1.85 } },
+            '第一次用只有两步：① 随便开一个聊天　② 回到这里点「＋ 我要做一张卡」。',
+            h('br', null),
+            '剩下的交给对话里那个 AI —— 它手上有 cardforge 工具，命令由它发，你不用记。',
+          ),
+          h('div', { style: { fontSize: '12px', opacity: 0.6 } }, '做好的卡落在「文档」文件夹下的 ElecKoi卡库。'),
+        ),
 
         h('div', { style: 分节 }, '做一张新卡'),
         h('button', { style: 主片, onClick: () => 设展开(!展开) }, 展开 ? '先算了' : '＋ 我要做一张卡'),
@@ -304,6 +357,7 @@ window.__ModuleLoader__.load({
         ),
 
         报 ? h('p', { style: { ...小字, marginTop: '12px', opacity: 0.9 } }, 报) : null,
+        末句 ? h(可复制, { 文: 末句, 报 }) : null,
 
         h('p', { style: { ...小字, margin: '26px 0 0' } }, 取服务(ctx, 'eleckoiAgentPresetsApi')
           ? '要是 AI 不接活，先确认当前聊天用的是「制卡助手」预设。'
