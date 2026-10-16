@@ -1208,7 +1208,7 @@ def _折读不出来(x):
     return x
 
 
-_解析器错 = re.compile(r"^(JSONDecodeError|SyntaxError): .*$", re.S)
+_解析器错 = re.compile(r"^(JSONDecodeError|SyntaxError|ValueError): .*$", re.S)
 
 
 def _折解析器(x):
@@ -1218,6 +1218,12 @@ def _折解析器(x):
     Python 抛 `JSONDecodeError: Expecting property name enclosed in double quotes: …`，
     Node 抛 `SyntaxError: Expected double-quoted property name in JSON at …` ——
     连类名带措辞都不同。只折**错**这一格（语料正文里不带这种字样）。
+
+    ★ `ValueError` 也在这个名单里：`plan.反推` 读不出卡时抛的是 `ValueError`
+      （「这不是 ElecKoi 卡」/「设定库是空的」/「卡里读不出设定库」），
+      而 `plan.mjs` 那一侧的措辞与类名同样只能折 —— 与 `比一比.mjs:1361` 的
+      `折解析器` 保持一字不差。实测对 `theme` 的 6 处折行**零影响**
+      （`黄金\\theme.json` 里 `ValueError` 出现 0 次，只添名单不会把已折的解开）。
     """
     if isinstance(x, str) and _解析器错.match(x):
         return "解析器: <解析器说>"
@@ -2130,6 +2136,336 @@ def 算_guard(料):
 
 
 算式["guard"] = 算_guard
+
+
+def 算_plan(料: dict) -> dict:
+    """顺序跑 plan 的四个入口，每步比 stdout / 返回值 / 异常消息。
+
+    ★ 工作目录建在**差分目录**底下（同 算_scaffold：系统 temp 可能是 8.3 短名，
+      `os.path.abspath` 与 `path.resolve` 算出的写法会对不上，`<工作>` 替换失配）。
+    ★ 沙箱开关是**进程级**状态（`plan._写文本` 走 `SB.land`），而 `算_sandbox` 跑完会
+      把它留在「开」上 —— 本函数的黄金必须与调用顺序无关，故进门摁回关、出门按原样还原。
+    ★ 语料里的 `@工作@` 一律写**正斜杠**（`@工作@/卡/齐备.json`）：这里替成
+      `工作.as_posix()`，两侧拼串写法一致；反斜杠形态在 JSON 里要翻倍，两头容易对不上。
+    ★ `反推`/`查`/`主` 里读不出 json 的异常文本是**解析器原话**（申报差异 3），
+      两侧天生不同 ⇒ 走 `_折解析器` 折成 `解析器: <解析器说>`。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import plan as PLAN
+    from forge import sandbox as SB
+
+    工作 = Path(tempfile.mkdtemp(prefix="_tmp_plan-", dir=str(根 / "差分")))
+    原沙箱 = SB.enabled()
+    SB.enable(False)
+    出: dict = {"常量": {}, "模板": [], "反推": [], "查": [], "主": []}
+    try:
+        for 件 in 料["预置"]:
+            if "目录" in 件:
+                (工作 / 件["目录"]).mkdir(parents=True, exist_ok=True)
+                continue
+            p = 工作 / 件["文件"]
+            p.parent.mkdir(parents=True, exist_ok=True)
+            # 与 JS 侧一一对应：`对象` 走 `json.dumps(ensure_ascii=False, indent=2)` + 末尾一个 \n
+            # （与 `JSON.stringify(x, null, 2)` 同形），`文本` 原样写。
+            if "对象" in 件:
+                文 = json.dumps(件["对象"], ensure_ascii=False, indent=2) + "\n"
+            else:
+                文 = 件["文本"]
+            p.write_text(文, encoding="utf-8", newline="")
+
+        def 替(s):
+            return str(s).replace("@工作@", 工作.as_posix())
+
+        for 名 in 料["常量"]:
+            出["常量"][名] = _动(getattr(PLAN, 名) if 料["常量"][名] else None)
+
+        for 步 in 料["模板"]:
+            名 = 步.get("名")
+            出["模板"].append({
+                "参数": _动(名),
+                "回": _动(PLAN.模板() if 名 is None else PLAN.模板(名)),
+            })
+
+        for 步 in 料["反推"]:
+            卡 = 替(步["卡"])
+            名 = 步.get("名")
+            rec: dict = {"卡": 卡, "名": _动(名), "回": None, "错": None}
+            try:
+                rec["回"] = _动(PLAN.反推(卡) if 名 is None else PLAN.反推(卡, 名))
+            except Exception as exc:  # noqa: BLE001
+                rec["错"] = _折解析器(_净文本("%s: %s" % (type(exc).__name__, exc)))
+            出["反推"].append(rec)
+
+        for 步 in 料["查"]:
+            # ★ 成功时不写 `错` 键（JS 侧 `rec` 只带 名/行，`错` 只在 except 里出现）。
+            rec: dict = {"名": 步["名"], "行": []}
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    回 = _动(PLAN.查(替(步["文"]).replace("@模@", PLAN.模板())))
+                rec["回"] = 回
+            except Exception as exc:  # noqa: BLE001
+                rec["错"] = _折解析器(_净文本("%s: %s" % (type(exc).__name__, exc)))
+            rec["出"] = _净文本(buf.getvalue())
+            出["查"].append(rec)
+
+        for 步 in 料["主"]:
+            if "开关" in 步:
+                SB.enable(步["开关"])
+            argv = [替(a) for a in 步["argv"]]
+            rec: dict = {"argv": argv, "开关": _动(步.get("开关")), "回": None, "错": None}
+            buf = io.StringIO()
+            try:
+                with contextlib.redirect_stdout(buf):
+                    rec["回"] = _动(PLAN.main(argv))
+            except Exception as exc:  # noqa: BLE001
+                rec["错"] = _折解析器(_净文本("%s: %s" % (type(exc).__name__, exc)))
+            rec["出"] = _净文本(buf.getvalue())
+            出["主"].append(rec)
+    finally:
+        SB.enable(原沙箱)
+        shutil.rmtree(工作, ignore_errors=True)
+
+    # ★ Windows 文件找不到时报错文本里路径走 `%r`（反斜杠翻倍）⇒ 归一表里要同时有「翻倍」那份，
+    #   否则 `FileNotFoundError: [Errno 2] … 'E:\\workGZQ\\…\\_tmp_plan-x\\卡\\不存在.json'` 替不掉。
+    #   顺序与 JS 侧 `算_plan` 的 `换路径` 四对一致（`str.replace` 是顺序生效的）。
+    对 = [
+        (工作.as_posix(), "<工作>"),
+        (str(工作), "<工作>"),
+        (str(工作).replace("\\", "\\\\"), "<工作>"),
+        (工作.as_posix(), "<工作>"),
+    ]
+    return _换路径(出, 对)
+
+
+算式["plan"] = 算_plan
+
+# ================================================================ bundle
+#
+# 同 `算_coach` 的架构：预置夹具 → 按序调 `bundle.run` → 记 stdout／返回值／异常消息 → 比整棵树。
+#
+# 【本模块唯一的真不可比物：zip 本身】两种 deflate 天生不同（CPython zlib 1.3.1 vs Node 那个
+# fork 1.3.1-e00f703），条目头的 mtime 也每次不一样 ⇒ 差分不比 zip 字节，改比**解包后的内容**
+# （`_zip`：逐条目记「内部名 / 大小 / 文字（或 sha256）」，顺序照 zip 自己的条目表）。这是**折法**，
+# 不是放宽比对 —— 与 JS 侧 `算_bundle` 的 `_zip` 一一对应。
+#
+# 【第二处：卡 / 手册 / 索引里带着每次新发的 uuid 与时间戳】`.card.json` 里的条目 id 与
+# created_at/updated_at、索引 md 里的条目号，两侧每跑一次都不一样，且这些键名（卡是酒馆形状）
+# 收不进 `_动` 的 `id`/`*_at` 口径；手册与索引正文里还嵌着绝对路径。⇒ 照 `算_coach` 的
+# `树带卡` 先例，只在本模块的树里把这些文件的 sha1 换成 `_净文本(正文)`，再靠外层 `_换路径`
+# 把工作目录折成 `<工作>`。**共享的 `_树()` 一个字节没动。**
+#
+# 【第三处：`生成时间`】`包信息.json` 是 `DIST.build_manifest` 产的，里面有 `M.now_iso()`；
+# `_zip` 读出来的文字过一次 `_净文本`（ISO ⇒ <时间>）。
+
+_包大小 = re.compile(r"^(\s*\d+ 个文件 · )[\d.]+( KB · .*)$")
+
+
+def _折行(s):
+    """把「N 个文件 · X KB · …」里的那个 X 折成 `<包大小>`。
+
+    ★ 申报差异，理由见上面「唯一的真不可比物」：文件数与清单条数都是确定的，只有体积随
+      deflate 实现变。与 JS 侧 `_折行` 的 `_包大小` 一字不差。
+    """
+    if not isinstance(s, str):
+        return s
+    return _包大小.sub(r"\1<包大小>\2", s, count=1)
+
+
+_UUID4 = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+_UUID32 = re.compile(r"(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])")
+
+
+def _折正文(s):
+    """新发的 uuid4 折成 `<uuid4>`，再过 `_净文本`。
+
+    卡里写成带连字符的 `8-4-4-4-12`，源码（spec / 预览页）里是连写的 32 位十六进制 —— 两支都要折。
+    """
+    return _净文本(_UUID32.sub("<uuid4>", _UUID4.sub("<uuid4>", s)))
+
+
+def _读zip(路径):
+    """读一个 zip：返回 `[{内部名, 体: bytes}]`，顺序照**中央目录**（＝写进去的顺序）。
+
+    ★ CPython 的 `ZipFile.read(name)` 查的是 `NameToInfo` —— **后写覆盖前写**。
+      `bundle.py:98` 那个恒假判断（`os.path.dirname(base) == project`，base 是相对路径、
+      project 是 abspath）会让工程根那份旧 `包信息.json` 也进包，于是 zip 里
+      `骨架/包信息.json` 出现两次，而 `read()` 两条都回**后写**那份。
+      这里必须照抄 last-wins，否则两条同名条目的内容对不上黄金。
+    """
+    import struct
+    import zlib
+
+    buf = Path(路径).read_bytes()
+    尾 = -1
+    下限 = max(0, len(buf) - 22 - 65535)
+    for i in range(len(buf) - 22, 下限 - 1, -1):
+        if struct.unpack_from("<I", buf, i)[0] == 0x06054B50:
+            尾 = i
+            break
+    if 尾 < 0:
+        raise ValueError("不是 zip：找不到中央目录结尾")
+    条数 = struct.unpack_from("<H", buf, 尾 + 10)[0]
+    p = struct.unpack_from("<I", buf, 尾 + 16)[0]
+    表 = []
+    for _ in range(条数):
+        if struct.unpack_from("<I", buf, p)[0] != 0x02014B50:
+            raise ValueError("不是 zip：中央目录坏了")
+        旗 = struct.unpack_from("<H", buf, p + 8)[0]
+        法 = struct.unpack_from("<H", buf, p + 10)[0]
+        压 = struct.unpack_from("<I", buf, p + 20)[0]
+        名长 = struct.unpack_from("<H", buf, p + 28)[0]
+        附长 = struct.unpack_from("<H", buf, p + 30)[0]
+        注长 = struct.unpack_from("<H", buf, p + 32)[0]
+        偏移 = struct.unpack_from("<I", buf, p + 42)[0]
+        名 = buf[p + 46:p + 46 + 名长].decode("utf-8" if (旗 & 0x800) else "latin-1")
+        表.append({"名": 名, "法": 法, "压": 压, "偏移": 偏移})
+        p += 46 + 名长 + 附长 + 注长
+
+    def 解一条(项):
+        q = 项["偏移"]
+        if struct.unpack_from("<I", buf, q)[0] != 0x04034B50:
+            raise ValueError("不是 zip：本地头坏了")
+        名长 = struct.unpack_from("<H", buf, q + 26)[0]
+        附长 = struct.unpack_from("<H", buf, q + 28)[0]
+        起 = q + 30 + 名长 + 附长
+        体 = buf[起:起 + 项["压"]]
+        if 项["法"] == 0:
+            return bytes(体)
+        if 项["法"] == 8:
+            return zlib.decompress(体, -15)
+        raise ValueError("不是 zip：不支持的压缩方式 %d" % 项["法"])
+
+    后写 = {}
+    for 项 in 表:
+        后写[项["名"]] = 项
+    return [{"内部名": 项["名"], "体": 解一条(后写[项["名"]])} for 项 in 表]
+
+
+def _zip(路径):
+    """逐条目记「内部名 / 大小 / 文字（或 sha256）」。"""
+    import hashlib
+    import shutil
+    import tempfile as _tempfile
+
+    暂 = _tempfile.mkdtemp(prefix="_zip-")
+    出 = []
+    try:
+        for 条 in _读zip(路径):
+            内部名 = 条["内部名"]
+            体 = 条["体"]
+            单片 = re.split(r"[\\/]", 内部名)[-1]
+            if ".spec." in 单片:
+                # `HUD.patch_spec` 落盘时 JS 侧走 `M.jdump`（JSON）、Python 侧走 `M.ydump`（YAML）
+                # —— **字节**天生不同（计划 §二① 备案过的申报差异），只能按读回来的**结构**比。
+                临时 = os.path.join(暂, 单片)
+                Path(临时).write_bytes(体)
+                出.append({"内部名": 内部名, "结构": _动(M.load_structured(临时))})
+                continue
+            try:
+                出.append({"内部名": 内部名, "大小": len(体),
+                           "文字": _折正文(体.decode("utf-8"))})
+            except UnicodeDecodeError:
+                出.append({"内部名": 内部名, "大小": len(体),
+                           "sha256": hashlib.sha256(体).hexdigest()})
+    finally:
+        shutil.rmtree(暂, ignore_errors=True)
+    return 出
+
+
+def _折树包(树, 工作):
+    """`.zip` 换逐条目折法、可比文本换正文，**只改本地这份树**。"""
+    import io
+
+    for 项 in 树:
+        rel = 项.get("路径") or ""
+        if "sha1" not in 项:
+            continue
+        p = os.path.join(str(工作), rel)
+        if not os.path.isfile(p):
+            continue
+        低 = rel.lower()
+        if 低.endswith(".zip"):
+            项.pop("sha1", None)
+            项["ZIP"] = _zip(p)
+        elif any(低.endswith(t) for t in (".card.json", ".md", ".html", ".json", ".js", ".css")):
+            项.pop("sha1", None)
+            项["文本"] = _折正文(io.open(p, encoding="utf-8", newline="").read())
+    return 树
+
+
+def 算_bundle(料: dict) -> dict:
+    """顺序跑一串 bundle 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    · 工作目录建在**差分目录**底下（**不是工具根**）：工具根会被 scaffold 语料第 27 条
+      （`abspath("")`）照进快照当场顶红；系统 temp 又可能是 8.3 短名，两侧 `abspath` 归一对不上。
+    · `out` / `out_print` 没法进 JSON ⇒ 语料写口令 `"@行@"`（`rec["行"]` 收它），
+      `out` 写 `"@工作@/…"`。两边用同一套口令，**出口本身**也进了差分。
+    · ★ `hud.py:51` 的模块级出口 `_P = print` 会被 `bundle.run` 里那句
+      `HUD.build(..., out=out_print)`（`hud.py:650 global _P`）**永久换掉**，hud 自己也不还原
+      —— 不收拾就会让**排在 bundle 后面跑的 `算_hud`** 把输出吐进一个已经没人看的收集器，
+      hud 当场红（实测：`bundle hud` 红 / `hud bundle` 绿）。`算_bridge` 从不碰它 ⇒ 进这里
+      之前恒是初始的 `print`。照 `算_coach` 存还原沙箱那一手。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import bundle as BU
+
+    原出口 = BU.HUD._P
+    情形们 = []
+    try:
+        for 情 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_bundle-", dir=str(根 / "差分")))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                工程名 = 情.get("夹具")
+                if 工程名:
+                    shutil.copytree(str(根 / "差分" / "语料" / "bundle" / 工程名),
+                                    str(工作 / 工程名))
+                for 旧 in 情.get("守旧") or []:
+                    旧路径 = 工作 / 旧["路径"]
+                    旧路径.parent.mkdir(parents=True, exist_ok=True)
+                    旧路径.write_text(旧["正文"], encoding="utf-8", newline="\n")
+
+                出: dict = {"名": 情.get("名"), "步": []}
+                for 步 in 情.get("步骤") or []:
+                    原参 = 步.get("参数") or []
+                    参数0 = [_换路径(a, [("@工作@", str(工作)), ("@根@", str(根))])
+                            for a in 原参]
+                    行: list = []
+                    参数 = [(行.append if a == "@行@" else a) for a in 参数0]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": None}
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = getattr(BU, 步["调用"])(*参数)
+                        rec["回"] = _动(None if 回 is None else 回)
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = _净文本("%s: %s" % (type(exc).__name__, exc))
+                    rec["参数"] = _动(原参)
+                    rec["行"] = [_折行(_净文本(str(x))) for x in 行]
+                    rec["出"] = _折行(_净文本(buf.getvalue()))
+                    出["步"].append(rec)
+                出["树"] = _折树包(_树(工作), 工作)
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+                BU.HUD._P = 原出口
+            情形们.append(_换路径(_折浮(收_uuid(出)), 对))
+    finally:
+        BU.HUD._P = 原出口
+    return {"情形": 情形们}
+
+
+算式["bundle"] = 算_bundle
 
 
 def main(argv):
