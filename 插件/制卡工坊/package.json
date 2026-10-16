@@ -1,8 +1,8 @@
 {
   "name": "@local/cardforge",
-  "version": "0.30.2",
+  "version": "0.30.3",
   "private": true,
-  "description": "制卡工坊：把本机的 forge.py 交给 ElecKoi 里的 AI 直接调用（宿主进程执行，不受命令行沙箱限制）。",
+  "description": "制卡工坊：把本机制卡引擎交给会话里的 AI 直接调用（零依赖 JS，宿主进程内跑，不需要 Python）。",
   "type": "module",
   "exports": {
     ".": "./index.js",

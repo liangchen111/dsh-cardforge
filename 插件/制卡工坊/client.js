@@ -8,7 +8,6 @@
  *   1. **DSH 自己那套壳**：`main`（keyed，一整页）＋ `sidebar.panellist`（list，侧栏入口图标）
  *   2. **ElecKoi 的槽**：`eleckoi.roleplay.conversation.input.dock`（list / session，输入框上方那一条）
  * 三个都挂上 —— `ctx.slots.inject` 只是排队等着，哪套壳声明了哪个槽就哪个生效，不会报错。
- * （ElecKoi 用 `@eleckoi/dsh-client-shell` 换掉整套壳，但 `main` / `sidebar.*` 这些原生槽它照样声明。）
  *
  * 说话的办法（两条路，自动挑）：
  *   甲 · ElecKoi：客户端服务 `eleckoiConversations`
@@ -19,6 +18,13 @@
  *   乙 · DSH：那边没有 `eleckoiConversations`（那是 ElecKoi 的服务）⇒ 直接找输入框写值、
  *       派发 `input`／回车事件，不行再点「发送」。纯 DOM，不依赖任何服务名。
  *
+ * 【两条铁律，0.30.3 加的 —— 上一版就是栽在这上面】
+ *   1. **每个组件必须是真组件**（`h(甲, {…})`），不许把函数组件当普通函数调用（`甲(ctx)`）。
+ *      后者会把子组件的 `useState` 记到父组件头上，hook 数量一变化，React 就抛
+ *      「Rendered more hooks than during the previous render」——整棵客户端树被卸载 ⇒ **白屏**。
+ *   2. **每个挂出去的组件都套一层错误边界**（`兜底`）。面板自己坏掉只许显示一条错话，
+ *      绝不许把整个应用带成空白。
+ *
  * 注意：`id` 必须**等于**包名（官方要求），这里是 `dsh-cardforge`。
  * React 由浏览器模块表提供，不要自己再装一份。
  */
@@ -27,6 +33,35 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require('react');
     const h = React.createElement;
+
+    /* ---------------- 错误边界（面板坏了不许连坐整个界面） ---------------- */
+
+    class 兜底 extends React.Component {
+      constructor(p) {
+        super(p);
+        this.state = { 错: null };
+      }
+      static getDerivedStateFromError(错) {
+        return { 错 };
+      }
+      componentDidCatch(错) {
+        console.warn('[制卡工坊] 面板出错：', 错);
+      }
+      render() {
+        if (this.state.错) {
+          const 话 = String(this.state.错?.message ?? this.state.错);
+          return h(
+            'div',
+            { style: { padding: '18px 20px', fontSize: '13px', lineHeight: 1.7, opacity: 0.9 } },
+            h('div', null, '制卡工坊这块出了点错（别的功能不受影响）：'),
+            h('div', { style: { marginTop: '6px', fontSize: '12px', opacity: 0.75, whiteSpace: 'pre-wrap' } }, 话),
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    const 包 = (组件) => () => h(兜底, null, h(组件, null));
 
     /* ---------------- 说话 ---------------- */
 
@@ -106,10 +141,10 @@ window.__ModuleLoader__.load({
       '你先取规程，再把要先定下来的几件事一次问完，别一条一条挤牙膏。';
 
     const 常用 = [
-      { k: '继续', 名: '接着做', 话: () => '接着把这张卡做下去——我们上次停在哪儿，你先看一眼再动手。' },
-      { k: '体检', 名: '体检', 话: () => '给这张卡做一次体检，问题按轻重排给我，能顺手修的直接修掉。' },
-      { k: '成品', 名: '出成品', 话: () => '把这张卡出成成品。出完告诉我卡名，以及成品文件在哪儿。' },
-      { k: '导入', 名: '导入', 话: () => '把这张卡的成品导进 ElecKoi。' },
+      { k: '继续', 名: '接着做', 话: '接着把这张卡做下去——我们上次停在哪儿，你先看一眼再动手。' },
+      { k: '体检', 名: '体检', 话: '给这张卡做一次体检，问题按轻重排给我，能顺手修的直接修掉。' },
+      { k: '成品', 名: '出成品', 话: '把这张卡出成成品。出完告诉我卡名，以及成品文件在哪儿。' },
+      { k: '导入', 名: '导入', 话: '把这张卡的成品导进 ElecKoi。' },
     ];
 
     /* ---------------- 样式 ---------------- */
@@ -168,9 +203,9 @@ window.__ModuleLoader__.load({
     const 标题 = { fontSize: '20px', fontWeight: 600, margin: '0 0 4px' };
     const 小字 = { fontSize: '12px', opacity: 0.6, margin: '0 0 22px' };
 
-    /* ---------------- 新建表单 ---------------- */
+    /* ---------------- 新建表单（真组件！hooks 归它自己） ---------------- */
 
-    function 新建夹(ctx, 报, 紧凑) {
+    function 新建夹({ ctx, 报, 紧凑 }) {
       const [名, 设名] = React.useState('');
       const [题材, 设题材] = React.useState('');
       const [感觉, 设感觉] = React.useState('');
@@ -209,9 +244,9 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /* ---------------- 输入框上方的条 ---------------- */
+    /* ---------------- 输入框上方的条（ElecKoi） ---------------- */
 
-    function 工坊条(ctx) {
+    function 工坊条({ ctx }) {
       const [报, 设报] = React.useState('');
       const [开, 设开] = React.useState(false);
 
@@ -229,15 +264,15 @@ window.__ModuleLoader__.load({
         'div',
         { style: 条 },
         h('button', { style: 主片, title: '制卡工坊', onClick: () => 设开(!开) }, 开 ? '⚒ 收起' : '⚒ 做新卡'),
-        ...常用.map((项) => h('button', { key: 项.k, style: 片, onClick: 点(项.话()) }, 项.名)),
+        ...常用.map((项) => h('button', { key: 项.k, style: 片, onClick: 点(项.话) }, 项.名)),
         报 ? h('span', { style: 报话 }, 报) : null,
-        开 ? h('div', { style: 浮层 }, 新建夹(ctx, 设报, true)) : null,
+        开 ? h('div', { style: 浮层 }, h(新建夹, { ctx, 报: 设报, 紧凑: true })) : null,
       );
     }
 
     /* ---------------- 整页（DSH 的 main 槽；ElecKoi 里不会出现） ---------------- */
 
-    function 制卡工坊(ctx) {
+    function 制卡工坊({ ctx }) {
       const [报, 设报] = React.useState('');
       const [展开, 设展开] = React.useState(false);
 
@@ -259,13 +294,13 @@ window.__ModuleLoader__.load({
 
         h('div', { style: 分节 }, '做一张新卡'),
         h('button', { style: 主片, onClick: () => 设展开(!展开) }, 展开 ? '先算了' : '＋ 我要做一张卡'),
-        展开 ? h('div', { style: { marginTop: '12px' } }, 新建夹(ctx, 设报, false)) : null,
+        展开 ? h('div', { style: { marginTop: '12px' } }, h(新建夹, { ctx, 报: 设报, 紧凑: false })) : null,
 
         h('div', { style: 分节 }, '手上这张卡'),
         h(
           'div',
           { style: 卡列 },
-          ...常用.map((项) => h('button', { key: 项.k, style: 长片, onClick: 点(项.话()) }, 项.名)),
+          ...常用.map((项) => h('button', { key: 项.k, style: 长片, onClick: 点(项.话) }, 项.名)),
         ),
 
         报 ? h('p', { style: { ...小字, marginTop: '12px', opacity: 0.9 } }, 报) : null,
@@ -299,10 +334,13 @@ window.__ModuleLoader__.load({
         const 取名 = () => {
           try {
             const t = ctx.locale?.bind?.('dsh-cardforge')
-            if (t) return t('panel.title')
+            if (typeof t === 'function') {
+              const 值 = t('panel.title')
+              if (值) return 值
+            }
           } catch {}
           return '制卡工坊'
-        }
+        };
         // 一个槽挂了，绝不许把别的槽（乃至整个客户端）连坐。
         const 挂 = (槽, 选项, 组件) => {
           try {
@@ -316,19 +354,19 @@ window.__ModuleLoader__.load({
           } catch (错) {
             console.warn('[制卡工坊] 取槽失败：' + 槽, 错)
           }
-        }
+        };
         // ElecKoi：输入框上方那一区。这是主入口。
         挂(
           'eleckoi.roleplay.conversation.input.dock',
           { name: 'eleckoi.roleplay.conversation.input.dock', id: 'dsh-cardforge', order: 40 },
-          () => 工坊条(ctx),
+          包(工坊条),
         )
         // DSH 自己那套壳（ElecKoi 里这两个槽不会被声明，inject 只是等着，不会报错）。
-        挂('main', { name: 'main', key: 'dsh-cardforge', locale: 'dsh-cardforge' }, () => 制卡工坊(ctx))
+        挂('main', { name: 'main', key: 'dsh-cardforge', locale: 'dsh-cardforge' }, 包(制卡工坊))
         挂(
           'sidebar.panellist',
           { name: 'sidebar.panellist', id: 'dsh-cardforge', order: 30, label: 取名, locale: 'dsh-cardforge' },
-          入口,
+          包(入口),
         )
       },
     };
