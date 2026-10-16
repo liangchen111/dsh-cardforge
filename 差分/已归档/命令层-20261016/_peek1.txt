@@ -1,0 +1,22 @@
+1 ["new", "探卡", "--到", ".", "--id", "fix"] 回=0
+   出: '组装完成（卡名：探卡 · 模块：没接）：\n  out/replacement_card.txt            34713 字符\n  out/replacement_create.txt          34778 字符\n  out/view_card.html                  34696 字符\n  out/view_create.html                34761 字符\n  预览页                          188189 字符  -> <工作>\\探卡\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 2 条（conf 2 条 · 非 conf 来源 0 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/   
+2 ["name", "探卡", "--看"] 回=0
+   出: '卡名 · 现状\n────────────────────────────────────────────────────────\n  工程          <工作>\\探卡\n  spec          <工作>\\探卡\\source\\探卡.spec.yaml\n  目录名        探卡\n  spec 里的名字 探卡\n  界面配置      <工作>\\探卡\\hud\\hud.conf.json\n  配置里的卡名  探卡\n\n  两处一致 ✔\n'
+3 ["check", "探卡/source/探卡.spec.yaml"] 回=0
+   出: '==========================================================================\n对象    : 探卡.spec.yaml\n卡片    : 探卡\n条目 5 · 分组 3 · 变量 10 · 对象 4 · 正则 2\n常驻    : 1 条 / 162 字（护栏 3000 字）\n触发方式: agent_tool=3 · always=2\n读取策略: normal=3 · keyword=2\n插入角色: system=3 · assistant=1 · user=1\n--------------------------------------------------------------------------\n  ✔ 没有发现问题\n--------------------------------------------------------------------------\n结论：0 个错误 · 0 个警告 · 0 条提示\n  → 可以交付。\n'
+4 ["check", "探卡"] 回=0
+   出: '==========================================================================\n对象    : 探卡.spec.yaml\n卡片    : 探卡\n条目 5 · 分组 3 · 变量 10 · 对象 4 · 正则 2\n常驻    : 1 条 / 162 字（护栏 3000 字）\n触发方式: agent_tool=3 · always=2\n读取策略: normal=3 · keyword=2\n插入角色: system=3 · assistant=1 · user=1\n--------------------------------------------------------------------------\n  ✔ 没有发现问题\n--------------------------------------------------------------------------\n结论：0 个错误 · 0 个警告 · 0 条提示\n  → 可以交付。\n'
+5 ["entry", "探卡/source/探卡.spec.yaml", "--列"] 回=0
+   出: '  id                       标题             分组  触发        策略     字数  关键词          启用\n  fixed-opening-assistant  AI角色开场白     —     always      normal     34  —               是  \n  fix-world-core           核心 · 世界总纲  世界  always      normal    162  —               是  \n  fix-rule-check           规则 · 判定      规则  agent_tool  keyword    95  判定,掷骰,检定  是  \n  fix-ref-names            名册 · 常用名字  名册  agent_tool  normal     86  —               是  \n  fix-opt-pressure         可选 · 时局压力  世界  agent_tool  ke
+9 ["trash", "探卡/source/探卡.spec.yaml"] 回=0
+   出: '回收站是空的（<工作>\\探卡\\.forge/回收站 下没有东西）。\n'
+10 ["plan", "探卡/成品/探卡.card.json"] 回=1
+   出: "!! [Errno 2] No such file or directory: '探卡/成品/探卡.card.json'\n"
+11 ["lint", "探卡/source/探卡.spec.yaml"] 回=1
+   出: '==================================================================\n正文体检 · 探卡/source/探卡.spec.yaml · 共 379 汉字 · 按一轮正文判\n==================================================================\n  ✔ 提示冒号＋空行接列表  无\n  ✔ 对立句式  0 次 · 0.00/千字（一轮限 1 次）\n  ✗ 破折号  3 处 · 7.92/千字\n  ✔ 段首序数词  0.000/千字（限 0.19）· 0 处\n  ✔ 相邻句同构  0 处 · 0.0/百句\n  ✔ 三句排比  0 处\n------------------------------------------------------------------\n  硬判据不过：破折号 3 处\n  改法：把那句拆成两句口语、或换个说法 —— 别加词，加词只会更像模板。\n'
+12 ["mods"] 回=0
+   出: '可用模块（5 个）—— 接法：python forge.py add <名> <你的 spec.yaml>\n\n  代笔     v1.0.0    建卡器上每一栏都多一对「AI 代笔 / 取回」扣子：请求走对话那条路发出去，AI 照【代笔 · 栏位名】回一块，界面自动切出来搬进那一栏。\n         id=ai · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量与栏位（骨架里已有）：扣子摆几对、请求里要什么、回话怎么切，全从 hud.CONFIG.fields 现读\n         需要：宿主至少通一条送信的路：input.set（只填不送，默认）或 chat.send（直接发）；两条都不通时退回「自己复制给 AI」\n\n  备份     v1.0.0    在建卡器那一页多一块「档案备份」：一键把玩家那份档案（变量里封缄过的，加上界面这一份草稿）导出成一段文本 —— 同时抄进剪贴板、并存进这一局的「存档」变量；封缄时也会顺手存一份 —— 重启回来按「从存档取回」就能把表单填回来，换了机器才靠抄走的那段文本。\n    
+13 ["analyze", "探卡/成品/探卡.card.json"] 回=0
+   出: "!! 探卡.card.json: [Errno 2] No such file or directory: '探卡/成品/探卡.card.json'\n\n"
+14 ["domains"] 回=0
+   出: 'ElecKoi 真值域表（来源：反编译 0.2.8 逐字节取证）\n\n  trigger_mode\n      合法值：always / agent_tool\n      缺省  ：always\n      always = 提示词常驻；agent_tool = 由 AI 读取。缺省 always。\n\n  agent_read_strategy\n      合法值：required / keyword / normal\n      缺省  ：normal\n      旧值  ：variable_condition → normal\n      required=必读 / keyword=命中后本轮必读 / normal=选读。旧值 variable_condition 会被显式降级为 normal（源码 normalizeEntry 原文）。\n\n  kind\n      合法值：normal / opening / history_compaction / hidden_tool_timeline\n      缺省  ：normal\n      条目类型

@@ -1,0 +1,1367 @@
+{
+  "情形": [
+    {
+      "名": "用法与总表",
+      "步": [
+        {
+          "argv": [],
+          "回": 0,
+          "错": null,
+          "出": "forge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        },
+        {
+          "argv": [
+            "-h"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "forge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        },
+        {
+          "argv": [
+            "help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "forge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        },
+        {
+          "argv": [
+            "并没有这个命令"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "认不得的命令：并没有这个命令\n\nforge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        },
+        {
+          "argv": [
+            "new",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py new <卡名> [--到 目录] [--id 前缀] [--模块 骰子,备份]\n      python forge.py new <卡名> --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n"
+        },
+        {
+          "argv": [
+            "name",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py name <工程 或 spec> --看              现在叫什么、几处一致\n      python forge.py name <工程 或 spec> --改 <新卡名>     改卡名（spec 与界面配置一起改）\n      （卡名散在两处：spec 的 character.name 是真源，hud/hud.conf.json 的「卡名」\n        给界面用。这条命令把两处一起改，免得改一处、另一处悄悄留着旧名。）\n"
+        },
+        {
+          "argv": [
+            "unpack",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py unpack <卡.json> [-o 出.yaml]\n"
+        },
+        {
+          "argv": [
+            "build",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py build <spec.yaml> [出.json]\n"
+        },
+        {
+          "argv": [
+            "check",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py check <spec.yaml 或 卡.json 或 目录> [更多...]\n"
+        },
+        {
+          "argv": [
+            "hud",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py hud <工程目录 或 source/*.spec.yaml> [--写回]\n      组装卡内 HUD：拼页面 -> 出 预览.html；--写回 再把正则写回 spec。\n"
+        },
+        {
+          "argv": [
+            "bundle",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py bundle <工程目录> [-o 出.zip] [--带卡]\n      打的是**工程分发包**（含界面层源码，给人接着改）。\n      它会把工程顺手收一遍：重组 HUD → 写回 spec → 重出成品卡 → 重出手册与索引；\n      --带卡 时再额外导出一张酒馆 V2 卡 .json。\n      只要成品卡、不要工程包：用 `python forge.py build <spec> <出.json>`。\n"
+        },
+        {
+          "argv": [
+            "import",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py import <工程包.zip 或 卡.json> [--到 目录] [--改名] [--不校验]\n      收包：把别人给的工程包（或单张卡）落到本地，成一张能接着改的工程。\n"
+        },
+        {
+          "argv": [
+            "analyze",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py analyze <卡文件> ...\n"
+        },
+        {
+          "argv": [
+            "to-eleckoi",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py to-eleckoi <酒馆卡> <出.yaml>\n"
+        },
+        {
+          "argv": [
+            "to-tavern",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py to-tavern <ElecKoi卡 或 spec.yaml> <出.json> [--带原卡]\n"
+        },
+        {
+          "argv": [
+            "png",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py png <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png] [--带酒馆块]\n\n  出一条**可以当图片导入**的卡：把成品卡嵌进 PNG 的 tEXt 块 `eleckoi-card`\n  （= base64(gzip(卡 JSON))）—— 手机与客户端「导入角色」选图片走的就是这条路，\n  只给 .card.json 对方是导不进去的。\n  再加一段 iTXt 摘要；像素一个字节不动，同一份卡跑两次得到同一个 PNG。\n  **默认不写酒馆的 `chara` 块** —— 官方「角色卡同步协议」明写导出不得携带\n  第三方兼容载荷，验收条款还专门查这个。真要一份酒馆也能吃的图，加 --带酒馆块。\n  --图 不给就现画一张渐变封面（本工具不依赖 Pillow）。\n"
+        },
+        {
+          "argv": [
+            "preset",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n\n  把卡里那套设定搬成一份 ElecKoi **创作预设**（`eleckoi.agent-preset` v2）——\n  在客户端「预设管理器 → 导入预设」选它、分类选「创作预设」，AI 就带着这套\n  设定与规程干活。角色卡是「一次对话演一个人」，创作预设是「一次对话配一套做法」。\n  条目按客户端白名单逐条核（kind / position / agent_read_strategy …），\n  角色扮演机件（隐藏工具时间线、历史压缩）留在卡里不搬过来。\n  可选项：--名 <预设名> · --作者 <署名> · --说明 <文字或 .md 文件>\n          --工具组 a,b（默认 builtin:creator）· --版本名 <名>\n          --留引擎条目（默认丢掉那两类机件）· --png [出.png] 一并出图片版\n"
+        },
+        {
+          "argv": [
+            "plan",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "# 规划书 · 我的卡\n\n> 开工前把它填满。`python forge.py plan --查 本文件.md` 会告诉你还缺什么。\n> 填的是**想法**，不是字段名 —— 卡怎么写是下一步的事。\n\n\n## 一、一句话是什么\n\n> 这张卡想让人**体验**什么？一句话，不要形容词堆砌。\n\n- <在这里写>\n\n## 二、调子与体裁\n\n> 什么调子（都市 / 西幻 / 悬疑 / 日常……）、什么体裁（连载 / 单元 / 一次性）。\n\n- <在这里写>\n\n## 三、世界\n\n> 时代与地点、世界的规则、**这个世界里没有的东西**（口径卡）。\n\n- <在这里写>\n\n## 四、玩家是谁\n\n> 玩家扮演谁、开局处境、他能做什么、他做不到什么。\n\n- <在这里写>\n\n## 五、角色名册\n\n> 每人写四样：他是谁 / 他想要什么 / **他的弱点** / **他说话的腔调**。\n\n- <在这里写>\n\n## 六、故事与推进\n\n> 主线是什么、冲突从哪来、节奏怎么排、打算怎么收（或者不收）。\n\n- <在这里写>\n\n## 七、要记的状态\n\n> 要记什么（字段）、初值多少、**谁在什么时候更新** —— 三样不全就别加变量。\n\n- <在这里写>\n\n## 八、玩法要哪几条\n\n> 从玩法机制库里挑（见 `guide --篇 玩法`），**默认只上 3–5 条**，写清每条靠什么实现。\n\n- <在这里写>\n\n## 九、界面与交付\n\n> 要不要界面 / 小手机；交给谁、在什么设备上导入（手机端只认 PNG）。\n\n- <在这里写>\n\n## 附 · 交付前自查\n\n- [ ] `python forge.py check <工程>` 0 错\n- [ ] 解包往返一致（`unpack` → `build` → `diff` 报语义完全一致）\n- [ ] 常驻条目**只降不涨**（它是每轮的固定税）\n- [ ] 手机端导入：给 `png` 出的 `.card.png`（JSON 手机上导不进去）\n"
+        },
+        {
+          "argv": [
+            "lint",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py lint <卡.json 或 spec.yaml 或 文本> [-o 报告.md]\n      python forge.py lint -      从标准输入读（写完一轮自查用）\n      python forge.py lint --标准 打判据表（每条判据的口径与来源）\n有硬判据不过 ⇒ 退出码 1；三条硬判据 = 提示冒号＋空行接列表 · 对立句式 ≤1 · 破折号 0\n长文本（>2000 汉字）自动降级成只报密度 —— 硬阈值是按「一轮输出」标定的。\n"
+        },
+        {
+          "argv": [
+            "manual",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py manual <spec.yaml 或 卡.json> [-o 出.html] [--只手册]\n"
+        },
+        {
+          "argv": [
+            "index",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py index <spec.yaml 或 卡.json> [-o 出.md]\n"
+        },
+        {
+          "argv": [
+            "coach",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py coach（直接跑即可，参数见下面总表里那一行）\n\nforge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        },
+        {
+          "argv": [
+            "guide",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "# ElecKoi 制卡规程 · 目录\n\n取一段：`python forge.py guide --节 <名>` / `--篇 <名>` / `--对话 <名>`；全文：`--全文`。\n\n## 节（按顺序做）\n  一、开工流程（照这个顺序做）\n  二、手上已经有一张卡（不是从零开始）\n  三、开场白（别去改任何文件，用 opener）\n  四、把卡拆开改\n  五、内容怎么写（方法论九篇）\n  六、验收标准（不满足就不要交付）\n  七、交付怎么说\n  八、完整走一遍（照这个顺序抄）\n  九、红线 · 会被静默吃掉的写法\n\n## 篇（方法论 · 写内容之前先读「必读」的）\n  [必读] 机制 · 一张卡由什么构成 —— 开始做一张新卡、或玩家问「一张卡都有什么」时读这条。\n  [关键词] 机制 · 条目触发方式怎么选 —— 玩家问到条目怎么配、为什么某条不生效时读这条。\n  [必读] 预算 · 每句话都在跟聊天记录抢位置 —— 写任何内容之前先读这条；也是玩家抱怨「AI 忘了刚才聊的」时的第一诊断。\n  [关键词] 世界 · 世界观设计清单 —— 玩家开始讲世界、地点、势力、历史时读这条。\n  [关键词] 故事 · 主线、冲突与节奏 —— 玩家开始讲剧情走向、冲突、阶段推进时读这条。\n  [关键词] 角色 · 角色条目拆分法 —— 玩家开始讲某个角色、或要加 NPC 时读这条。\n  [关键词] 写法 · 怎么把角色写活 —— 具体落笔写条目正文、开场白、示例对话时读这条。\n  [关键词] 变量 · 什么时候需要变量 —— 玩家提到好感度、金钱、时间、进度这类会变的数字时读这条。\n  [关键词] 界面 · 卡内界面要不要做 —— 玩家提到界面、面板、开局建卡器、美化时读这条。\n  [关键词] 玩法 · 让玩家觉得「被记得」 —— 玩家说「好玩」「记不住」「没进展」「NPC 像布景」，或要做长期连载卡时读这条。\n  [关键词] 玩法 · 世界要会动，也要能查账 —— 玩家要「随机」「生成」「掷骰」「重开一次」，或要把卡做成长线世界时读这条。\n  [关键词] 玩法 · 谁可以知道什么 —— 卡里要藏秘密、要写阴谋线，或者你要判断「这个 NPC 现在能不能知道这件事」时读这条。\n  [关键词] 玩法 · 给玩家的选择要像真的 —— 玩家要「能选」「多分支」「别老是同意/拒绝」，或你要写一个封闭场景（一间屋、一个晚上）时读这条。\n  [关键词] 前端 · 小手机不是一条正则 —— 玩家要小手机 / 抽屉面板 / 悬浮球 / 状态栏，或要写卡内前端时读这条。\n  [关键词] 前端 · 换宿主最容易死在哪 —— 界面写完了但没反应 / 显示成空 / 变量是 `--` / 只在你自己造的仿真里好使时读这条。\n  [关键词] 界面 · EJS 是这门卡的编程语言 —— 要写会自己算的界面（状态栏变色、选项卡、按变量决定显示什么）时读这条。\n  [关键词] 参考 · 哪些资料值得看 —— 想知道某种做法别人是怎么做的、或要一条能点开的出处时读这条。\n\n## 对话段（在 ElecKoi 里对着玩家做卡时读：怎么问、怎么交）\n  [总则] 你是制卡师 —— 身份与边界（不许替玩家编设定）\n  [访谈] 一层一层问 —— 一次问什么、问到什么程度算够、什么时候给草稿\n  [交付] 你输出什么 —— 每定完一层交给玩家什么、怎么收尾\n  [红线] 会被静默吃掉的写法（与第九节同一段）\n"
+        },
+        {
+          "argv": [
+            "make",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py make <卡稿.yaml> [--到 <目录>] [--试] [--覆盖] [--保留]\n  稿子写的是「这张卡该长什么样」，不是「先做这步再做那步」：\n    · 条目按标题认人 —— 卡里已有同名的改它，没有才新建（不必管骨架里现成有什么）\n    · 分组 / 变量对象缺了自动补（报告里单列一份，名字打错看得见）\n    · **全程在临时目录里做，全绿了才整棵拷到目标位置** ——\n      稿子有毛病时，目标位置一个字都不会被写\n  --试    只验证：做到能出成品、体检通过，但不往目标位置写\n  --覆盖  那份工程已经在了就照稿子重落一遍（只认同一张卡：\n          目标里有 source/<卡名>.spec.yaml 才让盖；别的东西一律不碰）\n  --保留  把这一趟的临时工程留着（调试稿子用）\n  不知道稿子长什么样：\n    python forge.py make --模板   一份骨架（有哪些键、怎么缩进）\n    python forge.py make --示例   一张真能开的卡（连「话该写多细」一起示范）\n"
+        },
+        {
+          "argv": [
+            "mods",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "可用模块（5 个）—— 接法：python forge.py add <名> <你的 spec.yaml>\n\n  代笔     v1.0.0    建卡器上每一栏都多一对「AI 代笔 / 取回」扣子：请求走对话那条路发出去，AI 照【代笔 · 栏位名】回一块，界面自动切出来搬进那一栏。\n         id=ai · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量与栏位（骨架里已有）：扣子摆几对、请求里要什么、回话怎么切，全从 hud.CONFIG.fields 现读\n         需要：宿主至少通一条送信的路：input.set（只填不送，默认）或 chat.send（直接发）；两条都不通时退回「自己复制给 AI」\n\n  备份     v1.0.0    在建卡器那一页多一块「档案备份」：一键把玩家那份档案（变量里封缄过的，加上界面这一份草稿）导出成一段文本 —— 同时抄进剪贴板、并存进这一局的「存档」变量；封缄时也会顺手存一份 —— 重启回来按「从存档取回」就能把表单填回来，换了机器才靠抄走的那段文本。\n         id=backup · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「玩家」（骨架里已有）：导出与还原的都是它那一棵树，不另加变量\n         需要：变量树里那个「给机器用的」存档位（骨架里已有：对象「存档」＋ 它的变量「角色」，initial_state 与 schema_code 里也各有一处）：**这是「过夜」的唯一落脚点** ——…\n         需要：核心的初值 DEFAULTS 里也要有那个对象（骨架里已有）：面板是按 fillState 之后的对象列表画的，DEFAULTS 里少了它，这一局还没存过的时候面板上就不会出现那一行「机器位…\n         需要：建卡器（hud.core.js 的 create 视图）：模块只往它里面加一块，核心一个字不动\n         需要：核心的封缄挂载点 afterSubmit（骨架里已有）：封缄那一笔写落定之后，核心会叫模块这一处 ——「备份」靠它在封缄的同一口气里也存一份。**少了它，写「存档」的时机就只剩「按导出」一处…\n\n  尺度     v1.0.0    把「叙事尺度」那三档（克制 / 标准 / 放开）与「时局压力」开关背后的意思写死 —— 一条给 AI 读的常驻条目，外加建卡器与面板上的一句人话。\n         id=scale · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「世界设定 · 叙事尺度」「世界设定 · 压力源」：骨架里已经有，不用另加\n         需要：骨架界面上那两颗档位扣子（叙事尺度 / 时局压力）：已有，模块只补说明\n\n  点数池   v1.0.0    给六维配一笔预算：可分配 = 等级 × 每级点数 ＋ 永久奖励，界面实时算「已用 / 剩余」；一颗「交给命运」按职业倾向一次撒开，临时加成单列、不进池子。\n         id=pool · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量：六条数字栏当六维（默认 力量/敏捷/体质/智力/感知/魅力）、一条等级栏（默认「等级」）、一条永久奖励栏（默认「永久奖励」）、一条对象栏（默认「加成」，六个数字）、一条职业栏（默认「职…\n         需要：骨架里那颗「等级」数字栏：模块拿它算池子大小；认不出的值（空、乱写、0）一律按 1 级算\n         需要：想换六维的名字 / 每级几点 / 职业名册：在 hud.core.js 的 CONFIG 里加一个 pool 块（样例写在 点数池.js 顶上），模块一个字都不用改\n\n  骰子     v1.0.0    把正文里那行 〔骰·…〕 纯文本渲成带边框的骰子框 —— 对抗、带 DC、兜底共七条正则，按结果分色；另顶掉「规则 · 判定」那一条，换成一套讲清格式的判定规则。\n         id=dice · 并进内容：条目+正则\n         需要：什么都不用加：不接变量、不接脚本，只并七条正则、替换一条条目\n\n"
+        },
+        {
+          "argv": [
+            "add",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py add <模块> <spec.yaml> [<模块2> ...]\n      先跑 `python forge.py mods` 看有哪些模块。\n"
+        },
+        {
+          "argv": [
+            "drop",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py drop <模块> <spec.yaml> [<模块2> ...]\n      撤掉 add 接上的东西：替换的还原、新增的删掉、正则按 id 删、界面文件与登记一并摘掉。\n      只撤账本里记着的；手写进 spec 的东西一律不动。\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py entry <spec> --新 \"标题\" [--分组 X]\n                                      [--模板 常驻|必读|关键词|选读|开场]\n                                      [--正文 \"…\"] [--关键词 判定,掷骰]\n                                      [--位置 instructions] [--提示 \"什么时候读我\"]\n      python forge.py entry <spec> --列 [--分组 X]\n      python forge.py entry <spec> --看 <id 或 标题>      看一条的全貌（正文全文在内）\n      python forge.py entry <spec> --改 <id 或 标题> [<id 或 标题> …] --正文 \"…\"\n                                      [--标题 \"…\"] [--关键词 a,b]\n                                      [--提示 \"什么时候读我\"] [--模板 常驻|必读|关键词|选读]\n                                      [--策略 …] [--位置 …] [--角色 …] [--内容模式 …]\n                                      [--启用 | --停用]   卡里留着但不生效 / 让它生效\n  （--改 后面给一串就是**批量改**：这批条目同时改成同一组字段，一次落盘、\n    一条回收记录。值域照旧当场拦 —— 只要有一条会被降级，整批一个字都不落盘。）\n      python forge.py entry <spec> --复制 <id 或 标题> [<id 或 标题> …]\n                                      [--标题 \"…\"] [--到 分组]\n      python forge.py entry <spec> --挪 <id 或 标题> [<id 或 标题> …] [--到 分组]\n      python forge.py entry <spec> --删 <id 或 标题> [<id 或 标题> …]\n      python forge.py entry <spec> --启用|--停用 <id 或 标题> [<id 或 标题> …]\n  （--复制 / --挪 / --删 / --启用 / --停用 后面可以跟一串，一次动多条：\n    一次落盘、一条回收记录，`trash --还原 N` 一次全捞回来。\n    有认不出的名字就**整批停下**，绝不半个批次落盘 —— 半条是最难收拾的。）\n  （--复制 的副本顺着原件排、默认叫「原名（副本）」；--到 分组 能让副本直接落进那个组。\n    复制是加一条、跟 --新 一样不写回收记录 —— 不要了就 --删 掉它。开场白条目不许复制。）\n  （--改 只动内容与偏好；id / 顺序号 / 分组位置一概不动，卡里引用旧 id 的地方不会断）\n  （凡要写一段话的地方，值都可以写成 @文件名 —— 正文太长、带换行或引号时这么写，\n    例：--正文@正文.txt ，或 --正文 @正文.txt ）\n"
+        },
+        {
+          "argv": [
+            "group",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py group <spec> --列\n      python forge.py group <spec> --新 <名> [--父 分组]\n      python forge.py group <spec> --改名 <旧名> <新名>\n      python forge.py group <spec> --删 <名>\n"
+        },
+        {
+          "argv": [
+            "var",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py var <spec> --列\n      python forge.py var <spec> --新对象 <名> [--父 对象] [--说明 \"…\"]\n      python forge.py var <spec> --新 <对象>.<变量> [--类型 number]\n                                      [--初值 1] [--说明 \"…\"]\n      python forge.py var <spec> --改名 <变量 id 或 对象.变量> --成 <新名>\n      python forge.py var <spec> --改名对象 <对象> --成 <新名>\n      python forge.py var <spec> --换对象 <变量 id 或 对象.变量> --到 <对象>\n      python forge.py var <spec> --删 <变量 id 或 对象.变量> [<…> …]\n      python forge.py var <spec> --删对象 <名>\n      python forge.py var <spec> --对齐       把 Zod 对齐另两处\n  （改名一次把**三处**一起挪：面板 / 初值那一格的键 / Zod 那个字段名 ——\n    只改一处，另两处会悄悄悬空。id 不动，按 id 引用的地方不会断。\n    正文里写着旧名字的地方**只报不改** —— 工具不知道那是变量名还是恰好同字的词。\n  --换对象 是名字不动、换它挂在哪个对象下：挂靠关系 / 初值那格 / Zod 那个字段\n    一起搬到新对象那棵子树下，顺带排到新对象末尾。id 同样不动。\n  --删 后面给一串就是批量删：一次落盘、一条回收记录，`trash --还原 N` 一次全捞回来。）\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py regex <spec> --列\n      python forge.py regex <spec> --新 <名> --模式 \"/〔试〕/g\" [--替换 \"…\"]\n                                        [--目标 AiOutput] [--顺序 30]\n      python forge.py regex <spec> --删 <名 或 id>\n      python forge.py regex <spec> --启 <名> / --停 <名>\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py opener <工程> --看              看开场白（正文 / 标记 / 写回没写回）\n      python forge.py opener <工程> --正文@开场白.txt   换正文（末尾的零宽标记自动补齐，改完写回 spec）\n      python forge.py opener <工程> --补齐             只补末尾的零宽标记（少了，建卡界面会静默消失）\n      python forge.py opener <工程> --写回             只写回（不改正文）\n  （工程有界面层时，开场白的真源是 hud/hud.conf.json，spec 里那条是派生物；\n   只有 source/ 的工程（比如 import 进来的单张卡）没有界面层，spec 里那条就是真源，\n   改它不会「改了白改」—— 两种都认。\n    --正文 默认改完顺手写回；想先只改配置，加 --不写回）\n"
+        },
+        {
+          "argv": [
+            "trash",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py trash <工程 或 spec>            看回收站里有什么\n      python forge.py trash <工程 或 spec> --还原 1      把第 1 条放回去（1 = 最近）\n      python forge.py trash <工程 或 spec> --清空\n"
+        },
+        {
+          "argv": [
+            "theme",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "可用主题（5 套）—— 换法：python forge.py theme <名> <工程>\n\n  墨夜     深底浅字 —— 客户端是暗色界面、或者夜里读长文时用这一套。\n         18 个槽 · 对比度 正文 10.0 · 次级 5.0 · 淡字 2.5\n\n  朱砂     朱红描金与方角收边 —— 适合志怪、武侠、庙堂一类题材。\n         18 个槽 · 对比度 正文 11.5 · 次级 5.3 · 淡字 2.3\n\n  羊皮卷   陈纸与旧墨 —— 核心自带的这一套，也是不给主题时的样子。\n         18 个槽 · 对比度 正文 10.9 · 次级 4.7 · 淡字 2.2\n\n  苔原     苔绿与米黄 —— 圆角收边，适合自然、田园、旅记一类题材。\n         18 个槽 · 对比度 正文 10.9 · 次级 4.5 · 淡字 2.1\n\n  霜白     冷白与青灰 —— 干净利落，适合现代题材、都市、科幻。\n         18 个槽 · 对比度 正文 11.0 · 次级 4.5 · 淡字 2.7\n\n"
+        },
+        {
+          "argv": [
+            "diff",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py diff <a.json> <b.json>\n"
+        },
+        {
+          "argv": [
+            "domains",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "ElecKoi 真值域表（来源：反编译 0.2.8 逐字节取证）\n\n  trigger_mode\n      合法值：always / agent_tool\n      缺省  ：always\n      always = 提示词常驻；agent_tool = 由 AI 读取。缺省 always。\n\n  agent_read_strategy\n      合法值：required / keyword / normal\n      缺省  ：normal\n      旧值  ：variable_condition → normal\n      required=必读 / keyword=命中后本轮必读 / normal=选读。旧值 variable_condition 会被显式降级为 normal（源码 normalizeEntry 原文）。\n\n  kind\n      合法值：normal / opening / history_compaction / hidden_tool_timeline\n      缺省  ：normal\n      条目类型。缺省 normal。\n\n  dynamic_mode\n      合法值：standard / ejs_reference\n      缺省  ：standard\n      旧值  ：ejs_controller → standard、single_condition → standard\n      ejs_controller 会被显式降级；single_condition 全 asar 0 次，平台不认识。\n\n  content_mode\n      合法值：plain_text / ejs\n      缺省  ：plain_text\n      正文解释方式。缺省 plain_text。字段通常不写。\n\n  keyword_condition\n      合法值：none / any / all / not_any\n      缺省  ：none\n      多关键词之间的逻辑。空串按 none 处理，无害。\n\n  insert_role\n      合法值：system / user / assistant\n      缺省  ：user\n      正文以谁的口气插入。\n\n平台不读的字段：\n  agent_read_condition —— 全 asar 出现 0 次 —— ElecKoi 根本不读它。它承载的「变量条件加载」意图在 ElecKoi 里不生效。\n\n  插入位置（条目字段 position）：\n        留空 \"\"          不占系统提示词位 —— 关键词命中、或由 AI 选读时才插入（世界书 / 参考类）\n        \"instructions\"  并入系统提示词区 —— 每轮都在（常驻 / 必读类条目用它）\n        卡里在 library.prompt_positions 自定义的位置，也可以写那个位置的 id（本工具不校验）。\n"
+        },
+        {
+          "argv": [
+            "selftest",
+            "--help"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "用法：python forge.py selftest（直接跑即可，参数见下面总表里那一行）\n\nforge.py —— ElecKoi 制卡工具 · 命令行入口\n\n一条命令的用法：\n\n    python forge.py new   <你的卡名>              开一张新卡（抄骨架 + 界面层）\n                              --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n                                                连界面层一起接手一张现成的卡（内容层用它的）\n    python forge.py unpack <卡.json>              卡 -> 可读 spec.yaml\n    python forge.py build  <spec.yaml> [出.json]  spec -> 卡\n    python forge.py check  <文件 或 目录>          校验（值域 + 一致性 + 护栏 + 界面守则）\n    python forge.py entry  <spec> --新 \"标题\"       加一条条目（--列 / 看 / 改 / 复制 / 挪 / 删；都能一次给一串）\n    python forge.py name   <工程 或 spec> --改 新卡名  改卡名（spec 与界面配置一起改）\n    python forge.py opener <工程> --正文@开场白.txt  换开场白（末尾那三个零宽标记工具负责）\n    python forge.py group  <spec> --新 <名>        加一个分组（--列 / --改名 / --删）\n    python forge.py var    <spec> --新 玩家.声望    加一个变量（三处一次写全；--改名 / --换对象 / --删 可给一串）\n    python forge.py regex  <spec> --新 <名> --模式 \"…\"   加一条正则（--列 / --删 / --启 / --停）\n    python forge.py trash  <工程>                  回收站：删掉的东西都在这儿，能放回去\n    python forge.py hud    <工程 或 spec>          组装卡内 HUD（出 预览.html）\n    python forge.py analyze <卡文件> ...           拆解报告（酒馆 / ElecKoi 都认）\n    python forge.py to-eleckoi <酒馆卡> <出.yaml>  酒馆卡 -> ElecKoi 规格\n    python forge.py to-tavern <ElecKoi卡> <出.json> ElecKoi 卡 -> 酒馆 V2 卡\n    python forge.py png    <卡.json 或 spec.yaml> [-o 出.png] [--图 封面.png]\n                                                出「可以当图片导入」的卡（.card.png）\n                                                不加 --图 就现画一张渐变封面\n    python forge.py preset <卡.json 或 spec.yaml> [-o 出.preset.json] [--png [出.png]]\n                                                把卡里的设定搬成一份 ElecKoi「创作预设」\n                                                （--名 改预设名 · --项 只搬这几条 · --png 一并出图）\n    python forge.py plan   [<卡.json 或 spec.yaml>] [-o 出.md]\n                                                写卡之前先落一份规划书；给了卡就从卡反推\n                                                （`plan --查 规划书.md` 查缺什么）\n    python forge.py lint   [<卡 或 文稿 或 ->] [-o 报告.md]\n                                                正文体检（防八股）：只查句式骨架，不查词\n                                                （`lint --标准` 打判据表；`-` 读标准输入）\n    python forge.py manual <spec 或 卡> [-o 出.html]  生成人读手册（同时出索引）\n    python forge.py index  <spec 或 卡> [-o 出.md]    生成给 AI 的导航索引\n    python forge.py coach  [--到 <目录>]            出「怎么做一张卡」：给 AI 的规程 + 给 ElecKoi 的向导卡\n    python forge.py guide  [--节 <名>|--篇 <名>|--对话 <名>|--全文]  打印制卡规程（给 AI 按需取：不给参数＝目录）\n    python forge.py make   <卡稿.yaml> [--到 <目录>]  照一份卡稿一次落成整张卡（--示例 / --模板 / --试 / --覆盖）\n    python forge.py mods  [--工程 <工程>]          列出模块（带版本；给工程则标出接没接）\n    python forge.py add    <模块> <spec.yaml>      给卡挂上一块现成的机制\n    python forge.py drop   <模块> <spec.yaml>      撤掉一块机制（add 的反操作，按账本精确撤）\n    python forge.py theme  [<主题名> <工程>]        列出 / 换皮肤（只覆盖颜色槽，不碰版式）\n    python forge.py theme  --导出 <工程>            把这张卡的配色导成一份皮肤文件（可发人）\n    python forge.py theme  --导入 <皮肤.json> <工程> 套上别人给的皮肤（--装 则收进主题库）\n    python forge.py bundle <工程> [-o 出.zip]       把工程打成一个包（分发用）\n    python forge.py import <包.zip 或 卡.json>       收包：落到本地成一张能接着改的工程\n    python forge.py diff   <a.json> <b.json>      语义比对\n    python forge.py domains                       打印真值域表\n    python forge.py selftest                      自检：四十二项，含负向用例与往返比对\n\n沙箱友好模式：任何命令后面加 `--沙箱`（或设 `FORGE_SANDBOX=1`），\nforge 就只创建、只覆盖 —— 不删文件、不改名。给「在受限沙箱里跑」的场合用\n（ElecKoi 里的 AI 跑命令就是这种环境：能读能写，但不许删、不许改名）。\n代价是丢掉原子落盘，所以**能用普通模式就用普通模式**。\n\n设计约定：**spec.yaml 是唯一真相，card.json 是派生物。只手改 spec。**\n界面那一层住在本工程里（`hud/` 与 `<卡>.spec.yaml` 同处一个工程目录）。\n\n长正文这么写：凡是要写一段话的参数（`--正文` / `--标题` / `--说明` / `--模式` / `--替换`…）\n值都可以写成 `@文件名`，从那个文件读 —— 换行、引号、多长都不必跟 shell 的转义规则搏斗。\n例：`python forge.py entry <spec> --改 \"核心 · 世界总纲\" --正文@世界总纲.txt`。\n读一条现在写了什么：`python forge.py entry <spec> --看 \"id 或 标题\"`。\n查一个命令怎么用：`python forge.py <命令> --help`（例：`python forge.py entry --help`）。\n\n"
+        }
+      ]
+    },
+    {
+      "名": "建卡 · 只读 · 写盘 · 返工",
+      "步": [
+        {
+          "argv": [
+            "new",
+            "探卡",
+            "--到",
+            ".",
+            "--id",
+            "fix"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "组装完成（卡名：探卡 · 模块：没接）：\n  out/replacement_card.txt            34713 字符\n  out/replacement_create.txt          34778 字符\n  out/view_card.html                  34696 字符\n  out/view_create.html                34761 字符\n  预览页                          188189 字符  -> <工作>\\探卡\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 2 条（conf 2 条 · 非 conf 来源 0 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 34778 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 34713 字符\n组装完成（卡名：探卡 · 模块：没接）：\n  out/replacement_card.txt            34713 字符\n  out/replacement_create.txt          34778 字符\n  out/view_card.html                  34696 字符\n  out/view_create.html                34761 字符\n  预览页                          188189 字符  -> <工作>\\探卡\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 2 条（conf 2 条 · 非 conf 来源 0 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 34778 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 34713 字符\n已开新卡 -> <工作>\\探卡\n  抄过来 7 个文件 · 改写 6 个 · 改名 1 个\n  卡名 探卡 · id 前缀 fix · HUD 全局名 FIX_HUD\n  条目 5 条（含开场白）· 变量 10 个\n\n下一步：\n  1. 打开 <工作>\\探卡\\预览.html 看看默认长什么样\n  2. 改 source\\探卡.spec.yaml\n  3. python ../../../forge.py check \"<工作>\\探卡\\source\\探卡.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "build",
+            "探卡/source/探卡.spec.yaml",
+            "探卡/成品/探卡.card.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已打包 -> 探卡/成品/探卡.card.json\n  条目 5 · 分组 3 · 变量 10 · 正则 2\n"
+        },
+        {
+          "argv": [
+            "name",
+            "探卡",
+            "--看"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "卡名 · 现状\n────────────────────────────────────────────────────────\n  工程          <工作>\\探卡\n  spec          <工作>\\探卡\\source\\探卡.spec.yaml\n  目录名        探卡\n  spec 里的名字 探卡\n  界面配置      <工作>\\探卡\\hud\\hud.conf.json\n  配置里的卡名  探卡\n\n  两处一致 ✔\n"
+        },
+        {
+          "argv": [
+            "check",
+            "探卡/source/探卡.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "==========================================================================\n对象    : 探卡.spec.yaml\n卡片    : 探卡\n条目 5 · 分组 3 · 变量 10 · 对象 4 · 正则 2\n常驻    : 1 条 / 162 字（护栏 3000 字）\n触发方式: agent_tool=3 · always=2\n读取策略: normal=3 · keyword=2\n插入角色: system=3 · assistant=1 · user=1\n--------------------------------------------------------------------------\n  ✔ 没有发现问题\n--------------------------------------------------------------------------\n结论：0 个错误 · 0 个警告 · 0 条提示\n  → 可以交付。\n"
+        },
+        {
+          "argv": [
+            "check",
+            "探卡"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "==========================================================================\n批量校验 · 2 个文件\n==========================================================================\n  ✔ 探卡.spec.yaml                             ok\n  ✔ 探卡.card.json                             ok\n--------------------------------------------------------------------------\n2 个文件 · 0 个错误\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "探卡/source/探卡.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  id                       标题             分组  触发        策略     字数  关键词          启用\n  fixed-opening-assistant  AI角色开场白     —     always      normal     34  —               是  \n  fix-world-core           核心 · 世界总纲  世界  always      normal    162  —               是  \n  fix-rule-check           规则 · 判定      规则  agent_tool  keyword    95  判定,掷骰,检定  是  \n  fix-ref-names            名册 · 常用名字  名册  agent_tool  normal     86  —               是  \n  fix-opt-pressure         可选 · 时局压力  世界  agent_tool  keyword   117  时局,压力,局势  是  \n\n  共 5 条。改一条：entry --改 <id 或 标题> --正文 \"…\" [--提示 \"…\"]\n"
+        },
+        {
+          "argv": [
+            "group",
+            "探卡/source/探卡.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  id             名    父             条目数\n  grp-fix-world  世界  —                   2\n  grp-fix-rules  规则  —                   1\n  grp-fix-ref    名册  grp-fix-rules       1\n"
+        },
+        {
+          "argv": [
+            "var",
+            "探卡/source/探卡.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  对象      变量      类型     初值     id                   \n  世界设定  压力源    boolean  \"false\"  variable-fix-pressure\n  世界设定  叙事尺度  string   \"标准\"   variable-fix-scale   \n  玩家      姓名      string   \"\"       variable-fix-name    \n  玩家      性别      string   \"\"       variable-fix-sex     \n  玩家      种族      string   \"\"       variable-fix-race    \n  玩家      等级      number   \"1\"      variable-fix-level   \n  玩家      状态      string   \"正常\"   variable-fix-status  \n  玩家      钱币      number   \"0\"      variable-fix-coin    \n  玩家      背包      array    \"[]\"     variable-fix-bag     \n  存档      角色      string   \"\"       variable-fix-archive \n\n  共 10 个。把 Zod 对齐另两处：python forge.py var \"<工作>\\探卡\\source\\探卡.spec.yaml\" --对齐\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "探卡/source/探卡.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "      顺序  名                 作用      模式       \n  开    10  建卡界面 · 羊皮卷  AiOutput  /\\u200B{3}/\n  开    20  面板 · 羊皮卷      AiOutput  〔面板〕   \n\n  共 2 条。ElecKoi 是按 order 从小到大依次跑的。\n"
+        },
+        {
+          "argv": [
+            "trash",
+            "探卡/source/探卡.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "回收站是空的（<工作>\\探卡\\.forge/回收站 下没有东西）。\n"
+        },
+        {
+          "argv": [
+            "plan",
+            "探卡/成品/探卡.card.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "# 规划书 · 探卡\n\n> 开工前把它填满。`python forge.py plan --查 本文件.md` 会告诉你还缺什么。\n> 填的是**想法**，不是字段名 —— 卡怎么写是下一步的事。\n\n## 一、一句话是什么\n\n- （反推不出来 —— 看下面的条目，自己补一句）\n## 二、调子与体裁\n\n- （自己补）\n## 三、世界\n\n- 这个世界没有的东西（口径卡）：自己补一句\n- 设定库分组：世界、规则、名册\n- 世界观类条目：核心 · 世界总纲\n## 四、玩家是谁\n\n- （自己补：开场白里能看出一点）\n## 五、角色名册\n\n- AI角色开场白 —— **弱点**：<补>；**腔调**：<补>\n- 名册 · 常用名字 —— **弱点**：<补>；**腔调**：<补>\n## 六、故事与推进\n\n- 条目里的故事类：（无）\n## 七、要记的状态\n\n- 变量 10 条 —— 逐条确认「初值」与「谁更新」\n\n## 八、玩法要哪几条\n\n- （自己补；现成机制见 `python forge.py guide --篇 玩法`）\n## 九、界面与交付\n\n- 卡内正则 2 条（可能含界面层，`hud` 管）\n- 交付：手机上导入要 `png` 出 `.card.png`；想让 AI 也拿到一份，再出 `preset`\n## 附 · 现状清单（自动生成 · 别手改）\n\n- 条目 **5** 条 · 分组 **3** 组 · 变量 **10** · 正则 **2**\n- 常驻 **2** 条（共 196 字）—— 只降不涨\n- 开场白 **1** 条\n### 条目全表\n\n| 标题 | 分组 | 触发 | 策略 | 字数 |\n|---|---|---|---|---|\n| AI角色开场白 | — | always | normal | 34 |\n| 核心 · 世界总纲 | 世界 | always | normal | 162 |\n| 规则 · 判定 | 规则 | agent_tool | keyword | 95 |\n| 名册 · 常用名字 | 名册 | agent_tool | normal | 86 |\n| 可选 · 时局压力 | 世界 | agent_tool | keyword | 117 |\n"
+        },
+        {
+          "argv": [
+            "lint",
+            "探卡/source/探卡.spec.yaml"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "==================================================================\n正文体检 · 探卡/source/探卡.spec.yaml · 共 379 汉字 · 按一轮正文判\n==================================================================\n  ✔ 提示冒号＋空行接列表  无\n  ✔ 对立句式  0 次 · 0.00/千字（一轮限 1 次）\n  ✗ 破折号  3 处 · 7.92/千字\n  ✔ 段首序数词  0.000/千字（限 0.19）· 0 处\n  ✔ 相邻句同构  0 处 · 0.0/百句\n  ✔ 三句排比  0 处\n------------------------------------------------------------------\n  硬判据不过：破折号 3 处\n  改法：把那句拆成两句口语、或换个说法 —— 别加词，加词只会更像模板。\n"
+        },
+        {
+          "argv": [
+            "mods"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "可用模块（5 个）—— 接法：python forge.py add <名> <你的 spec.yaml>\n\n  代笔     v1.0.0    建卡器上每一栏都多一对「AI 代笔 / 取回」扣子：请求走对话那条路发出去，AI 照【代笔 · 栏位名】回一块，界面自动切出来搬进那一栏。\n         id=ai · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量与栏位（骨架里已有）：扣子摆几对、请求里要什么、回话怎么切，全从 hud.CONFIG.fields 现读\n         需要：宿主至少通一条送信的路：input.set（只填不送，默认）或 chat.send（直接发）；两条都不通时退回「自己复制给 AI」\n\n  备份     v1.0.0    在建卡器那一页多一块「档案备份」：一键把玩家那份档案（变量里封缄过的，加上界面这一份草稿）导出成一段文本 —— 同时抄进剪贴板、并存进这一局的「存档」变量；封缄时也会顺手存一份 —— 重启回来按「从存档取回」就能把表单填回来，换了机器才靠抄走的那段文本。\n         id=backup · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「玩家」（骨架里已有）：导出与还原的都是它那一棵树，不另加变量\n         需要：变量树里那个「给机器用的」存档位（骨架里已有：对象「存档」＋ 它的变量「角色」，initial_state 与 schema_code 里也各有一处）：**这是「过夜」的唯一落脚点** ——…\n         需要：核心的初值 DEFAULTS 里也要有那个对象（骨架里已有）：面板是按 fillState 之后的对象列表画的，DEFAULTS 里少了它，这一局还没存过的时候面板上就不会出现那一行「机器位…\n         需要：建卡器（hud.core.js 的 create 视图）：模块只往它里面加一块，核心一个字不动\n         需要：核心的封缄挂载点 afterSubmit（骨架里已有）：封缄那一笔写落定之后，核心会叫模块这一处 ——「备份」靠它在封缄的同一口气里也存一份。**少了它，写「存档」的时机就只剩「按导出」一处…\n\n  尺度     v1.0.0    把「叙事尺度」那三档（克制 / 标准 / 放开）与「时局压力」开关背后的意思写死 —— 一条给 AI 读的常驻条目，外加建卡器与面板上的一句人话。\n         id=scale · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「世界设定 · 叙事尺度」「世界设定 · 压力源」：骨架里已经有，不用另加\n         需要：骨架界面上那两颗档位扣子（叙事尺度 / 时局压力）：已有，模块只补说明\n\n  点数池   v1.0.0    给六维配一笔预算：可分配 = 等级 × 每级点数 ＋ 永久奖励，界面实时算「已用 / 剩余」；一颗「交给命运」按职业倾向一次撒开，临时加成单列、不进池子。\n         id=pool · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量：六条数字栏当六维（默认 力量/敏捷/体质/智力/感知/魅力）、一条等级栏（默认「等级」）、一条永久奖励栏（默认「永久奖励」）、一条对象栏（默认「加成」，六个数字）、一条职业栏（默认「职…\n         需要：骨架里那颗「等级」数字栏：模块拿它算池子大小；认不出的值（空、乱写、0）一律按 1 级算\n         需要：想换六维的名字 / 每级几点 / 职业名册：在 hud.core.js 的 CONFIG 里加一个 pool 块（样例写在 点数池.js 顶上），模块一个字都不用改\n\n  骰子     v1.0.0    把正文里那行 〔骰·…〕 纯文本渲成带边框的骰子框 —— 对抗、带 DC、兜底共七条正则，按结果分色；另顶掉「规则 · 判定」那一条，换成一套讲清格式的判定规则。\n         id=dice · 并进内容：条目+正则\n         需要：什么都不用加：不接变量、不接脚本，只并七条正则、替换一条条目\n\n"
+        },
+        {
+          "argv": [
+            "analyze",
+            "探卡/成品/探卡.card.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "==============================================================================\n文件      : 探卡.card.json\n大小      : 110.4 KB\n来源      : JSON 文件\n识别为    : ElecKoi 角色卡\n------------------------------------------------------------------------------\n  名字                         探卡\n  设定库                        5 条 / 3 组\n  变量                         4 个对象 / 10 个变量\n  正则                         2 条\n  开场白                        31 字（末尾零宽标记 3 个）\n  设定库正文合计 494 字 ≈ 137 token\n\n"
+        },
+        {
+          "argv": [
+            "domains"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "ElecKoi 真值域表（来源：反编译 0.2.8 逐字节取证）\n\n  trigger_mode\n      合法值：always / agent_tool\n      缺省  ：always\n      always = 提示词常驻；agent_tool = 由 AI 读取。缺省 always。\n\n  agent_read_strategy\n      合法值：required / keyword / normal\n      缺省  ：normal\n      旧值  ：variable_condition → normal\n      required=必读 / keyword=命中后本轮必读 / normal=选读。旧值 variable_condition 会被显式降级为 normal（源码 normalizeEntry 原文）。\n\n  kind\n      合法值：normal / opening / history_compaction / hidden_tool_timeline\n      缺省  ：normal\n      条目类型。缺省 normal。\n\n  dynamic_mode\n      合法值：standard / ejs_reference\n      缺省  ：standard\n      旧值  ：ejs_controller → standard、single_condition → standard\n      ejs_controller 会被显式降级；single_condition 全 asar 0 次，平台不认识。\n\n  content_mode\n      合法值：plain_text / ejs\n      缺省  ：plain_text\n      正文解释方式。缺省 plain_text。字段通常不写。\n\n  keyword_condition\n      合法值：none / any / all / not_any\n      缺省  ：none\n      多关键词之间的逻辑。空串按 none 处理，无害。\n\n  insert_role\n      合法值：system / user / assistant\n      缺省  ：user\n      正文以谁的口气插入。\n\n平台不读的字段：\n  agent_read_condition —— 全 asar 出现 0 次 —— ElecKoi 根本不读它。它承载的「变量条件加载」意图在 ElecKoi 里不生效。\n\n  插入位置（条目字段 position）：\n        留空 \"\"          不占系统提示词位 —— 关键词命中、或由 AI 选读时才插入（世界书 / 参考类）\n        \"instructions\"  并入系统提示词区 —— 每轮都在（常驻 / 必读类条目用它）\n        卡里在 library.prompt_positions 自定义的位置，也可以写那个位置的 id（本工具不校验）。\n"
+        },
+        {
+          "argv": [
+            "manual",
+            "探卡/source/探卡.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已生成手册 -> <工作>\\探卡\\文档\\探卡.手册.html\n  条目 5 · 分组 3 · 变量 10 · 对象 4 · 正则 2\n  体检：0 错 · 0 警告\n已生成索引 -> <工作>\\探卡\\文档\\探卡.索引.md\n"
+        },
+        {
+          "argv": [
+            "index",
+            "探卡/source/探卡.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已生成索引 -> <工作>\\探卡\\文档\\探卡.索引.md\n"
+        },
+        {
+          "argv": [
+            "hud",
+            "探卡"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "组装完成（卡名：探卡 · 模块：没接）：\n  out/replacement_card.txt            34713 字符\n  out/replacement_create.txt          34778 字符\n  out/view_card.html                  34696 字符\n  out/view_create.html                34761 字符\n  预览页                          188189 字符  -> <工作>\\探卡\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "探卡",
+            "--看"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "开场白 · 探卡\n──────────────────────────────────────────────────────────────\n配置文件    <工作>\\探卡\\hud\\hud.conf.json\n挂到条目    fixed-opening-assistant\n字数        29（不含末尾标记）\n零宽标记    末尾 3 个 ✔\n尖括号      无 ✔\n方案        1 个：建卡 · 控件版（写回后共用这一份正文）\n写回状态    与 spec 一致 ✔\n\n正文：\n欢迎来到这张探卡卡。\n\n在故事开始之前，请先写下你的名字。\n\n\n\n（末尾那 3 个看不见的零宽空格就是它 —— 建卡界面靠它触发）\n"
+        },
+        {
+          "argv": [
+            "coach"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "① 给电脑上的 AI 读的规程\n   <工作>\\向导\\AI制卡规程.md（25513 字）\n   <工作>\\向导\\SKILL.md（门牌：工具在哪 + 规矩 + 指向规程；整个目录拷进 skills/ 就是技能）\n   <工作>\\向导\\示例卡稿.yaml（一张能直接落成绿卡的完整卡稿 —— 照着改比对着空文件想快得多）\n② 给 ElecKoi 里的 AI 读的卡\n  条目 22 · 分组 4 · 变量 0 · 正则 0\n  成品卡 / 手册 / 索引都跟着这次内容重出了（不会留旧版）\n   <工作>\\向导\\制卡助手\\source\\制卡助手.spec.yaml\n   <工作>\\向导\\制卡助手\\成品\\制卡助手.card.json\n\n卡直接导入 ElecKoi 用；规程丢给 Claude Code / Codex 这类能跑命令的 AI 用。\n"
+        },
+        {
+          "argv": [
+            "guide"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "# ElecKoi 制卡规程 · 目录\n\n取一段：`python forge.py guide --节 <名>` / `--篇 <名>` / `--对话 <名>`；全文：`--全文`。\n\n## 节（按顺序做）\n  一、开工流程（照这个顺序做）\n  二、手上已经有一张卡（不是从零开始）\n  三、开场白（别去改任何文件，用 opener）\n  四、把卡拆开改\n  五、内容怎么写（方法论九篇）\n  六、验收标准（不满足就不要交付）\n  七、交付怎么说\n  八、完整走一遍（照这个顺序抄）\n  九、红线 · 会被静默吃掉的写法\n\n## 篇（方法论 · 写内容之前先读「必读」的）\n  [必读] 机制 · 一张卡由什么构成 —— 开始做一张新卡、或玩家问「一张卡都有什么」时读这条。\n  [关键词] 机制 · 条目触发方式怎么选 —— 玩家问到条目怎么配、为什么某条不生效时读这条。\n  [必读] 预算 · 每句话都在跟聊天记录抢位置 —— 写任何内容之前先读这条；也是玩家抱怨「AI 忘了刚才聊的」时的第一诊断。\n  [关键词] 世界 · 世界观设计清单 —— 玩家开始讲世界、地点、势力、历史时读这条。\n  [关键词] 故事 · 主线、冲突与节奏 —— 玩家开始讲剧情走向、冲突、阶段推进时读这条。\n  [关键词] 角色 · 角色条目拆分法 —— 玩家开始讲某个角色、或要加 NPC 时读这条。\n  [关键词] 写法 · 怎么把角色写活 —— 具体落笔写条目正文、开场白、示例对话时读这条。\n  [关键词] 变量 · 什么时候需要变量 —— 玩家提到好感度、金钱、时间、进度这类会变的数字时读这条。\n  [关键词] 界面 · 卡内界面要不要做 —— 玩家提到界面、面板、开局建卡器、美化时读这条。\n  [关键词] 玩法 · 让玩家觉得「被记得」 —— 玩家说「好玩」「记不住」「没进展」「NPC 像布景」，或要做长期连载卡时读这条。\n  [关键词] 玩法 · 世界要会动，也要能查账 —— 玩家要「随机」「生成」「掷骰」「重开一次」，或要把卡做成长线世界时读这条。\n  [关键词] 玩法 · 谁可以知道什么 —— 卡里要藏秘密、要写阴谋线，或者你要判断「这个 NPC 现在能不能知道这件事」时读这条。\n  [关键词] 玩法 · 给玩家的选择要像真的 —— 玩家要「能选」「多分支」「别老是同意/拒绝」，或你要写一个封闭场景（一间屋、一个晚上）时读这条。\n  [关键词] 前端 · 小手机不是一条正则 —— 玩家要小手机 / 抽屉面板 / 悬浮球 / 状态栏，或要写卡内前端时读这条。\n  [关键词] 前端 · 换宿主最容易死在哪 —— 界面写完了但没反应 / 显示成空 / 变量是 `--` / 只在你自己造的仿真里好使时读这条。\n  [关键词] 界面 · EJS 是这门卡的编程语言 —— 要写会自己算的界面（状态栏变色、选项卡、按变量决定显示什么）时读这条。\n  [关键词] 参考 · 哪些资料值得看 —— 想知道某种做法别人是怎么做的、或要一条能点开的出处时读这条。\n\n## 对话段（在 ElecKoi 里对着玩家做卡时读：怎么问、怎么交）\n  [总则] 你是制卡师 —— 身份与边界（不许替玩家编设定）\n  [访谈] 一层一层问 —— 一次问什么、问到什么程度算够、什么时候给草稿\n  [交付] 你输出什么 —— 每定完一层交给玩家什么、怎么收尾\n  [红线] 会被静默吃掉的写法（与第九节同一段）\n"
+        },
+        {
+          "argv": [
+            "diff",
+            "探卡/成品/探卡.card.json",
+            "探卡/成品/探卡.card.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "✔ 两张卡语义完全一致\n"
+        },
+        {
+          "argv": [
+            "new",
+            "二号",
+            "--到",
+            ".",
+            "--id",
+            "fix2"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "组装完成（卡名：二号 · 模块：没接）：\n  out/replacement_card.txt            34718 字符\n  out/replacement_create.txt          34783 字符\n  out/view_card.html                  34701 字符\n  out/view_create.html                34766 字符\n  预览页                          188215 字符  -> <工作>\\二号\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 2 条（conf 2 条 · 非 conf 来源 0 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 34783 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 34718 字符\n组装完成（卡名：二号 · 模块：没接）：\n  out/replacement_card.txt            34718 字符\n  out/replacement_create.txt          34783 字符\n  out/view_card.html                  34701 字符\n  out/view_create.html                34766 字符\n  预览页                          188215 字符  -> <工作>\\二号\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 2 条（conf 2 条 · 非 conf 来源 0 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 34783 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 34718 字符\n已开新卡 -> <工作>\\二号\n  抄过来 7 个文件 · 改写 6 个 · 改名 1 个\n  卡名 二号 · id 前缀 fix2 · HUD 全局名 FIX2_HUD\n  条目 5 条（含开场白）· 变量 10 个\n\n下一步：\n  1. 打开 <工作>\\二号\\预览.html 看看默认长什么样\n  2. 改 source\\二号.spec.yaml\n  3. python ../../../forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--新",
+            "自检 · 新条目",
+            "--分组",
+            "世界",
+            "--模板",
+            "关键词",
+            "--正文",
+            "占位正文",
+            "--关键词",
+            "自检,试"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已加条目「自检 · 新条目」\n  id      fix2-entry-<hex8>\n  模板    关键词（触发 agent_tool · 策略 keyword · 角色 user）\n  分组    世界\n  位置    （不占提示词位 —— 关键词命中或 AI 选读时才插入）\n  ⚠ 这条由 AI 读取，却没写 agent_selection_hint（什么时候读我）——AI 只在目录里看到路径、标题、策略、读取提示这四项，缺这一项它就不知道何时该读。用 entry --改 \"标题\" --提示 '什么时候读我' 补。\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  id                       标题             分组  触发        策略     字数  关键词          启用\n  fixed-opening-assistant  AI角色开场白     —     always      normal     34  —               是  \n  fix2-world-core          核心 · 世界总纲  世界  always      normal    162  —               是  \n  fix2-rule-check          规则 · 判定      规则  agent_tool  keyword    95  判定,掷骰,检定  是  \n  fix2-ref-names           名册 · 常用名字  名册  agent_tool  normal     86  —               是  \n  fix2-opt-pressure        可选 · 时局压力  世界  agent_tool  keyword   117  时局,压力,局势  是  \n  fix2-entry-<hex8>      自检 · 新条目    世界  agent_tool  keyword     4  自检,试         是  \n\n  共 6 条。改一条：entry --改 <id 或 标题> --正文 \"…\" [--提示 \"…\"]\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--改",
+            "自检 · 新条目",
+            "--正文",
+            "改过的正文",
+            "--提示",
+            "问起自检时读这条"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已改条目「自检 · 新条目」\n  正文、读取提示\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--看",
+            "自检 · 新条目"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "条目 · 自检 · 新条目\n──────────────────────────────────────────────────────────────\nid          fix2-entry-<hex8>\n分组        世界\n类型        normal\n启用        是\n顺序        5\n触发方式    agent_tool\n读取策略    keyword\n动态模式    standard\n内容模式    \n关键词      自检、试\n关键词条件  none\n读取提示    问起自检时读这条\n插入位置    （无）\n插入角色    user\n图标        chat\n\n正文（5 字）：\n改过的正文\n\n改这条： python forge.py entry <spec> --改 \"自检 · 新条目\" --正文@新正文.txt\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--停用",
+            "自检 · 新条目"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已停用 1 条\n  · 自检 · 新条目\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--启用",
+            "自检 · 新条目"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已启用 1 条\n  · 自检 · 新条目\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--复制",
+            "自检 · 新条目",
+            "--标题",
+            "自检 · 副本",
+            "--到",
+            "世界"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已复制 1 条\n  · 自检 · 新条目 -> 「自检 · 副本」（在「世界」下）\n  （顺着原件排 · 顺序号在末尾 · 不要了就 python forge.py entry <spec> --删 \"自检 · 副本\"）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--挪",
+            "自检 · 副本",
+            "--到",
+            "规则"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已把 1 条挪到 规则\n  · 自检 · 副本\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "二号/source/二号.spec.yaml",
+            "--删",
+            "自检 · 副本"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已删 1 条\n  · 自检 · 副本（5 字）\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "group",
+            "二号/source/二号.spec.yaml",
+            "--新",
+            "自检组",
+            "--父",
+            "世界"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已加分组「自检组」（父：世界）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "group",
+            "二号/source/二号.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  id                 名      父              条目数\n  grp-fix2-world     世界    —                    3\n  grp-fix2-rules     规则    —                    1\n  grp-fix2-ref       名册    grp-fix2-rules       1\n  fix2-grp-<hex8>  自检组  grp-fix2-world       0\n"
+        },
+        {
+          "argv": [
+            "group",
+            "二号/source/二号.spec.yaml",
+            "--改名",
+            "自检组",
+            "更新组"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "分组「自检组」改名成「更新组」\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "group",
+            "二号/source/二号.spec.yaml",
+            "--删",
+            "更新组"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已删分组「更新组」\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--新对象",
+            "面板",
+            "--说明",
+            "自检用的对象"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已加变量对象「面板」\n  · initial_state 里补上「面板: {}」\n  · Zod 里补上「面板: z.object({})」\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--新",
+            "面板.声望",
+            "--类型",
+            "number",
+            "--初值",
+            "5"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已加变量「面板.声望」（number）\n  · initial_state 里写上「面板.声望 = 5」\n  · Zod 里补上「声望: z.number()」\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "  对象      变量      类型     初值     id                    \n  世界设定  压力源    boolean  \"false\"  variable-fix2-pressure\n  世界设定  叙事尺度  string   \"标准\"   variable-fix2-scale   \n  玩家      姓名      string   \"\"       variable-fix2-name    \n  玩家      性别      string   \"\"       variable-fix2-sex     \n  玩家      种族      string   \"\"       variable-fix2-race    \n  玩家      等级      number   \"1\"      variable-fix2-level   \n  玩家      状态      string   \"正常\"   variable-fix2-status  \n  玩家      钱币      number   \"0\"      variable-fix2-coin    \n  玩家      背包      array    \"[]\"     variable-fix2-bag     \n  存档      角色      string   \"\"       variable-fix2-archive \n  面板      声望      number   \"5\"      variable-fix2-<hex8>\n\n  共 11 个。把 Zod 对齐另两处：python forge.py var \"<工作>\\二号\\source\\二号.spec.yaml\" --对齐\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--改名",
+            "面板.声望",
+            "--成",
+            "名望"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "变量「面板.声望」改名为「名望」\n  三处一起挪：面板 ✓ · 初值 ✓ · Zod ✓\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--换对象",
+            "面板.名望",
+            "--到",
+            "玩家"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "变量「面板.名望」挪到「玩家」下\n  一起挪的：对象表 ✓ · 初值 ✓ · Zod ✓ · 排序 → 末尾（order 8）\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--删",
+            "面板.名望"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 没有变量「面板.名望」。\n"
+        },
+        {
+          "argv": [
+            "var",
+            "二号/source/二号.spec.yaml",
+            "--删对象",
+            "面板"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已删变量对象「面板」（一起收走 0 个变量、0 个子对象）\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "二号/source/二号.spec.yaml",
+            "--新",
+            "自检正则",
+            "--模式",
+            "/〔自检〕/g",
+            "--替换",
+            "<b>$1</b>",
+            "--目标",
+            "AiOutput",
+            "--顺序",
+            "30"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已加正则「自检正则」\n  /〔自检〕/g\n  顺序 30 · 作用 AiOutput\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "二号/source/二号.spec.yaml",
+            "--列"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "      顺序  名                 作用      模式       \n  开    10  建卡界面 · 羊皮卷  AiOutput  /\\u200B{3}/\n  开    20  面板 · 羊皮卷      AiOutput  〔面板〕   \n  开    30  自检正则           AiOutput  /〔自检〕/g\n\n  共 3 条。ElecKoi 是按 order 从小到大依次跑的。\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "二号/source/二号.spec.yaml",
+            "--停",
+            "自检正则"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "正则「自检正则」已停用\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "二号/source/二号.spec.yaml",
+            "--启",
+            "自检正则"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "正则「自检正则」已启用\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "二号/source/二号.spec.yaml",
+            "--删",
+            "自检正则"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已删正则「自检正则」\n  · 这一份在回收站里，能还原（python forge.py trash --还原 1）\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "trash",
+            "二号/source/二号.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "    1  删了正则「自检正则」\n        <时间> · 正则 · 1 项\n    2  删了变量对象「面板」连它下面 0 个变量\n        <时间> · 变量对象 · 3 项\n    3  变量「面板.名望」挪到「玩家」下\n        <时间> · 变量 · 1 项\n    4  变量「面板.声望」改名成「名望」\n        <时间> · 变量 · 1 项\n    5  删了分组「更新组」\n        <时间> · 分组 · 1 项\n    6  删了 1 条（自检 · 副本）\n        <时间> · 条目 · 1 项\n    7  1 条挪到「规则」\n        <时间> · 条目 · 1 项\n    8  1 条启用\n        <时间> · 条目字段 · 1 项\n    9  1 条停用\n        <时间> · 条目字段 · 1 项\n   10  改了条目「自检 · 新条目」的 正文、读取提示\n        <时间> · 条目字段 · 1 项\n\n  放回去： python forge.py trash \"二号/source/二号.spec.yaml\" --还原 1\n"
+        },
+        {
+          "argv": [
+            "trash",
+            "二号/source/二号.spec.yaml",
+            "--还原",
+            "1"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已放回：删了正则「自检正则」\n  · 正则「自检正则」\n\n下一步： python forge.py check \"<工作>\\二号\\source\\二号.spec.yaml\"\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "二号",
+            "--看"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "开场白 · 二号\n──────────────────────────────────────────────────────────────\n配置文件    <工作>\\二号\\hud\\hud.conf.json\n挂到条目    fixed-opening-assistant\n字数        29（不含末尾标记）\n零宽标记    末尾 3 个 ✔\n尖括号      无 ✔\n方案        1 个：建卡 · 控件版（写回后共用这一份正文）\n写回状态    与 spec 一致 ✔\n\n正文：\n欢迎来到这张二号卡。\n\n在故事开始之前，请先写下你的名字。\n\n\n\n（末尾那 3 个看不见的零宽空格就是它 —— 建卡界面靠它触发）\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "二号",
+            "--补齐"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "末尾正好 3 个零宽标记 —— 不用补。\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "二号",
+            "--写回"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "组装完成（卡名：二号 · 模块：没接）：\n  out/replacement_card.txt            34718 字符\n  out/replacement_create.txt          34783 字符\n  out/view_card.html                  34701 字符\n  out/view_create.html                34766 字符\n  预览页                          188215 字符  -> <工作>\\二号\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 3 条（conf 2 条 · 非 conf 来源 1 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 34783 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 34718 字符\n    order=30  自检正则                     pattern=/〔自检〕/g        替换 9 字符\n"
+        },
+        {
+          "argv": [
+            "theme"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "可用主题（5 套）—— 换法：python forge.py theme <名> <工程>\n\n  墨夜     深底浅字 —— 客户端是暗色界面、或者夜里读长文时用这一套。\n         18 个槽 · 对比度 正文 10.0 · 次级 5.0 · 淡字 2.5\n\n  朱砂     朱红描金与方角收边 —— 适合志怪、武侠、庙堂一类题材。\n         18 个槽 · 对比度 正文 11.5 · 次级 5.3 · 淡字 2.3\n\n  羊皮卷   陈纸与旧墨 —— 核心自带的这一套，也是不给主题时的样子。\n         18 个槽 · 对比度 正文 10.9 · 次级 4.7 · 淡字 2.2\n\n  苔原     苔绿与米黄 —— 圆角收边，适合自然、田园、旅记一类题材。\n         18 个槽 · 对比度 正文 10.9 · 次级 4.5 · 淡字 2.1\n\n  霜白     冷白与青灰 —— 干净利落，适合现代题材、都市、科幻。\n         18 个槽 · 对比度 正文 11.0 · 次级 4.5 · 淡字 2.7\n\n"
+        },
+        {
+          "argv": [
+            "theme",
+            "朱砂",
+            "二号"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已换皮肤：朱砂 -> hud\\主题.css\n  朱红描金与方角收边 —— 适合志怪、武侠、庙堂一类题材。\n  18 个槽写进 主题.css（核心样式一个字没动）\n  可读性：正文 11.5 · 次级 5.3 · 淡字 2.3（取最不利的宿主背景）\n\n下一步： python forge.py hud \"<工作>\\二号\"   重新组装，看看新样子\n       python forge.py theme --巡览 \"<工作>\\二号\"   五套皮肤摆一起对比\n"
+        },
+        {
+          "argv": [
+            "hud",
+            "二号",
+            "--写回"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "组装完成（卡名：二号 · 模块：没接）：\n  out/replacement_card.txt            35552 字符\n  out/replacement_create.txt          35617 字符\n  out/view_card.html                  35535 字符\n  out/view_create.html                35600 字符\n  预览页                          192385 字符  -> <工作>\\二号\\预览.html\n\n校验通过：无三反引号 / 无 </script 字面量 / 无 HTML 注释 / 关键标记齐备。\n\n已写回 spec：\n  开场白 fixed-opening-assistant 已更新（正文与开场消息都换了）\n  正则规则共 3 条（conf 2 条 · 非 conf 来源 1 条，一个字没动）：\n    order=10  建卡界面 · 羊皮卷               pattern=/\\u200B{3}/    替换 35617 字符\n    order=20  面板 · 羊皮卷                 pattern=〔面板〕           替换 35552 字符\n    order=30  自检正则                     pattern=/〔自检〕/g        替换 9 字符\n"
+        },
+        {
+          "argv": [
+            "build",
+            "二号/source/二号.spec.yaml",
+            "二号/成品/再打.card.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "已打包 -> 二号/成品/再打.card.json\n  条目 6 · 分组 3 · 变量 11 · 正则 3\n"
+        },
+        {
+          "argv": [
+            "check",
+            "二号/source/二号.spec.yaml"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "==========================================================================\n对象    : 二号.spec.yaml\n卡片    : 二号\n条目 6 · 分组 3 · 变量 11 · 对象 4 · 正则 3\n常驻    : 1 条 / 162 字（护栏 3000 字）\n触发方式: agent_tool=4 · always=2\n读取策略: normal=3 · keyword=3\n插入角色: system=3 · user=2 · assistant=1\n--------------------------------------------------------------------------\n  ✔ 没有发现问题\n--------------------------------------------------------------------------\n结论：0 个错误 · 0 个警告 · 0 条提示\n  → 可以交付。\n"
+        },
+        {
+          "argv": [
+            "diff",
+            "二号/成品/二号.card.json",
+            "二号/成品/再打.card.json"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "!! FileNotFoundError: [Errno 2] No such file or directory: '二号/成品/二号.card.json'\n   （不是崩溃 —— 上面那句就是原因。想看调用栈：设 FORGE_TRACEBACK=1）\n"
+        }
+      ]
+    },
+    {
+      "名": "参数毛病",
+      "步": [
+        {
+          "argv": [
+            "new"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py new <卡名> [--到 目录] [--id 前缀] [--模块 骰子,备份]\n      python forge.py new <卡名> --从 <卡.json / 工程包.zip / spec.yaml / 工程目录>\n"
+        },
+        {
+          "argv": [
+            "new",
+            "坏卡",
+            "--认不得的旗",
+            "1"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "认不得的参数：--认不得的旗\n"
+        },
+        {
+          "argv": [
+            "entry"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py entry <spec> --新 \"标题\" [--分组 X]\n                                      [--模板 常驻|必读|关键词|选读|开场]\n                                      [--正文 \"…\"] [--关键词 判定,掷骰]\n                                      [--位置 instructions] [--提示 \"什么时候读我\"]\n      python forge.py entry <spec> --列 [--分组 X]\n      python forge.py entry <spec> --看 <id 或 标题>      看一条的全貌（正文全文在内）\n      python forge.py entry <spec> --改 <id 或 标题> [<id 或 标题> …] --正文 \"…\"\n                                      [--标题 \"…\"] [--关键词 a,b]\n                                      [--提示 \"什么时候读我\"] [--模板 常驻|必读|关键词|选读]\n                                      [--策略 …] [--位置 …] [--角色 …] [--内容模式 …]\n                                      [--启用 | --停用]   卡里留着但不生效 / 让它生效\n  （--改 后面给一串就是**批量改**：这批条目同时改成同一组字段，一次落盘、\n    一条回收记录。值域照旧当场拦 —— 只要有一条会被降级，整批一个字都不落盘。）\n      python forge.py entry <spec> --复制 <id 或 标题> [<id 或 标题> …]\n                                      [--标题 \"…\"] [--到 分组]\n      python forge.py entry <spec> --挪 <id 或 标题> [<id 或 标题> …] [--到 分组]\n      python forge.py entry <spec> --删 <id 或 标题> [<id 或 标题> …]\n      python forge.py entry <spec> --启用|--停用 <id 或 标题> [<id 或 标题> …]\n  （--复制 / --挪 / --删 / --启用 / --停用 后面可以跟一串，一次动多条：\n    一次落盘、一条回收记录，`trash --还原 N` 一次全捞回来。\n    有认不出的名字就**整批停下**，绝不半个批次落盘 —— 半条是最难收拾的。）\n  （--复制 的副本顺着原件排、默认叫「原名（副本）」；--到 分组 能让副本直接落进那个组。\n    复制是加一条、跟 --新 一样不写回收记录 —— 不要了就 --删 掉它。开场白条目不许复制。）\n  （--改 只动内容与偏好；id / 顺序号 / 分组位置一概不动，卡里引用旧 id 的地方不会断）\n  （凡要写一段话的地方，值都可以写成 @文件名 —— 正文太长、带换行或引号时这么写，\n    例：--正文@正文.txt ，或 --正文 @正文.txt ）\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "没有这张卡.spec.yaml",
+            "--列"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：没有这张卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "参数卡/source/参数卡.spec.yaml",
+            "--启用"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改",
+            "核心 · 世界总纲"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改",
+            "核心 · 世界总纲",
+            "--启用",
+            "甲",
+            "--停用",
+            "乙"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改",
+            "核心 · 世界总纲",
+            "--正文@并没有这个文件.txt"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "entry",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改@参数卡/source/参数卡.spec.yaml"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "group"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py group <spec> --列\n      python forge.py group <spec> --新 <名> [--父 分组]\n      python forge.py group <spec> --改名 <旧名> <新名>\n      python forge.py group <spec> --删 <名>\n"
+        },
+        {
+          "argv": [
+            "group",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改名",
+            "世界"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "var"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py var <spec> --列\n      python forge.py var <spec> --新对象 <名> [--父 对象] [--说明 \"…\"]\n      python forge.py var <spec> --新 <对象>.<变量> [--类型 number]\n                                      [--初值 1] [--说明 \"…\"]\n      python forge.py var <spec> --改名 <变量 id 或 对象.变量> --成 <新名>\n      python forge.py var <spec> --改名对象 <对象> --成 <新名>\n      python forge.py var <spec> --换对象 <变量 id 或 对象.变量> --到 <对象>\n      python forge.py var <spec> --删 <变量 id 或 对象.变量> [<…> …]\n      python forge.py var <spec> --删对象 <名>\n      python forge.py var <spec> --对齐       把 Zod 对齐另两处\n  （改名一次把**三处**一起挪：面板 / 初值那一格的键 / Zod 那个字段名 ——\n    只改一处，另两处会悄悄悬空。id 不动，按 id 引用的地方不会断。\n    正文里写着旧名字的地方**只报不改** —— 工具不知道那是变量名还是恰好同字的词。\n  --换对象 是名字不动、换它挂在哪个对象下：挂靠关系 / 初值那格 / Zod 那个字段\n    一起搬到新对象那棵子树下，顺带排到新对象末尾。id 同样不动。\n  --删 后面给一串就是批量删：一次落盘、一条回收记录，`trash --还原 N` 一次全捞回来。）\n"
+        },
+        {
+          "argv": [
+            "var",
+            "参数卡/source/参数卡.spec.yaml",
+            "--新",
+            "没有点"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "var",
+            "参数卡/source/参数卡.spec.yaml",
+            "--删"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "var",
+            "参数卡/source/参数卡.spec.yaml",
+            "--改名",
+            "玩家.声望"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "var",
+            "参数卡/source/参数卡.spec.yaml",
+            "--换对象",
+            "玩家.声望"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "regex"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py regex <spec> --列\n      python forge.py regex <spec> --新 <名> --模式 \"/〔试〕/g\" [--替换 \"…\"]\n                                        [--目标 AiOutput] [--顺序 30]\n      python forge.py regex <spec> --删 <名 或 id>\n      python forge.py regex <spec> --启 <名> / --停 <名>\n"
+        },
+        {
+          "argv": [
+            "regex",
+            "参数卡/source/参数卡.spec.yaml",
+            "--删",
+            "并没有这条"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "trash"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py trash <工程 或 spec>            看回收站里有什么\n      python forge.py trash <工程 或 spec> --还原 1      把第 1 条放回去（1 = 最近）\n      python forge.py trash <工程 或 spec> --清空\n"
+        },
+        {
+          "argv": [
+            "opener",
+            "参数卡",
+            "--看"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 没找到工程（从 参数卡 往上找 `hud/hud.conf.json`、或 `source/*.spec.yaml`，两样都没找着）。\n  单张卡还没收成工程？先： python forge.py import <卡.json> --到 .\n"
+        },
+        {
+          "argv": [
+            "diff",
+            "只有一个.json"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py diff <a.json> <b.json>\n"
+        },
+        {
+          "argv": [
+            "check",
+            "并不存在.yaml"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到：并不存在.yaml\n"
+        },
+        {
+          "argv": [
+            "manual"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py manual <spec.yaml 或 卡.json> [-o 出.html] [--只手册]\n"
+        },
+        {
+          "argv": [
+            "index"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py index <spec.yaml 或 卡.json> [-o 出.md]\n"
+        },
+        {
+          "argv": [
+            "unpack",
+            "并不存在.json"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "!! FileNotFoundError: [Errno 2] No such file or directory: '并不存在.json'\n   （不是崩溃 —— 上面那句就是原因。想看调用栈：设 FORGE_TRACEBACK=1）\n"
+        },
+        {
+          "argv": [
+            "analyze",
+            "并不存在.json"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "!! 并不存在.json: [Errno 2] No such file or directory: '并不存在.json'\n\n"
+        },
+        {
+          "argv": [
+            "to-tavern",
+            "并不存在.json",
+            "出.json"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! [Errno 2] No such file or directory: '并不存在.json'\n"
+        },
+        {
+          "argv": [
+            "to-eleckoi",
+            "并不存在.json",
+            "出.yaml"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! [Errno 2] No such file or directory: '并不存在.json'\n"
+        },
+        {
+          "argv": [
+            "png",
+            "并不存在.json"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! [Errno 2] No such file or directory: '并不存在.json'\n"
+        },
+        {
+          "argv": [
+            "preset",
+            "并不存在.json"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! [Errno 2] No such file or directory: '并不存在.json'\n"
+        },
+        {
+          "argv": [
+            "import",
+            "并不存在.zip"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 找不到包：<工作>\\并不存在.zip\n"
+        },
+        {
+          "argv": [
+            "make",
+            "并不存在.yaml"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "!! 找不到卡稿：并不存在.yaml\n"
+        },
+        {
+          "argv": [
+            "bundle",
+            "并不存在"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 找不到工程目录：<工作>\\并不存在\n"
+        },
+        {
+          "argv": [
+            "hud",
+            "并不存在"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 这个工程里没有 hud/hud.conf.json：<工作>\\并不存在\n  没有它就没有界面这一层。`forge new` 建的工程自带一份。\n"
+        },
+        {
+          "argv": [
+            "mods",
+            "接不上的模块"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "可用模块（5 个）—— 接法：python forge.py add <名> <你的 spec.yaml>\n\n  代笔     v1.0.0    建卡器上每一栏都多一对「AI 代笔 / 取回」扣子：请求走对话那条路发出去，AI 照【代笔 · 栏位名】回一块，界面自动切出来搬进那一栏。\n         id=ai · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量与栏位（骨架里已有）：扣子摆几对、请求里要什么、回话怎么切，全从 hud.CONFIG.fields 现读\n         需要：宿主至少通一条送信的路：input.set（只填不送，默认）或 chat.send（直接发）；两条都不通时退回「自己复制给 AI」\n\n  备份     v1.0.0    在建卡器那一页多一块「档案备份」：一键把玩家那份档案（变量里封缄过的，加上界面这一份草稿）导出成一段文本 —— 同时抄进剪贴板、并存进这一局的「存档」变量；封缄时也会顺手存一份 —— 重启回来按「从存档取回」就能把表单填回来，换了机器才靠抄走的那段文本。\n         id=backup · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「玩家」（骨架里已有）：导出与还原的都是它那一棵树，不另加变量\n         需要：变量树里那个「给机器用的」存档位（骨架里已有：对象「存档」＋ 它的变量「角色」，initial_state 与 schema_code 里也各有一处）：**这是「过夜」的唯一落脚点** ——…\n         需要：核心的初值 DEFAULTS 里也要有那个对象（骨架里已有）：面板是按 fillState 之后的对象列表画的，DEFAULTS 里少了它，这一局还没存过的时候面板上就不会出现那一行「机器位…\n         需要：建卡器（hud.core.js 的 create 视图）：模块只往它里面加一块，核心一个字不动\n         需要：核心的封缄挂载点 afterSubmit（骨架里已有）：封缄那一笔写落定之后，核心会叫模块这一处 ——「备份」靠它在封缄的同一口气里也存一份。**少了它，写「存档」的时机就只剩「按导出」一处…\n\n  尺度     v1.0.0    把「叙事尺度」那三档（克制 / 标准 / 放开）与「时局压力」开关背后的意思写死 —— 一条给 AI 读的常驻条目，外加建卡器与面板上的一句人话。\n         id=scale · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量「世界设定 · 叙事尺度」「世界设定 · 压力源」：骨架里已经有，不用另加\n         需要：骨架界面上那两颗档位扣子（叙事尺度 / 时局压力）：已有，模块只补说明\n\n  点数池   v1.0.0    给六维配一笔预算：可分配 = 等级 × 每级点数 ＋ 永久奖励，界面实时算「已用 / 剩余」；一颗「交给命运」按职业倾向一次撒开，临时加成单列、不进池子。\n         id=pool · 并进内容：条目 · 并进界面：脚本+样式（落 hud/模块/）\n         需要：变量：六条数字栏当六维（默认 力量/敏捷/体质/智力/感知/魅力）、一条等级栏（默认「等级」）、一条永久奖励栏（默认「永久奖励」）、一条对象栏（默认「加成」，六个数字）、一条职业栏（默认「职…\n         需要：骨架里那颗「等级」数字栏：模块拿它算池子大小；认不出的值（空、乱写、0）一律按 1 级算\n         需要：想换六维的名字 / 每级几点 / 职业名册：在 hud.core.js 的 CONFIG 里加一个 pool 块（样例写在 点数池.js 顶上），模块一个字都不用改\n\n  骰子     v1.0.0    把正文里那行 〔骰·…〕 纯文本渲成带边框的骰子框 —— 对抗、带 DC、兜底共七条正则，按结果分色；另顶掉「规则 · 判定」那一条，换成一套讲清格式的判定规则。\n         id=dice · 并进内容：条目+正则\n         需要：什么都不用加：不接变量、不接脚本，只并七条正则、替换一条条目\n\n"
+        },
+        {
+          "argv": [
+            "add",
+            "并不存在的模块",
+            "参数卡/source/参数卡.spec.yaml"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "drop",
+            "并不存在的模块",
+            "参数卡/source/参数卡.spec.yaml"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "找不到 spec：参数卡/source/参数卡.spec.yaml\n"
+        },
+        {
+          "argv": [
+            "theme",
+            "并不存在的主题",
+            "参数卡"
+          ],
+          "回": 1,
+          "错": null,
+          "出": "!! 没有这个主题：并不存在的主题（跑 `forge theme` 看有哪些）\n"
+        },
+        {
+          "argv": [
+            "name",
+            "参数卡",
+            "--看"
+          ],
+          "回": 0,
+          "错": null,
+          "出": "卡名 · 现状\n────────────────────────────────────────────────────────\n  工程          None\n  spec          （没有）\n  目录名        \n  spec 里的名字 （空）\n  界面配置      （没有界面层）\n  配置里的卡名  （空）\n\n  两处一致 ✔\n"
+        },
+        {
+          "argv": [
+            "build"
+          ],
+          "回": 2,
+          "错": null,
+          "出": "用法：python forge.py build <spec.yaml> [出.json]\n"
+        }
+      ]
+    }
+  ]
+}

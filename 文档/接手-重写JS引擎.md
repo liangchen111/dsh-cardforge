@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（25/27 个模块逐字节绿）
+## 现状（27/27 —— **全部搬完**，2026-10-16）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -25,7 +25,7 @@
 | YAML 子集读取器 | `forgejs\lib\yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
 | `sandbox` | `forgejs\lib\sandbox.mjs` | ✔ 5,397 字节（模式关／开各跑一遍） |
 | `content` | `forgejs\lib\content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵工程树） |
-| `opener` | `forgejs\lib\opener.mjs` | ✔ 228,776 字节（105 步 · 10 个夹具工程） |
+| `opener` | `forgejs\lib\opener.mjs` | ✔ 341,131 字节（105 步 · 10 个夹具工程 · 界面档三条支路已真跑） |
 | `scaffold` | `forgejs\lib\scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵工程树） |
 | `draft` | `forgejs\lib\draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
 | `mods` | `forgejs\lib\mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
@@ -41,9 +41,11 @@
 | `lint` | `forgejs\lib\lint.mjs` | ✔ 161,769 字节（456 行 · 4 情形 / 87 步 · **`yaml` 走自写子集**） |
 | `plan` | `forgejs\lib\plan.mjs` | ✔ 40,095 字节（904 行 · 预置 16 · 模板 5 · 反推 17 · 查 12 · 主 15） |
 | `bundle` | `forgejs\lib\bundle.mjs` | ✔ 2,037,261 字节（397 行 · 5 情形 / 5 步 · zip 字节走申报差异） |
-| `guard` | `forgejs\lib\guard.mjs` | ✔ 13,193 字节 |
+| `guard` | `forgejs\lib\guard.mjs` | ✔ 16,896 字节（233 行 · 23 情形 / 57 步） |
+| **命令层** | `forgejs\forge.mjs` | ✔ 133,725 字节（3,898 行 · 3 情形 / 136 步 · **33 条命令全覆盖**） |
+| **CLI 薄壳** | `forgejs\cli.mjs` | 75 行（对位 `forge\cli.py` 37 ＋ `forge\__main__.py` 8） |
 
-**在跑**：**命令层** —— `forge.py`（3,109 行 · 33 条命令）⇒ `forgejs\forge.mjs`；`forge\cli.py`（37）＋ `__main__.py`（8）⇒ `forgejs\cli.mjs`。
+**在跑**：无。`node forgejs\cli.mjs selftest` 在**只有 Node**（没有 Python）时可以独立跑，45 项全绿。
 
 ## 怎么跑
 
@@ -60,24 +62,25 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 - Node：`D:\node.exe`（v24.14.0）
 - 加语料：`差分\语料\<名>.json` 写输入；`出黄金.py` / `比一比.mjs` 各加一个 `算_<名>` 函数。
 
-## 下一步（照顺序）
+## 下一步（**搬完了**，剩下的都是「交货」不是「搬」）
 
-1. **在跑**：**命令层** —— `forge.py`(3,109 行 · 33 条命令) ＋ `cli.py`(37) ＋ `__main__.py`(8)。**这是最后一块。**
-2. 它绿了就**全部搬完**：`forge/` 27 个模块 ＋ CLI 实体。
-   收尾三件：① 文档四份推到 26/26 与「全部搬完」；② 端到端实机验证（见「怎么验」一节）；③ 决定插件化形态
-   （`manifest.json` ＋ `cordis.yml` ＋ 纯 `.mjs`，**不进 npm**）—— 这一步要等玩家点头。
-   **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
-   `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
-3. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 是**惰性导入**，
-   `opener.mjs` 已落地但没回填，等命令层合拢时一起接；需要写 YAML 的调用点都得把 `M.ydump`
-   改成 `M.jdump`（`opener.mjs` / `scaffold.mjs` 已这么做）。
+1. **端到端实机验证**：在只有 Node 的环境（或手机）上，拿一张真工程跑一遍
+   `node forgejs\cli.mjs new / entry / build / png`，产物与 Python 版逐字节比。
+   差分台只证明了「每个函数等价」，还没证明「整条命令行在无 Python 的机器上跑得起来」。
+2. **决定插件化形态**（`manifest.json` ＋ `cordis.yml` ＋ 纯 `.mjs`，**不进 npm**）—— **要玩家点头再动**。
+3. 若只想在手机上改卡、不想背全量：**语料与黄金 27 份全部可复用**，砍子集不必重建差分台。
+
+> **行数以 Python 实测为准**（`forge\` 合计 13,134 行，`forge.py` 3,110 行 / 155,166 字节）—— 别用 PowerShell 的
+> `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
+3. ~~还欠着的两处~~ **已回填**（2026-10-16，命令层合拢时）：`content.mjs:920` 的 `_OP()` 占位（原写「forgejs 还没搬 opener.mjs」）
+   已改成静态 `import * as OP from './opener.mjs'`；`M.ydump` → `M.jdump` 全库已扫过一遍。
 4. **子代理派工单必须写死**：验收标准是 `python 差分\跑.py` **全绿**（不是「我那个模块绿就行」）；
    临时目录建在 `差分\` 底下（系统 temp 可能是 8.3 短名，路径归一对不上）；不许改 `forge\` 下任何 Python。
    **父级收工前必须自己复核**：`git status --short -- forge forge.py` 空 · 差分目录无残留 ·
    `git diff -U0` 只看得到该看的行 · `--刷` 重刷后**旧黄金一个字节没动**。
 
 
-## 十五条纪律（差分台已经证明有用）
+## 十七条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
@@ -139,6 +142,18 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
     （报 `active teammate "…" not found`，已第二次验证），别指望唤它回来补活 —— 只能自己重建。
     另附一条：**中文源码一律用 write/edit 工具写，别过 pwsh** —— PowerShell 5.1 的 `Set-Content -Encoding UTF8`
     会给**无 BOM 的 UTF-8 文件加 BOM**，`-replace` 还会一次命中多处（这正是上面那场事故的起因）。
+16. **Python 的关键字实参写成 `名字: 值`，在 JS 里就是「标签语句」**（命令层一次逮到 **27 处**）：
+    `apply_modules(spec, names, {project, out})` 想表达 `project=…, out=…`，可 `{project, out}` 在 JS 里只是**一个对象**，
+    而 `add_group(spec, 名, 父: '')` 这种更直接 —— `父:` 是**标签**。两种都**语法合法、`node --check` 照样过、整句什么都不干**，
+    症状是「参数明明传了，行为却像没传」。探测器：把 `标识符:` 改成 `标识符:;` 再 `node --check`，还能过就是标签语句。
+    **凡是「传了参数却没反应」的怪现象，先怀疑这一条。**
+17. **差分绿 = 语料走到的那条路一致，不等于那个模块没有别的路**（命令层合拢时一次点出 **5 处**真 bug，全是「语料没走到 ⇒ 一直绿」）：
+    `scaffold.mjs:368` 对象当位置参（模块账本与打印全落空）· `scaffold.mjs:596` `M.ydump`（JS 侧故意抛错，「接手搬运」这条路根本走不通）·
+    `bridge.mjs:1082` `_或(seq_hint.get(a), 1e6)` 把「键在、值是 `0`」当成缺席（Python `dict.get(k,d)` **只在键不在**时才用默认值，
+    设定库第一条被推到末位）· `content.mjs:490` `join` 不保留 `TRASH_DIR` 里的 `/` · `content.mjs:920` 过期占位。
+    另一条同族：**`lenPy()` 只能量字符串** —— 它先 `Array.from(String(s))` 数码点，传数组进去量到的是 `"a,b".length`。
+    还有一条命令层专属：**Node 的 fs 错误不是 CPython 的 `OSError`** —— `[Errno 2] No such file or directory: '<调用时的原样路径>'`
+    要自己翻回来（类名／errno 说法／路径三样都得翻，`forge.mjs` 落成 `_OS表` ＋ `_python化()` ＋ `_错话()`）。
 
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）

@@ -2468,6 +2468,92 @@ def 算_bundle(料: dict) -> dict:
 算式["bundle"] = 算_bundle
 
 
+def 算_forge(料: dict) -> dict:
+    """`forge.py` —— 命令行入口（33 条命令）逐条走一遍 `main(argv)`。
+
+    ★ 走 `forge.cli.main`（＝`runpy.run_path("forge.py", run_name="__main__")`）：
+      `forge\cli.py` 与 `forge\__main__.py` 就是这么落地的，把它抛出的 `SystemExit`
+      折成**退出码** —— JS 侧 `cli.mjs` 的 `main` 直接 `return` 那个码，两侧同一个数。
+    ★ 每条命令都 `chdir` 到临时目录里跑（语料 argv 全是相对路径）：`plan` / `guide` /
+      `mods` / `theme` 的「--help」就是它们的**空参分支**，会真的把模板或清单打出来、
+      也可能往 cwd 落文件 —— 一律落进临时目录，**绝不碰工具根**。
+    ★ 临时目录建在**差分目录**底下（同 算_scaffold：系统 temp 的 8.3 短名会让两侧
+      路径归一后对不上）。
+    ★ 新条目 id 是 `前缀-32位十六进制`（随机）：先按 `[0-9a-f]{32}` 折成 `<hex32>`，
+      再走 `_净文本` 的 8 位规则 —— 顺序反过来就折不动了（32 位后面还跟着十六进制，
+      `_文本8` 的 `(?![0-9a-f])` 不认）。
+    """
+    import contextlib
+    import io as _io
+    import shutil
+
+    from forge import cli as CLI
+    from forge import sandbox as SBB
+
+    这里 = Path(__file__).resolve().parent
+    原cwd = os.getcwd()
+    原沙箱 = SBB.enabled()
+    SBB.enable(False)
+    情形们 = []
+
+    def 折32(s):
+        # 32 位连写十六进制（新发 id）先折；`_净文本` 只认带微秒与时区的完整 ISO，
+        # 而回收站清单打的是 `时间[:19]`（`2026-10-16T09:55:20`，没有微秒也没有时区）
+        # ⇒ 这里补一条**短 ISO** 的形状折法（两侧必须一样，否则同一个清单两边对不上）。
+        s = re.sub(r"[0-9a-f]{32}", "<hex32>", s)
+        return re.sub(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", "<时间>", s)
+
+    def 码(exc):
+        c = getattr(exc, "code", None)
+        if c is None:
+            return 0
+        return int(c) if isinstance(c, int) else 1
+
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_forge-", dir=str(这里)))
+            try:
+                os.chdir(工作)
+                出 = {"名": 情形["名"], "步": []}
+                for 步 in 情形["步"]:
+                    原参 = 步.get("argv")
+                    argv = [] if 原参 is None else [str(a) for a in 原参]
+                    rec = {"argv": _动(argv), "回": None, "错": None}
+                    buf = _io.StringIO()
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            CLI.main(list(argv))
+                        rec["回"] = 0
+                    except SystemExit as exc:
+                        rec["回"] = 码(exc)
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = 错文本("main", exc)
+                    rec["出"] = 折32(_净文本(buf.getvalue()))
+                    出["步"].append(rec)
+            finally:
+                os.chdir(原cwd)
+                shutil.rmtree(工作, ignore_errors=True)
+            情形们.append(
+                _换路径(
+                    出,
+                    [
+                        (str(工作), "<工作>"),
+                        (str(工作).replace("\\", "\\\\"), "<工作>"),
+                        (str(工作).lower(), "<工作>"),
+                        (str(工作).lower().replace("\\", "\\\\"), "<工作>"),
+                    ],
+                )
+            )
+    finally:
+        os.chdir(原cwd)
+        SBB.enable(原沙箱)
+    return {"情形": 情形们}
+
+
+算式["forge"] = 算_forge
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

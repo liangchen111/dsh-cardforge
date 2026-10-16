@@ -365,7 +365,7 @@ export function new_card(name, dest = null, id_prefix = null, quiet = false, mod
       _print('顺手并模块：')
     }
     try {
-      MODS.apply_modules(spec_path, names, { project: proj, out: quiet ? _无 : _print })
+      MODS.apply_modules(spec_path, names, proj, quiet ? _无 : _print)
     } catch (exc) {                                  // 模块接不上不该毁掉整张卡
       mod_error = exc
       if (!quiet) {
@@ -592,8 +592,9 @@ export function 灌内容(spec_path, 外来, proj, out = _print, 有界面 = tru
     }
   }
   OPENER._写json(conf_p, conf)
-  // ★ 移植记号：forgejs 的 `M.ydump` 是抛错（见文件头第 2 条）——这条路要等 YAML 写出器。
-  M.ydump(新, spec_path)
+  // ★ 移植记号：forgejs 的 `M.ydump` 是抛错（见文件头第 2 条）⇒ 照全仓先例改走 `M.jdump`，
+  //   文件名一个字不改（`差分` 的 `_树()` 对 `.spec.` 文件走 `M.loadStructured` 结构比较，不比字节）。
+  M.jdump(新, spec_path)
   // 来源里带过来的「已禁用」条目：**原样留着**（卡里不生效），但得说出来 ——
   // 不然从列表上看它就是一条普通条目，「看着像生效、其实没生效」是最坑的那类。
   const 禁用 = 条.filter((e) => !(e.enabled === undefined ? true : e.enabled))

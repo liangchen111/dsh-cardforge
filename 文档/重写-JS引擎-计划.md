@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（25/27）**
+**全部搬完并逐字节绿（27/27 · 2026-10-16 收工）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -283,7 +283,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | YAML 子集读取器 | `forgejs/lib/yaml.mjs`（`model.yload` 走它） | ✔ 109,826 字节（结构相等 · 10 份语料） |
 | `sandbox` | `forgejs/lib/sandbox.mjs` | ✔ 5,397 字节（模式关／开两遍） |
 | `content` | `forgejs/lib/content.mjs` | ✔ 94,122 字节（30+ 步操作 ＋ 整棵树） |
-| `opener` | `forgejs/lib/opener.mjs` | ✔ 228,776 字节（105 步 · 10 个夹具工程） |
+| `opener` | `forgejs/lib/opener.mjs` | ✔ 341,131 字节（105 步 · 10 个夹具工程 · 界面档三条支路已真跑） |
 | `scaffold` | `forgejs/lib/scaffold.mjs` | ✔ 331,130 字节（52 步 · 整棵树） |
 | `draft` | `forgejs/lib/draft.mjs` | ✔ 59,823 字节（33 条预置 · 126 条操作） |
 | `mods` | `forgejs/lib/mods.mjs` | ✔ 303,578 字节（9 份夹具 · 100 步操作） |
@@ -299,7 +299,9 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `lint` | `forgejs/lib/lint.mjs` | ✔ 161,769 字节（456 行 · 4 情形 / 87 步 · 6 条正则 84 个样本） |
 | `plan` | `forgejs/lib/plan.mjs` | ✔ 40,095 字节（904 行 · 预置 16 · 模板 5 · 反推 17 · 查 12 · 主 15） |
 | `bundle` | `forgejs/lib/bundle.mjs` | ✔ 2,037,261 字节（397 行 · 5 情形 / 5 步 · zip 字节走申报差异） |
-| `guard` | `forgejs/lib/guard.mjs` | ✔ 13,193 字节 |
+| `guard` | `forgejs/lib/guard.mjs` | ✔ 16,896 字节（233 行 · 23 情形 / 57 步） |
+| **命令层** | `forgejs/forge.mjs` | ✔ 133,725 字节（3,898 行 · 3 情形 / 136 步 · **33 条命令全覆盖**） |
+| **CLI 薄壳** | `forgejs/cli.mjs` | 75 行（对位 `forge/cli.py` 37 ＋ `forge/__main__.py` 8） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -307,9 +309,13 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：**命令层**（`forge.py` 3,109 行 · 33 条命令 ⇒ `forgejs/forge.mjs`；`forge/cli.py` 37 ＋ `__main__.py` 8 ⇒ `forgejs/cli.mjs`）。
-`forge.py` 是**单文件**，不能拆两个代理同时写 ⇒ 一人一遍过；其中 `cmd_selftest` 一个人占 950–2470 行（约 1,500 行）。
-**这是最后一块** —— 它绿了，整个 `forge/` ＋ CLI 就搬完了。
+**在跑**：无 —— **27/27 全部搬完**（26 个 `forgejs/lib/*.mjs` ＋ 命令层 `forgejs/forge.mjs` ＋ 薄壳 `forgejs/cli.mjs`）。
+`node forgejs/cli.mjs selftest` 在只有 Node（无 Python）时可以独立跑，45 项全绿。
+
+**收尾三件（都不是「搬」了，是「交货」）**
+1. 端到端实机验证：在**只有 Node** 的环境（或手机）上拿一张真工程跑一遍 `new → entry → build → png`，产物与 Python 版逐字节比。
+2. 插件化形态（`manifest.json` ＋ `cordis.yml` ＋ 纯 `.mjs`，无 npm）—— **要玩家点头再动**。
+3. 若要砍成「手机子集」：语料与黄金 27 份**全部可复用**，不必重建差分台。
 
 > ⚠️ **`png` 申报了一处「天生不可复现」**（2026-10-16）：**整段 deflate 体复现不出来** ——
 > CPython 3.13.14 用上游 zlib **`1.3.1`**，Node v24.14.0 自带的是 fork **`1.3.1-e00f703`**。

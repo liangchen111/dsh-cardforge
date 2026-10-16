@@ -1079,7 +1079,11 @@ export function to_eleckoi(path, out_spec, out = _print) {
 
   // ---- 组装 spec（回迁时把存档里的变量 / 正则 / 未映射字段取回来）
   if (seq_hint.size > 0) {
-    entries.sort((a, b) => _或(seq_hint.get(a), 1e6) - _或(seq_hint.get(b), 1e6))
+    // ★ 移植记号：Python 是 `seq_hint.get(id(x), 10**6)` —— dict.get 的默认值只在**键不在**时用。
+    //   写成 `_或(seq_hint.get(a), 1e6)` 会把真实的 `seq == 0`（原设定库第一条）当成缺席、
+    //   推到 1e6，回迁后该条目从首位跑到末位（自检第 12 项「往返无损」当场红）。
+    const _位 = (x) => (seq_hint.has(x) ? seq_hint.get(x) : 1e6)
+    entries.sort((a, b) => _位(a) - _位(b))
   }
 
   const lib_meta = _或(_取(_或(restore, {}), 'library_meta', null), {})

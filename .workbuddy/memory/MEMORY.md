@@ -126,7 +126,7 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：25/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+- **进度：27/27 —— 全部搬完（2026-10-16）** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（341,131 字节 · 界面档三条支路已真跑）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** ·
   **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）** ·
@@ -134,8 +134,16 @@
   **`coach`（709,969 字节 · `coach.mjs` 1,510 行）** · **`export`（115,144 字节 · `export.mjs` 616 行）** ·
   **`png`（80,563 字节 · `png.mjs` 748 行 · 26 情形 / 83 步）** · **`dist`（56,388 字节 · `dist.mjs` 721 行 · 17 情形 / 96 步）** ·
   **`preset`（441,131 字节 · `preset.mjs` 802 行 · 8 情形 / 122 步）** · **`lint`（161,769 字节 · `lint.mjs` 456 行 · 4 情形 / 87 步）**。
-  下一波在跑：**命令层** —— `forge.py`（3,109 行 · 33 条命令）⇒ `forgejs/forge.mjs`；`forge/cli.py`(37) ＋ `__main__.py`(8) ⇒ `forgejs/cli.mjs`。**这是最后一块**；
-  另有已绿的 **`plan`（40,095 字节 · 904 行）· `bundle`（2,037,261 字节 · 397 行）· `guard`（13,193 字节）**。
+  **命令层已收工**：`forgejs/forge.mjs`（3,898 行 / 172,266 字节 ⇒ 黄金 133,725 字节 · 3 情形 / 136 步 · **33 条命令全覆盖**，
+  含 `cmd_selftest` 的 45 项）＋ `forgejs/cli.mjs`（75 行 ⇒ `cli.py` 37 ＋ `__main__.py` 8）。
+  `node forgejs\cli.mjs selftest` 在**只有 Node、没有 Python** 时可以独立跑、45 项全绿。
+  其余：**`plan`（40,095 字节 · 904 行）· `bundle`（2,037,261 字节 · 397 行）· `guard`（16,896 字节 · 233 行）**。
+  **命令层合拢时一次点出 5 处「已绿模块里的真 bug」**（全是语料没走到 ⇒ 一直绿）：`scaffold.mjs:368` 对象当位置参 ·
+  `scaffold.mjs:596` `M.ydump`（JS 侧故意抛错）· `bridge.mjs:1082` `_或(seq_hint.get(a),1e6)` 把「键在、值是 0」当缺席 ·
+  `content.mjs:490` `join` 不保留 `/` · `content.mjs:920` 那句「forgejs 还没搬 opener.mjs」是过期占位。
+  **关键字实参写成 `名字: 值` 在 JS 里是「标签语句」**（语法合法、`node --check` 过、整句什么都不干）—— 命令层一次逮到 **27 处**；
+  探测器：把 `标识符:` 改成 `标识符:;` 再 `node --check`，还能过就是标签语句。**`lenPy()` 只能量字符串**（传数组量到的是 `"a,b".length`）。
+  **Node 的 fs 错误不是 CPython 的 `OSError`** ⇒ `forge.mjs` 落成 `_OS表` ＋ `_python化()` ＋ `_错话()`（类名／errno 说法／路径三样都翻）。
   已知坑：**`bundle.run` 里 `HUD.build(..., out=…)` 会把 hud 的模块级出口永久换掉且不还原** ⇒ 排在它后面跑的 `算_hud` 全黑（`bundle hud` 红 / `hud bundle` 绿）；两侧都改成「存还原」（Python 存 `B.HUD._P`、JS `finally` 里 `setOut(原出口)`），**`hud.mjs` 一字未动**。另：**`os.path.dirname(base) == project` 在 `bundle.py:98` 恒为假**（`os.walk` 的 base 是相对路径）⇒ 工程根旧 `包信息.json` 没被跳过、zip 里撞名，CPython 报 `UserWarning: Duplicate name:` —— **照抄原样，不许顺手修**。
   `preset` 撞到的坑：**`in` 成员测试 ≠ 真值判断** —— `TRIGGER_MODES` 里有**空串**，JS 里 `''` 是假值 ⇒ `!_pick(x,表,null)` 会把合法的 `''` 判成「不收」（Python 原句是 `x not in TRIGGER_MODES`）；**含空串/0 的表一律用成员测试，别用真值判断**。
   - **别用 `git checkout -- <共享文件>` 复原**（2026-10-16 事故 · 已立成接手页第 15 条纪律）：`guard` 子代理为复原自己误加的 BOM 跑了 `git checkout -- 差分/出黄金.py`，把 `plan`／`bundle` 两个**并行**子代理**尚未提交**的 `算_plan`／`算_bundle` ＋ 注册一起抹掉（100,888 → 95,831 字节）；`git log -S`／`git fsck --lost-found --no-reflogs` 全查过 —— **从未进过提交、无 dangling blob ⇒ 不可从 git 恢复**；更阴的是 `跑.py` 不带 `--刷` 时只跑 JS 侧比对 ⇒ **差分仍报 25 绿，绿灯把损坏盖住了**。父级照 `差分\比一比.mjs` 的 JS 侧镜像重写了两个算式：`算_plan` 重建后 `差分\黄金\plan.json` md5 **`CFB869B2AD9EDCE47DF50ED6C08C6DC8`**、`算_bundle` 重建后 `bundle.json` md5 **`5090C4D977938BEDC931FB3D1D060986`**，**两侧都与事故前的黄金逐字节相同**（提交 `e84a4bb`）。

@@ -45,6 +45,11 @@ import * as M from './model.mjs'
 import * as P from './pack.mjs'
 import * as ZOD from './zod.mjs'
 import * as SB from './sandbox.mjs'
+import * as OP from './opener.mjs'
+// ★ 移植记号：`os.path.join` 会**原样保留**后一段里的 `/`（`join('探卡', '.forge/回收站')`
+//   ⇒ `探卡\.forge/回收站`），而 `node:path` 的 `join` 会把 `/` 归一成 `\`。回收站路径
+//   的常量天生带 `/`，所以这里必须走 plan.mjs 里那份照抄 CPython `ntpath.join` 的实现。
+import { _join as _joinPy } from './plan.mjs'
 
 export const TRASH_DIR = '.forge/回收站'
 export const TRASH_MAX = 60           // 回收站最多留几条，超了删最旧的
@@ -482,7 +487,7 @@ export function entry_detail(spec, 谁) {
 
 // ------------------------------------------------------------------ 回收站
 export function trash_dir(spec) {
-  return join(project_of(spec), TRASH_DIR)
+  return _joinPy(project_of(spec), TRASH_DIR)
 }
 
 
@@ -914,12 +919,14 @@ export function restore(spec, which, out = _print) {
 
 /**
  * ★ 移植记号：Python 在 `restore()` 里两处 `from . import opener as OP`
- * （延迟导入以避开循环引用）。forgejs 的 `opener.mjs` 还没搬 ⇒ 只有走
- * 「还原开场白 / 还原卡名」这两条支路时才会撞上；其余全部照抄可用。
- * 调用点与 Python 一致（在 `try` **外面**），所以异常照旧往上冒。
+ * （延迟导入以避开循环引用）。forgejs 的 opener.mjs 已经搬好，这里改成
+ * 顶层的 `import * as OP from './opener.mjs'` —— ESM 的循环引用靠**实时绑定**
+ * 解决（opener.mjs 只在**调用时**取 `CONTENT.*`，模块求值期一次都不碰），
+ * 与 Python 的延迟导入等价。调用点与 Python 一致（在 `try` **外面**），
+ * 所以异常照旧往上冒。
  */
 function _OP() {
-  throw new Error('forgejs 还没搬 opener.mjs —— 这一支（开场白 / 卡名的跨文件还原）暂时走不了。')
+  return OP
 }
 
 
