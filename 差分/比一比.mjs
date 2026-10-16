@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import { gunzipSync } from 'node:zlib'
 import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
 import * as Z from '../forgejs/lib/zod.mjs'
@@ -117,6 +118,25 @@ try {
   CO = await import('../forgejs/lib/coach.mjs')
 } catch (e) {
   CO = null
+}
+
+// png 同理：它 import 三个兄弟（export / model / sandbox）＋ 复用 theme 的路径工具。
+// 名字用 PN —— 单字母 P 被 pack 占了，M 被 model 占了。
+let PN = null
+try {
+  PN = await import('../forgejs/lib/png.mjs')
+} catch (e) {
+  PN = null
+}
+
+// dist 同理：它 import 五个兄弟（bridge / hud / model / pack / sandbox / validate），
+// 别的模块都不 import 它 —— 只有 scaffold 用惰性导入等着它，落地即自动点亮。
+// 名字用 DI：D 被 domain、DR 被 draft、CO 被 coach 占了。
+let DI = null
+try {
+  DI = await import('../forgejs/lib/dist.mjs')
+} catch (e) {
+  DI = null
 }
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
@@ -323,6 +343,12 @@ const 净文本 = (s) => String(s).replace(_ISO, '<时间>').replace(_文本8, '
 
 /** 与 Python 侧 `_动` 同一套：随机 id / 时间戳 / 回收站记录的位置，全部归一。 */
 function 动(x, 键 = null) {
+  // ★ Python 的 `_动` 对 `bytes` / `bytearray` 是**原样返回**的（既不是 str 也不是容器，
+  //   也没有 `__dict__`）。PNG 那边 `_折字节` 之外偶尔漏出来的 Buffer（`write()` 的回里
+  //   `native_b64` 已经被转成 str，但 `_mk_*` 的直调回就是 Buffer）必须同样放行 ——
+  //   少了这一行，Buffer 会被当普通对象遍历、序列化成 `{"0":137,"1":80,…}`，
+  //   而 Python 侧还给它原值（JSON 里折成 `{"@十六进制@": …}`）⇒ 差分必红。
+  if (Buffer.isBuffer(x)) return x
   if (typeof x === 'string') {
     // ★ `*_at` 一律当时间（与出黄金.py 的 `_动` 同名分支逐字对应）：库里还有
     //   `config_updated_at` / `config_created_at` 这类不叫 created_at/updated_at 的时间戳，
@@ -1505,6 +1531,396 @@ function 算_export(料) {
 }
 
 算式.export = 算_export
+
+// --------------------------------------------------------------------- dist
+//
+// 又是情形制（同 算_coach），四处不一样：
+//   ① 语料给的是**两段**：`步骤`（会造树，也把树当输入）与`收尾`（同一棵树上接着调）。
+//   ② 只调 dist 自己；卡是**钉死的 zip / json 夹具**（`差分/语料/dist/`，由 `_造语料.py`
+//      生成一次、两边读同一份）⇒ 生成包的字节不被重写，compression 与时间戳的差异绕开。
+//      zip 的读法在 `forgejs/lib/dist.mjs` 里自己写了一份（Node 标准库没有 zipfile）。
+//   ③ 已申报差异：`_import_card` 落规格走 `M.jdump`（Python 是 `M.ydump`，JS 侧明确抛错）
+//      ⇒ 后缀是 `.json`，`走树()` 的 `.spec.` 分支按结构比，不比字节。
+//   ④ 工作目录建在**差分目录**底下（同 算_export，不是系统 temp）：`build_manifest` 一进门
+//      就 `abspath`，系统 temp 可能是 8.3 短名（`ADMINI~1`）⇒ 两边两种写法。
+//      ★ 也绝不建在工具根：工具根下任何 `_tmp_*` 会被 scaffold 语料第 27 条
+//        （`abspath("")`＝工具根）照进快照，当场顶红。
+//
+// ★ 语料里的 `@根@` 换的是**工具根**（`出参数()` 只认 `@根@` 与 `@工作@`）——夹具路径
+//   得写成 `@根@/差分/语料/dist/xxx.zip`。第一版语料编了个 `@语料@` 记号，两边都不认，
+//   黄金里落的全是「找不到包：…@语料@…」，16 个情形里 14 个根本没摸到真夹具。
+const _造树动作 = new Set(['写文件', '改文件', '拷目录', '删路径'])
+const _常量名 = new Set(['MANIFEST', 'MANIFEST_FORMAT', 'MANIFEST_VERSION', 'SKIP_DIRS', 'SKIP_TAILS'])
+
+/** 造树：写文件 / 建目录（文为 null）/ 改文件 / 拷目录 / 删路径。只归一化「路径」那一格。 */
+function 造(工作, 步, 根) {
+  const 参数 = (步.参数 ?? []).map((a) => 出参数(a, 工作, 根))
+  const p = 参数[0]
+  if (步.调用 === '写文件') {
+    const 文 = 参数[1] ?? null
+    if (文 === null) mkdirSync(p, { recursive: true })
+    else {
+      mkdirSync(dirname(p), { recursive: true })
+      writeFileSync(p, 文, 'utf8')
+    }
+  } else if (步.调用 === '改文件') {
+    writeFileSync(p, 参数[1], 'utf8')
+  } else if (步.调用 === '拷目录') {
+    拷目录(p, 参数[1])
+  } else if (步.调用 === '删路径') {
+    try {
+      rmSync(p, { recursive: true, force: true })
+    } catch { /* 删不掉就算了 */ }
+  } else {
+    throw new Error(`不认得的造树动作：${步.调用}`)
+  }
+  return null
+}
+
+/**
+ * 把 tuple 递归折成 list —— 与 `出黄金.py` 的 `_收元组` 逐条对齐。
+ *
+ * `_modules_of` / `_top_of` 交出来的是 tuple，JS 那边是天生的数组 ⇒ 不折的话
+ * **`动()` 对 tuple 不递归**（Python 侧原样带过去，路径就归一不了）。顺带把
+ * `SKIP_DIRS` 这个 **set** 折成排序数组：JS 侧是 `Set`，`JSON.stringify` 给 `{}`。
+ */
+function 收元组(x) {
+  if (Array.isArray(x)) return x.map(收元组)
+  if (x instanceof Set) return [...x].sort((a, b) => 码点序(a, b))
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const [k, v] of Object.entries(x)) o[k] = 收元组(v)
+    return o
+  }
+  return x
+}
+
+/** Python `sorted(key=lambda v: [ord(c) for c in str(v)])`：按**码点**序，不是 UTF-16 序。 */
+function 码点序(a, b) {
+  const 甲 = Array.from(String(a)).map((c) => c.codePointAt(0))
+  const 乙 = Array.from(String(b)).map((c) => c.codePointAt(0))
+  const n = Math.min(甲.length, 乙.length)
+  for (let i = 0; i < n; i += 1) {
+    if (甲[i] !== 乙[i]) return 甲[i] - 乙[i]
+  }
+  return 甲.length - 乙.length
+}
+
+/** 把结果里的「生成时间」换成记号 —— 两边跑的时刻天然不同，不归一必红（同 `出黄金.py:_稳时间`）。 */
+function 稳时间(x) {
+  if (typeof x === 'string') return x.replace(_ISO, '<时间>')
+  if (Array.isArray(x)) return x.map(稳时间)
+  if (x && typeof x === 'object') {
+    const o = {}
+    for (const [k, v] of Object.entries(x)) o[k] = 稳时间(v)
+    return o
+  }
+  return x
+}
+
+function 算_dist(料) {
+  if (!DI) throw new Error('forgejs/lib/dist.mjs 没导入成功，先把它落地再跑 dist')
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(这里, '_tmp_dist-'))
+      const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+      let 出 = null
+      try {
+        出 = { 名: 情形.名 ?? null, 步: [] }
+        const 全部步 = [...(情形.步骤 ?? []), ...(情形.收尾 ?? [])]
+        for (const 步 of 全部步) {
+          const 原参 = 步.参数 ?? []
+          const 参数 = (Array.isArray(原参) ? 原参 : [原参]).map((a) => 出参数(a, 工作, 根))
+          const 行 = []
+          const rec = { 调用: 步.调用, 参数: 动(参数) }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            let 回
+            if (_造树动作.has(步.调用)) 回 = 造(工作, 步, 根)
+            else if (_常量名.has(步.调用)) 回 = DI[步.调用]
+            else {
+              const 参 = [...参数]
+              if (步.出 === '行.append') 参.push((x) => { 行.push(x); return null })
+              回 = DI[步.调用](...参)
+            }
+            rec.回 = 稳时间(动(动回(收元组(回 ?? null))))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = 错文本(步.调用, e)
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.行 = 行.map(净文本)
+          rec.出 = 净文本(出文)
+          出.步.push(rec)
+        }
+        出.树 = 稳时间(走树(工作))
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+      情形们.push(换路径(收_uuid(折浮(出)), 对))
+    }
+  } finally {
+    SB.enable(原沙箱)
+  }
+  return { 情形: 情形们, 沙箱还原: SB.enabled() === 原沙箱 }
+}
+
+算式.dist = 算_dist
+
+// ------------------------------------------------------------------ png（成品图）
+//
+// 与 Python 侧 `算_png` 逐条对齐。三处要点：
+//   · **工作目录建在 `这里`（差分目录）底下** —— 不是工具根（`scaffold` 语料第 27 条
+//     `abspath("")` 就是工具根，留个 `_tmp_*` 在那儿当场红），也不是系统 temp
+//     （8.3 短名 `C:\Users\ADMINI~1\…`：Python `abspath` 与 Node `resolve` 会算出两种写法）。
+//   · **沙箱进门一律关掉、出门还原**（同 算_theme）—— `SB.land` 开着时走的是"复制"
+//     而不是 `os.replace`，黄金必须与调用顺序无关。
+//   · 返回的 bytes 一律折成 `{"@十六进制@": …}`（`_折字节`）—— 写出来的 PNG 到底
+//     逐字节是什么，正是本模块唯一要证明的事，所以**要折、不能丢**。折出来的是原文
+//     hex，比对强度与逐字节比等同。
+
+function _折字节(x) {
+  if (Buffer.isBuffer(x) || x instanceof Uint8Array) {
+    return { '@十六进制@': Buffer.from(x).toString('hex') }
+  }
+  if (Array.isArray(x)) return x.map(_折字节)
+  if (x !== null && typeof x === 'object') {
+    const 出 = {}
+    for (const [k, v] of Object.entries(x)) 出[_折字节(k)] = _折字节(v)
+    return 出
+  }
+  return x
+}
+
+// 酒馆外壳降级时那句 note 里嵌的是**语言自己的异常原文**（两边永远不同）
+// ⇒ 折成 `酒馆外壳降级生成（<降级原因>）`。**已申报差异**，写在 差分/语料/png.json 的「说明」里。
+const _壳注 = /酒馆外壳降级生成（[\s\S]*）/g
+
+function _折壳(x) {
+  if (typeof x === 'string') return x.replace(_壳注, '酒馆外壳降级生成（<降级原因>）')
+  if (Array.isArray(x)) return x.map(_折壳)
+  if (x !== null && typeof x === 'object' && !Buffer.isBuffer(x)) {
+    const 出 = {}
+    for (const [k, v] of Object.entries(x)) 出[k] = _折壳(v)
+    return 出
+  }
+  return x
+}
+
+// `读不了源卡 JSON：…` 里嵌的是解析器原文（两边的措辞永远不同）⇒ 折成 `<解析器说>`。
+const _读卡错 = /读不了源卡 JSON：[\s\S]*/g
+
+function _折错(文) {
+  return String(文).replace(_读卡错, '读不了源卡 JSON：<解析器说>')
+}
+
+function _是标记(o, 名) {
+  if (o === null || typeof o !== 'object' || Array.isArray(o) || Buffer.isBuffer(o)) return false
+  const ks = Object.keys(o)
+  return ks.length === 1 && ks[0] === 名
+}
+
+/** `出参数` 的 png 版：多认两个语料标记 —— `{"@字节@": "<hex>"}` 与 `{"@读文件@": 路径}`。 */
+function _参(x, 工作, 根) {
+  if (typeof x === 'string') {
+    const s = x.split('@根@').join(String(根)).split('@工作@').join(String(工作))
+    return s.split('@@重复x4100@@').join('x'.repeat(4100))
+  }
+  if (_是标记(x, '@字节@')) return Buffer.from(x['@字节@'], 'hex')
+  if (_是标记(x, '@读文件@')) return readFileSync(_参(x['@读文件@'], 工作, 根))
+  if (Array.isArray(x)) return x.map((v) => _参(v, 工作, 根))
+  if (x !== null && typeof x === 'object') {
+    const 出 = {}
+    for (const [k, v] of Object.entries(x)) 出[_参(k, 工作, 根)] = _参(v, 工作, 根)
+    return 出
+  }
+  return x
+}
+
+/** 预置文件的内容：`{"@十六进制@": …}` → 二进制；dict/list → JSON；字符串 → 原文。 */
+function _预置文(文) {
+  if (_是标记(文, '@十六进制@')) return Buffer.from(文['@十六进制@'], 'hex')
+  if (文 !== null && typeof 文 === 'object') return Buffer.from(JSON.stringify(文, null, 2), 'utf8')
+  return Buffer.from(String(文), 'utf8')
+}
+
+/**
+ * 把一张 PNG 折成**逐块可比**的结构 —— 与 Python 侧 `_PNG分解` 逐条同形。
+ *
+ * ★ 已申报差异（写在 `差分/语料/png.json` 的「说明」里）：
+ *   Node v24.14.0 自带的是 **fork 过的 zlib**（`process.versions.zlib == '1.3.1-e00f703'`），
+ *   CPython 用上游 zlib 1.3.1（`zlib.ZLIB_VERSION == ZLIB_RUNTIME_VERSION == '1.3.1'`）。
+ *   在 Z_DEFAULT_STRATEGY（两边都用默认）下 **deflate 产物不同**：实测 strategy 1/2/3
+ *   （Z_FILTERED / Z_HUFFMAN_ONLY / Z_RLE）两边逐字节同，strategy 0/4 不同；
+ *   `memLevel 1..9 × strategy 0..4` 全矩阵扫过，**没有任何组合能复现 Python 的默认产物**。
+ *   分歧还是**数据相关**的：400×'A'、2400 B 渐变图、500 B 混合载荷都逐字节同，
+ *   只有结构化 JSON 触发；把 388 B 的卡 JSON 按前缀二分，最短分歧前缀＝ **42 字节**。
+ *   ⇒ `write()` 卡支路那句 `gzip.compress(raw, 9, mtime=0)` 在 JS 侧**无法逐字节复现**，
+ *     整张 PNG 的字节数 / sha256 / 文件 sha1 全都跟着变（实测 4513 vs 4517）。
+ *
+ * 退到结构层比（比对强度除了那段压缩体之外一点没丢）：
+ *   · 每块记「类型 + 数据字节 sha1」；
+ *   · `tEXt` 的 `eleckoi-card` 那块把 base64 解回 gzip 容器，记
+ *     「容器头 10 字节 + 容器尾 8 字节 + gunzip 后原生字节数/sha256」——
+ *     这四样两边**逐字节相同**（客户端要的也是这四样）。
+ */
+function _PNG分解(buf) {
+  const 块 = []
+  for (const [typ, data] of PN.chunks(buf)) {
+    if (typ.toString('latin1') === 'tEXt') {
+      const sep = data.indexOf(0)
+      const kw = sep > 0 ? data.subarray(0, sep).toString('latin1') : ''
+      if (kw === 'eleckoi-card') {
+        const 包 = Buffer.from(data.subarray(sep + 1).toString('latin1'), 'base64')
+        const 原 = gunzipSync(包)
+        块.push({
+          类型: 'tEXt', 关键字: 'eleckoi-card',
+          容器头: 包.subarray(0, 10).toString('hex'),
+          容器尾: 包.subarray(-8).toString('hex'),
+          原生字节: 原.length,
+          原生sha256: createHash('sha256').update(原).digest('hex'),
+        })
+        continue
+      }
+    }
+    块.push({
+      类型: typ.toString('latin1'), 字节: data.length,
+      sha1: createHash('sha1').update(data).digest('hex'),
+    })
+  }
+  return 块
+}
+
+/** 能拆就拆；拆不动（语料手搓的坏图）返回 null —— 那种文件两边本来逐字节同。 */
+function _试分解(p) {
+  try {
+    return _PNG分解(readFileSync(p))
+  } catch (e) {
+    return null
+  }
+}
+
+/** `write()` 的返回值：`bytes` / `sha256` 换掉，改记 PNG 逐块分解（见 `_PNG分解`）。 */
+function _折回(x) {
+  if (x && typeof x === 'object' && !Array.isArray(x) && !Buffer.isBuffer(x)
+      && 'png' in x && 'sha256' in x) {
+    if (existsSync(x.png)) {
+      const 分解 = _试分解(x.png)
+      if (分解 !== null) {
+        return { png: x.png, native_bytes: x.native_bytes ?? null, PNG: 分解 }
+      }
+    }
+  }
+  if (Array.isArray(x)) return x.map(_折回)
+  if (x && typeof x === 'object' && !Buffer.isBuffer(x)) {
+    const 出 = {}
+    for (const [k, v] of Object.entries(x)) 出[k] = _折回(v)
+    return 出
+  }
+  return x
+}
+
+/** 工作树里 `.png` 的 sha1 同样换掉（同 `_折回`）。 */
+function _折树(树, 工作) {
+  for (const 项 of 树) {
+    const rel = 项.路径 || ''
+    if (rel.toLowerCase().endsWith('.png') && 'sha1' in 项) {
+      const p = join(工作, rel)
+      if (existsSync(p)) {
+        const 分解 = _试分解(p)
+        if (分解 !== null) {
+          delete 项.sha1
+          项.PNG = 分解
+        }
+      }
+    }
+  }
+  return 树
+}
+
+const _PNG字节 = /（\d+ 字节，/g
+const _PNGbase64 = /（base64 \d+）/g
+const _PNG自检 = /· \d+ 字节 · sha256 [0-9A-F]{12}/g
+
+/**
+ * stdout 里那三个「整张 PNG 有多大」的数不可比（见 `_PNG分解`），折掉。
+ *
+ * `write()` 第 1 行 `（%d 字节，%.2f MB）`、第 2 行 `（base64 %d）`，
+ * 以及 `verify()` 自检行 `· %d 字节 · sha256 %s`（`%s` 是整张图的 sha256 前 12）。
+ */
+function _折出文(文) {
+  return String(文)
+    .replace(_PNG字节, '（<PNG字节>，')
+    .replace(_PNGbase64, '（base64 <PNG长度>）')
+    .replace(_PNG自检, '· <PNG字节> 字节 · sha256 <PNGsha12>')
+}
+
+function 算_png(料) {
+  if (!PN) throw new Error('forgejs/lib/png.mjs 没导入成功，先把它落地再跑 png')
+
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(这里, '_tmp_png-'))
+      const 对 = [
+        [工作, '<工作>'],
+        [工作.split('\\').join('\\\\'), '<工作>'],
+      ]
+      try {
+        const 预置 = 情形.预置 || {}
+        for (const 名 of 预置.目录 || []) mkdirSync(join(工作, 名), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 || {})) {
+          const p = join(工作, 名)
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, _预置文(文))
+        }
+
+        const 出 = { 名: 情形.名, 步: [] }
+        for (const 步 of 情形.操作) {
+          const 原参 = '参数' in 步 ? 步.参数 : []
+          const 参数 = (Array.isArray(原参) ? 原参 : [原参]).map((a) => _参(a, 工作, 根))
+          const rec = { 调用: 步.调用, 参数: 动(_折壳(_折字节(参数))) }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            let 回 = PN[步.调用](...参数)
+            if (步.看JSON && (Buffer.isBuffer(回) || 回 instanceof Uint8Array)) {
+              回 = _折壳(JSON.parse(Buffer.from(回).toString('utf8')))
+            }
+            rec.回 = _折回(_折字节(动(动回(回 === undefined ? null : 回))))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = _折错(错文本(步.调用, e))
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.出 = _折出文(净文本(出文))
+          出.步.push(rec)
+        }
+        出.树 = _折树(走树(工作), 工作)
+        情形们.push(换路径(收_uuid(出), 对))
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+    }
+  } finally {
+    SB.enable(原沙箱)
+  }
+  return { 情形: 情形们, 沙箱还原: SB.enabled() === 原沙箱 }
+}
+
+算式.png = 算_png
 
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {

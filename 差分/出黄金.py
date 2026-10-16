@@ -1148,6 +1148,26 @@ def 算_manual(料: dict) -> dict:
 
 
 _读不出来 = re.compile(r"（读不出来：[^）]*）")
+def _收元组(x):
+    """把 tuple 递归折成 list。
+
+    `_modules_of` / `_top_of` 交出来的是 tuple，JS 那边是天生的数组 ⇒ 不折的话
+    Python 的 `json.dumps` 会给数组（它本来就把 tuple 写成数组）、JS 也一样 ——
+    真正会岔的是**差分里的 `_动`**：`_动` 对 tuple 不递归，元组里带着路径就归一不了。
+    进门先折成 list，两边形状一致。
+    """
+    if isinstance(x, tuple):
+        return [_收元组(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _收元组(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_收元组(v) for v in x]
+    if isinstance(x, (set, frozenset)):
+        # `SKIP_DIRS` 是 set：JS 那边是 Set（`JSON.stringify` 给 `{}`）⇒ 折成排序后的数组。
+        return sorted(x, key=lambda v: [ord(c) for c in str(v)])
+    return x
+
+
 # `import_theme()`（`theme.py:308`）把解析器原话插在另一句话里，形状不同、同样只差措辞。
 _不是json = re.compile(r"（不是 json？）：.*$", re.S)
 
@@ -1427,7 +1447,372 @@ def 算_export(料: dict) -> dict:
     return {"情形": 情形们}
 
 
+def _稳时间(x):
+    """把结果里的「生成时间」换成记号 —— 两边跑的时刻天然不同，不归一必红。
+
+    `build_manifest()` 的 `生成时间` 走的是 `M.now_iso()`，`_动()` 兜底那层只收
+    8 位十六进制与开头像 uuid 的东西，收不走它（值形如
+    `2026-10-16T07:47:28.442635+08:00`，里面一个十六进制串都没有）。
+    """
+    if isinstance(x, str):
+        return _ISO.sub("<时间>", x)
+    if isinstance(x, dict):
+        return {k: _稳时间(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_稳时间(v) for v in x]
+    return x
+
+
+def 算_dist(料: dict) -> dict:
+    """顺序跑一串 dist 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_coach` 同形（情形制），四点不一样：
+
+      · 语料里给的是**两段**：`步骤`（会造树，也把树当输入）与`收尾`（同一棵树上接着调，
+        通常是非落盘的纯函数与「清单被改过」这类要读盘的事）。两段共用同一棵工作树。
+      · 只调 `dist` 自己：卡用**钉死的 zip / json 夹具**（`语料/dist/` 下，`_造语料.py` 生成
+        一次、两边读同一份）⇒ 生成包的字节不被重写，compression 与时间戳的差异整个绕开。
+      · zip 自己写一份读法（Node 标准库没有 zipfile），坏 zip 抛的类名必须叫 `BadZipFile`
+        —— 差分记 `type(exc).__name__`，名字不对当场红。
+      · **已申报差异**：`_import_card` 写 spec 走 `M.jdump`（Python 是 `M.ydump`，JS 侧
+        明确抛错）⇒ 落出来的规格后缀是 `.json`，由 `_树()` 里的 `.spec.` 分支按
+        `load_structured()` **结构**比，不比字节。
+      · 工作目录建在**差分目录**底下（不是系统 temp，更不是工具根）：`build_manifest`
+        一进门就 `os.path.abspath`，系统 temp 可能是 8.3 短名 ⇒ 两边两种写法；工具根底下
+        任何 `_tmp_*` 会被 scaffold 语料第 27 条（`abspath("")`＝工具根）照进快照直接顶红。
+    """
+    import contextlib
+    import io
+    import shutil
+    import tempfile
+
+    from forge import dist as D
+    from forge import sandbox as _SB
+
+    def _造(工作, 步):
+        """写文件 / 建目录 / 改文件 —— 只归一化「路径」这一格，内容原样。"""
+        参数 = [出参数(a, 工作, 根) for a in 步["参数"]]
+        p = 参数[0]
+        if 步["调用"] == "写文件":
+            文 = 参数[1]
+            if 文 is None:
+                os.makedirs(p, exist_ok=True)
+            else:
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                with open(p, "w", encoding="utf-8", newline="") as f:
+                    f.write(文)
+        elif 步["调用"] == "改文件":
+            with open(p, "w", encoding="utf-8", newline="") as f:
+                f.write(参数[1])
+        elif 步["调用"] == "拷目录":
+            _拷目录(p, 参数[1])
+        elif 步["调用"] == "删路径":
+            if os.path.isdir(p):
+                shutil.rmtree(p, ignore_errors=True)
+            elif os.path.exists(p):
+                os.remove(p)
+        else:
+            raise AssertionError("不认得的造树动作：%s" % 步["调用"])
+        return None
+
+    def _拷目录(来源, 去处):
+        """`fs.cpSync(..., {recursive:true})` 在本机 Node v24.14.0 会把进程打崩
+        （退出码 0xC0000409）⇒ 递归拷目录两边都自己写：readdirSync + copyFileSync + utimes。
+        **这一支在 dist 里只被语料用**（dist 自己的 import 走 zip 与单文件卡）。"""
+        os.makedirs(去处, exist_ok=True)
+        for 名 in sorted(os.listdir(来源)):
+            s = os.path.join(来源, 名)
+            d = os.path.join(去处, 名)
+            if os.path.isdir(s):
+                _拷目录(s, d)
+            else:
+                shutil.copyfile(s, d)
+
+    def _常量(名):
+        return getattr(D, 名)
+
+    _造树 = ("写文件", "改文件", "拷目录", "删路径")
+    _常量名 = ("MANIFEST", "MANIFEST_FORMAT", "MANIFEST_VERSION", "SKIP_DIRS", "SKIP_TAILS")
+
+    原沙箱 = _SB.enabled()
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_dist-", dir=str(根 / "差分")))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in list(情形.get("步骤") or []) + list(情形.get("收尾") or []):
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参数 = [出参数(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": _动(参数)}
+                    行: list = []
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            if 步["调用"] in _造树:
+                                回 = _造(工作, 步)
+                            elif 步["调用"] in _常量名:
+                                回 = _常量(步["调用"])
+                            else:
+                                参 = list(参数)
+                                if 步.get("出") == "行.append":
+                                    参.append(行.append)
+                                回 = getattr(D, 步["调用"])(*参)
+                        if isinstance(回, tuple):
+                            回 = list(回)
+                        rec["回"] = _稳时间(_动(动回(_收元组(回))))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = 错文本(步["调用"], exc)
+                    rec["行"] = [_净文本(x) for x in 行]
+                    rec["出"] = _净文本(buf.getvalue())
+                    出["步"].append(rec)
+                出["树"] = _稳时间(_树(工作))
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+            情形们.append(_换路径(_折读不出来(_折浮(收_uuid(出))), 对))
+    finally:
+        _SB.enable(原沙箱)
+    return {"情形": 情形们, "沙箱还原": _SB.enabled() == 原沙箱}
+
+
+算式["dist"] = 算_dist
+
+
 算式["export"] = 算_export
+
+
+# ------------------------------------------------------------------ png（成品图）
+
+def _折字节(x):
+    """bytes/bytearray 折成 `{"@十六进制@": …}` —— 差分是 JSON，装不下二进制。"""
+    if isinstance(x, (bytes, bytearray)):
+        return {"@十六进制@": bytes(x).hex()}
+    if isinstance(x, dict):
+        return {_折字节(k): _折字节(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_折字节(v) for v in x]
+    return x
+
+
+_壳注 = re.compile(r"酒馆外壳降级生成（[\s\S]*）")
+
+
+def _折壳(x):
+    """酒馆外壳降级时那句 `note` 里嵌的是**语言自己的异常原文**（两边永远不同）
+    ⇒ 折成 `酒馆外壳降级生成（<降级原因>）`。**已申报差异**，写在 `差分/语料/png.json` 的「说明」里。"""
+    if isinstance(x, str):
+        return _壳注.sub("酒馆外壳降级生成（<降级原因>）", x)
+    if isinstance(x, dict):
+        return {k: _折壳(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)):
+        return [_折壳(v) for v in x]
+    return x
+
+
+_读卡错 = re.compile(r"读不了源卡 JSON：[\s\S]*")
+
+
+def _折错(文: str) -> str:
+    """`读不了源卡 JSON：…` 里嵌的是解析器原文（两边的措辞永远不同）⇒ 折成 `<解析器说>`。"""
+    return _读卡错.sub("读不了源卡 JSON：<解析器说>", 文)
+
+
+def _参(x, 工作: Path, 根: Path):
+    """`出参数` 的 png 版：多认两个语料标记 —— `{"@字节@": "<hex>"}` 与 `{"@读文件@": 路径}`。"""
+    if isinstance(x, str):
+        s = x.replace("@根@", str(根)).replace("@工作@", str(工作))
+        return s.replace("@@重复x4100@@", "x" * 4100)
+    if isinstance(x, dict):
+        if list(x.keys()) == ["@字节@"]:
+            return bytes.fromhex(x["@字节@"])
+        if list(x.keys()) == ["@读文件@"]:
+            return Path(_参(x["@读文件@"], 工作, 根)).read_bytes()
+        return {_参(k, 工作, 根): _参(v, 工作, 根) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_参(v, 工作, 根) for v in x]
+    return x
+
+
+def _预置文(文):
+    """预置文件的内容：`{"@十六进制@": …}` → 二进制；dict/list → JSON；字符串 → 原文。"""
+    if isinstance(文, dict) and list(文.keys()) == ["@十六进制@"]:
+        return bytes.fromhex(文["@十六进制@"])
+    if isinstance(文, (dict, list)):
+        return json.dumps(文, ensure_ascii=False, indent=2).encode("utf-8")
+    return str(文).encode("utf-8")
+
+
+def _PNG分解(buf: bytes):
+    """把一张 PNG 折成**逐块可比**的结构。
+
+    ★ 已申报差异（写在 `差分/语料/png.json` 的「说明」里）：
+      Node v24.14.0 自带的是 **fork 过的 zlib**（`process.versions.zlib == '1.3.1-e00f703'`），
+      CPython 用上游 zlib 1.3.1（`zlib.ZLIB_VERSION == ZLIB_RUNTIME_VERSION == '1.3.1'`）。
+      在 Z_DEFAULT_STRATEGY（两边都用默认）下 **deflate 产物不同**：实测 strategy 1/2/3
+      （Z_FILTERED / Z_HUFFMAN_ONLY / Z_RLE）两边逐字节同，strategy 0/4 不同；
+      `memLevel 1..9 × strategy 0..4` 全矩阵扫过，**没有任何组合能复现 Python 的默认产物**。
+      分歧还是**数据相关**的：400×'A'、2400 B 渐变图、500 B 混合载荷都逐字节同，
+      只有结构化 JSON 触发；把 388 B 的卡 JSON 按前缀二分，最短分歧前缀＝ **42 字节**。
+      ⇒ `png.write()` 卡支路那句 `gzip.compress(raw, 9, mtime=0)` 在 JS 侧**无法逐字节复现**，
+        整张 PNG 的字节数 / sha256 / 文件 sha1 全都跟着变（实测 4513 vs 4517）。
+
+    退到结构层比（比对强度除了那段压缩体之外一点没丢）：
+      · 每块记「类型 + 数据字节 sha1」；
+      · `tEXt` 的 `eleckoi-card` 那块把 base64 解回 gzip 容器，记
+        「容器头 10 字节 + 容器尾 8 字节 + gunzip 后原生字节数/sha256」——
+        这四样两边**逐字节相同**（客户端要的也是这四样）。
+    """
+    import base64 as _b64
+    import gzip as _gz
+    import hashlib as _hl
+
+    from forge import png as _P
+
+    块 = []
+    for typ, data, _起, _止 in _P.chunks(buf):
+        if typ == b"tEXt":
+            sep = data.find(b"\x00")
+            kw = data[:sep] if sep > 0 else b""
+            if kw == b"eleckoi-card":
+                包 = _b64.b64decode(data[sep + 1:])
+                原 = _gz.decompress(包)
+                块.append({"类型": "tEXt", "关键字": "eleckoi-card",
+                          "容器头": 包[:10].hex(), "容器尾": 包[-8:].hex(),
+                          "原生字节": len(原), "原生sha256": _hl.sha256(原).hexdigest()})
+                continue
+        块.append({"类型": typ.decode("latin-1"),
+                  "字节": len(data), "sha1": _hl.sha1(data).hexdigest()})
+    return 块
+
+
+def _试分解(p: Path):
+    """能拆就拆；拆不动（-例如语料手搓的坏图）返回 None —— 那种文件两边本来逐字节同。"""
+    try:
+        return _PNG分解(p.read_bytes())
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _折回(x):
+    """`write()` 的返回值：`bytes` / `sha256` 换掉，改记 PNG 逐块分解（见 `_PNG分解`）。"""
+    if isinstance(x, dict) and "png" in x and "sha256" in x:
+        p = Path(x["png"])
+        if p.is_file():
+            分解 = _试分解(p)
+            if 分解 is not None:
+                return {"png": x["png"], "native_bytes": x.get("native_bytes"), "PNG": 分解}
+    if isinstance(x, list):
+        return [_折回(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _折回(v) for k, v in x.items()}
+    return x
+
+
+def _折树(树, 工作: Path):
+    """工作树里 `.png` 的 sha1 同样换掉（同 `_折回`）。"""
+    for 项 in 树:
+        rel = 项.get("路径") or ""
+        if rel.lower().endswith(".png") and "sha1" in 项:
+            p = 工作 / rel
+            if p.is_file():
+                分解 = _试分解(p)
+                if 分解 is not None:
+                    项.pop("sha1")
+                    项["PNG"] = 分解
+    return 树
+
+
+_PNG字节 = re.compile(r"（\d+ 字节，")
+_PNGbase64 = re.compile(r"（base64 \d+）")
+_PNG自检 = re.compile(r"· \d+ 字节 · sha256 [0-9A-F]{12}")
+
+
+def _折出文(文: str) -> str:
+    """stdout 里那三个「整张 PNG 有多大」的数不可比（见 `_PNG分解`），折掉。
+
+    `write()` 第 1 行 `（%d 字节，%.2f MB）`、第 2 行 `（base64 %d）`，
+    以及 `verify()` 自检行 `· %d 字节 · sha256 %s`（`%s` 是整张图的 sha256 前 12）。
+    """
+    文 = _PNG字节.sub("（<PNG字节>，", 文)
+    文 = _PNGbase64.sub("（base64 <PNG长度>）", 文)
+    return _PNG自检.sub("· <PNG字节> 字节 · sha256 <PNGsha12>", 文)
+
+
+def 算_png(料: dict) -> dict:
+    """顺序跑一串 png 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_theme` 同形（情形制），两处不一样：
+
+      · **工作目录建在 `差分/` 底下**（不是工具根、更不是系统 temp）—— `write()` 的默认出口
+        是从 `abspath(卡路径)` 推出来的，而系统 temp 可能是 8.3 短名
+        （`C:\\Users\\ADMINI~1\\…`），Python `abspath` 与 Node `resolve` 会算出两种写法；
+        工具根则会被 `scaffold` 语料第 27 条（`abspath("")`＝工具根）撞上。
+      · 返回的 bytes 一律折成 `{"@十六进制@": …}`（`_折字节`）—— JSON 装不下二进制，
+        但「写出来的 PNG 到底逐字节是什么」正是本模块唯一要证明的事，所以**要折、不能丢**。
+        折出来的是原文 hex，比对强度与逐字节比等同。
+      · 步骤可带 `"看JSON": true`：返回的 bytes 先按 JSON 解一遍再记（用于 `_chara_wrapper`，
+        那句降级 note 要过 `_折壳`）。
+    """
+    import contextlib
+    import io
+    import shutil
+
+    from forge import png as P
+    from forge import sandbox as _SB
+
+    差分 = Path(__file__).resolve().parent
+    F = {名: getattr(P, 名) for 名 in dir(P) if not 名.startswith("__")}
+
+    原沙箱 = _SB.enabled()
+    # ★ 沙箱开关是**进程级**状态；`SB.land` 开着时走"复制"而不是 `os.replace`，
+    #   黄金必须与「单跑 / 整套跑」的调用顺序无关 ⇒ 进门一律先关掉，出门按原样还原（同 算_theme）。
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_png-", dir=str(差分)))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                预置 = 情形.get("预置") or {}
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 名).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 名
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_bytes(_预置文(文))
+
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in 情形["操作"]:
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参数 = [_参(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": _动(_折壳(_折字节(参数)))}
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = F[步["调用"]](*参数)
+                        if 步.get("看JSON") and isinstance(回, (bytes, bytearray)):
+                            回 = _折壳(json.loads(bytes(回).decode("utf-8")))
+                        rec["回"] = _折回(_折字节(_动(动回(回))))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = _折错(错文本(步["调用"], exc))
+                    rec["出"] = _折出文(_净文本(buf.getvalue()))
+                    出["步"].append(rec)
+                出["树"] = _折树(_树(工作), 工作)
+                情形们.append(_换路径(收_uuid(出), 对))
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+    finally:
+        _SB.enable(原沙箱)
+    return {"情形": 情形们, "沙箱还原": _SB.enabled() == 原沙箱}
+
+
+算式["png"] = 算_png
 
 
 def main(argv):

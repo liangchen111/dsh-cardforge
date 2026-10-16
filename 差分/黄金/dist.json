@@ -1,0 +1,1964 @@
+{
+  "情形": [
+    {
+      "名": "标准包",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\甲乙",
+          "错": null,
+          "行": [],
+          "出": "收包 标准包.zip\n  甲乙 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 4 个文件 -> <工作>\\甲乙\n  清单核过：4 个文件与包信息一致。\n\n  甲乙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲乙\"\n        python forge.py ui --根 \"<工作>\"\n"
+        },
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 目标已经存在：<工作>\\甲乙\n  换个地方（--到 目录），或者加 --改名 让它自动叫「…-2」。",
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>",
+            true
+          ],
+          "回": "<工作>\\甲乙-2",
+          "错": null,
+          "行": [],
+          "出": "收包 标准包.zip\n  甲乙 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 4 个文件 -> <工作>\\甲乙-2\n  清单核过：4 个文件与包信息一致。\n\n  甲乙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲乙-2\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "甲乙/读我.md",
+          "sha1": "bf2cd1defcaca8c335eb0b1c9d891718c1351a16"
+        },
+        {
+          "路径": "甲乙/hud/hud.conf.json",
+          "sha1": "d0f9f1d8020ba6694067e6dc7fafe055b4fb93c1"
+        },
+        {
+          "路径": "甲乙/hud/hud.css",
+          "sha1": "3508ec37ee58d9866d8d645906b777440cd8e42c"
+        },
+        {
+          "路径": "甲乙/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "甲乙"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        },
+        {
+          "路径": "甲乙-2/读我.md",
+          "sha1": "bf2cd1defcaca8c335eb0b1c9d891718c1351a16"
+        },
+        {
+          "路径": "甲乙-2/hud/hud.conf.json",
+          "sha1": "d0f9f1d8020ba6694067e6dc7fafe055b4fb93c1"
+        },
+        {
+          "路径": "甲乙-2/hud/hud.css",
+          "sha1": "3508ec37ee58d9866d8d645906b777440cd8e42c"
+        },
+        {
+          "路径": "甲乙-2/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "甲乙"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "名": "清单对不上",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/清单对不上.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\坏的包",
+          "错": null,
+          "行": [],
+          "出": "收包 清单对不上.zip\n  坏的包 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 3 个文件 -> <工作>\\坏的包\n\n  ⚠ 清单对不上（包在路上坏了，或者包被动过）：\n      字节数不符 2 个：hud/hud.css、不见了.txt\n      内容不符 1 个：source/甲乙.spec.yaml\n      文件已经解出来了，能看能改；但别直接拿来出卡 —— 先跟发卡的人对一下。\n\n  乙丙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\坏的包\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "坏的包/不见了.txt",
+          "sha1": "e29f3bcf955fec57f2afc201e58808a89b49550e"
+        },
+        {
+          "路径": "坏的包/hud/hud.css",
+          "sha1": "3508ec37ee58d9866d8d645906b777440cd8e42c"
+        },
+        {
+          "路径": "坏的包/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "乙丙"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "名": "不可信条目",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/不可信条目.zip",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 这个包里有 6 个路径不可信的条目，整包拒收：\n    /绝对.txt\n    ~/家.txt\n    ../上一级.txt\n    好卡/../跳出.txt\n  包里的条目名是别人给的字符串 —— 照着写出去就是往系统目录塞文件。",
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": []
+    },
+    {
+      "名": "顶层卡名",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/外卖卡.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\source",
+          "错": null,
+          "行": [],
+          "出": "收包 外卖卡.zip\n\n  解开 3 个文件 -> <工作>\\source\n\n  （这个目录里没有 source/*.spec.yaml —— 包结构可能不对。）\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "source/外卖卡.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1
+          }
+        },
+        {
+          "路径": "source/读我.md",
+          "sha1": "6fcf9dfbd479ed82697fee719b9f8c610a11ff2a"
+        },
+        {
+          "路径": "source/hud/hud.css",
+          "sha1": "c113e66fff265af9a131ef2894f82c8cbc65b403"
+        }
+      ]
+    },
+    {
+      "名": "让位",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/甲项目.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\甲项目",
+          "错": null,
+          "行": [],
+          "出": "收包 甲项目.zip\n\n  解开 2 个文件 -> <工作>\\甲项目\n\n  (无名)：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 1 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲项目\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "甲项目/hud/子/深.css",
+          "sha1": "c8b619fe4389a72e9ecd157aee9680b04ae5841c"
+        },
+        {
+          "路径": "甲项目/source/让位卡.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1
+          }
+        }
+      ]
+    },
+    {
+      "名": "看不出卡名",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/空名.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\空名",
+          "错": null,
+          "行": [],
+          "出": "收包 空名.zip\n      · 由 ? 生成 · ?\n\n  解开 1 个文件 -> <工作>\\空名\n  清单核过：0 个文件与包信息一致。\n\n  （这个目录里没有 source/*.spec.yaml —— 包结构可能不对。）\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "空名/顶层文件.txt",
+          "sha1": "6fcf9dfbd479ed82697fee719b9f8c610a11ff2a"
+        }
+      ]
+    },
+    {
+      "名": "不是zip",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/不是zip.zip",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 这不是一个完好的 zip：File is not a zip file",
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": []
+    },
+    {
+      "名": "找不到包",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/没有这个.zip",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 找不到包：E:\\workGZQ\\制卡工具\\差分\\语料\\dist\\没有这个.zip",
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "import_pack",
+          "参数": [
+            "",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 找不到包：E:\\workGZQ\\制卡工具",
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": []
+    },
+    {
+      "名": "外来卡",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/外来卡.card.json",
+            "<工作>"
+          ],
+          "回": "<工作>\\外来卡",
+          "错": null,
+          "行": [],
+          "出": "收卡 外来卡.card.json\n\n  按 ElecKoi 卡解包 -> source\\外来卡.spec.yaml\n  注意：卡里只有内容层（source/），界面层（hud/）本来就不在卡里 —— 没丢东西。\n  想要卡内界面：`forge.py new <卡名> --从 \"外来卡.card.json\"` 开一张带界面的新卡，内容用它的。\n\n  外来卡：条目 1 · 分组 1 · 变量 0 · 正则 0\n  体检：2 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\外来卡\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "外来卡/source/外来卡.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "外来卡",
+              "group": ""
+            },
+            "assets": [],
+            "library": {
+              "snapshot_format": "eleckoi.setting-library-snapshot",
+              "snapshot_version": 1,
+              "active_version_id": "v1",
+              "version_name": "默认",
+              "list_all_expanded": true,
+              "expanded_group_ids": [],
+              "prompt_positions": [],
+              "created_at": "",
+              "updated_at": "",
+              "groups": [
+                {
+                  "id": "g1",
+                  "name": "常规",
+                  "parent_id": "",
+                  "order": 0
+                }
+              ],
+              "entries": [
+                {
+                  "id": "e1",
+                  "title": "条目一",
+                  "group_id": "g1",
+                  "content": "正文一",
+                  "enabled": true,
+                  "order": 0,
+                  "opening_messages": []
+                }
+              ]
+            },
+            "variables": {
+              "config_format": "eleckoi.variable-config",
+              "config_version": 1,
+              "character_id": "",
+              "name": "",
+              "version_name": "默认",
+              "active_version_id": "w1",
+              "initial_state": {},
+              "schema_code": "",
+              "objects": [],
+              "variables": [],
+              "expanded_object_ids": [],
+              "created_at": "",
+              "updated_at": "",
+              "config_updated_at": ""
+            },
+            "regex_rules": []
+          }
+        }
+      ]
+    },
+    {
+      "名": "酒馆卡",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/酒馆卡.json",
+            "<工作>"
+          ],
+          "回": "<工作>\\酒馆卡",
+          "错": null,
+          "行": [],
+          "出": "收卡 酒馆卡.json\n\n已转换 -> <工作>\\酒馆卡\\source\\酒馆卡.spec.yaml\n  条目 4 条（含开场白）· 分组 4 个 · 开场方案 1 套\n\n注意：酒馆和 ElecKoi 不是一一对应，以下三处要人工确认——\n  1. 酒馆有 8 个插入位置，这里只按「强约束 → instructions / 其余留空」粗略映射，\n     导入后请在软件里按需调整（常驻条目位置空着会被过滤掉）。\n  2. 酒馆的「概率触发」「包含组」「向量匹配」「递归扫描」在 ElecKoi 侧没有等价字段，未转换。\n  3. 变量需要在 ElecKoi 里重新定义（酒馆卡通常不变量化）。\n\n下一步： python forge.py check <工作>\\酒馆卡\\source\\酒馆卡.spec.yaml\n  ElecKoi 解包没成（这不像 ElecKoi 卡：character / setting_library / variable_config 三样一样都没有。\n  先认一下是什么卡： python forge.py analyze \"酒馆卡.json\"\n  酒馆卡走 python forge.py to-eleckoi（`import` 与 `new --从` 会自动转）。），按酒馆 V2 卡转过来了。\n  注意：卡里只有内容层（source/），界面层（hud/）本来就不在卡里 —— 没丢东西。\n  想要卡内界面：`forge.py new <卡名> --从 \"酒馆卡.json\"` 开一张带界面的新卡，内容用它的。\n\n  酒馆来的：条目 4 · 分组 4 · 变量 0 · 正则 0\n  体检：0 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\酒馆卡\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "酒馆卡/source/酒馆卡.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "酒馆来的",
+              "group": "",
+              "frontend_beauty_enabled": false,
+              "profile_age": "",
+              "profile_sex": "",
+              "profile_height": "",
+              "profile_birthday": "",
+              "profile_like": "",
+              "image_prompt": "",
+              "opening": "",
+              "show_opening": false
+            },
+            "assets": [],
+            "library": {
+              "snapshot_format": "eleckoi.setting-library-snapshot",
+              "snapshot_version": 1,
+              "active_version_id": "library-<hex8><hex8><hex8><hex8>",
+              "version_name": "",
+              "list_all_expanded": true,
+              "expanded_group_ids": [],
+              "prompt_positions": [],
+              "created_at": "<时间>",
+              "updated_at": "<时间>",
+              "groups": [
+                {
+                  "id": "grp-opening-wrap",
+                  "name": "开场",
+                  "parent_id": "",
+                  "order": 0,
+                  "tree_view_order": 0,
+                  "created_at": "",
+                  "updated_at": ""
+                },
+                {
+                  "id": "grp-core",
+                  "name": "核心",
+                  "parent_id": "",
+                  "order": 1,
+                  "tree_view_order": 1,
+                  "created_at": "",
+                  "updated_at": ""
+                },
+                {
+                  "id": "grp-world",
+                  "name": "世界书",
+                  "parent_id": "",
+                  "order": 2,
+                  "tree_view_order": 2,
+                  "created_at": "",
+                  "updated_at": ""
+                },
+                {
+                  "id": "grp-ref",
+                  "name": "参考",
+                  "parent_id": "",
+                  "order": 3,
+                  "tree_view_order": 3,
+                  "created_at": "",
+                  "updated_at": ""
+                }
+              ],
+              "entries": [
+                {
+                  "id": "fixed-opening-assistant",
+                  "title": "AI角色开场白",
+                  "icon_id": "chat",
+                  "kind": "opening",
+                  "group_id": "",
+                  "content": "你好。",
+                  "opening_messages": [
+                    {
+                      "id": "opening-default",
+                      "title": "默认开场",
+                      "content": "你好。",
+                      "initial_variable_state": ""
+                    }
+                  ],
+                  "default_opening_message_id": "opening-default",
+                  "agent_selection_hint": "",
+                  "agent_read_strategy": "normal",
+                  "dynamic_mode": "standard",
+                  "keywords": [],
+                  "keyword_scan_depth": 1,
+                  "condition_keywords": [],
+                  "keyword_condition": "none",
+                  "keyword_use_regex": false,
+                  "keyword_ignore_case": true,
+                  "keyword_whole_word": false,
+                  "keyword_recursion_depth": 0,
+                  "trigger_mode": "always",
+                  "enabled": true,
+                  "position": "",
+                  "prompt_position_id": "",
+                  "insert_role": "assistant",
+                  "order": 0,
+                  "view_order": 0,
+                  "group_view_order": 0,
+                  "tree_view_order": 0,
+                  "created_at": "<时间>",
+                  "updated_at": "<时间>"
+                },
+                {
+                  "id": "entry-<hex8><hex8><hex8><hex8>",
+                  "title": "核心 · 角色描述",
+                  "icon_id": "",
+                  "kind": "normal",
+                  "group_id": "grp-core",
+                  "content": "一个测试角色。",
+                  "opening_messages": [],
+                  "default_opening_message_id": "",
+                  "agent_selection_hint": "",
+                  "agent_read_strategy": "normal",
+                  "dynamic_mode": "standard",
+                  "keywords": [],
+                  "keyword_scan_depth": 6,
+                  "condition_keywords": [],
+                  "keyword_condition": "none",
+                  "keyword_use_regex": false,
+                  "keyword_ignore_case": true,
+                  "keyword_whole_word": false,
+                  "keyword_recursion_depth": 0,
+                  "trigger_mode": "always",
+                  "enabled": true,
+                  "position": "instructions",
+                  "prompt_position_id": "",
+                  "insert_role": "system",
+                  "order": 1,
+                  "view_order": 0,
+                  "group_view_order": 0,
+                  "tree_view_order": 1,
+                  "created_at": "<时间>",
+                  "updated_at": "<时间>"
+                },
+                {
+                  "id": "entry-<hex8><hex8><hex8><hex8>",
+                  "title": "核心 · 性格",
+                  "icon_id": "",
+                  "kind": "normal",
+                  "group_id": "grp-core",
+                  "content": "话少。",
+                  "opening_messages": [],
+                  "default_opening_message_id": "",
+                  "agent_selection_hint": "",
+                  "agent_read_strategy": "normal",
+                  "dynamic_mode": "standard",
+                  "keywords": [],
+                  "keyword_scan_depth": 6,
+                  "condition_keywords": [],
+                  "keyword_condition": "none",
+                  "keyword_use_regex": false,
+                  "keyword_ignore_case": true,
+                  "keyword_whole_word": false,
+                  "keyword_recursion_depth": 0,
+                  "trigger_mode": "always",
+                  "enabled": true,
+                  "position": "instructions",
+                  "prompt_position_id": "",
+                  "insert_role": "system",
+                  "order": 2,
+                  "view_order": 0,
+                  "group_view_order": 0,
+                  "tree_view_order": 2,
+                  "created_at": "<时间>",
+                  "updated_at": "<时间>"
+                },
+                {
+                  "id": "entry-<hex8><hex8><hex8><hex8>",
+                  "title": "核心 · 场景",
+                  "icon_id": "",
+                  "kind": "normal",
+                  "group_id": "grp-core",
+                  "content": "在酒馆里。",
+                  "opening_messages": [],
+                  "default_opening_message_id": "",
+                  "agent_selection_hint": "",
+                  "agent_read_strategy": "normal",
+                  "dynamic_mode": "standard",
+                  "keywords": [],
+                  "keyword_scan_depth": 6,
+                  "condition_keywords": [],
+                  "keyword_condition": "none",
+                  "keyword_use_regex": false,
+                  "keyword_ignore_case": true,
+                  "keyword_whole_word": false,
+                  "keyword_recursion_depth": 0,
+                  "trigger_mode": "always",
+                  "enabled": true,
+                  "position": "instructions",
+                  "prompt_position_id": "",
+                  "insert_role": "system",
+                  "order": 3,
+                  "view_order": 0,
+                  "group_view_order": 0,
+                  "tree_view_order": 3,
+                  "created_at": "<时间>",
+                  "updated_at": "<时间>"
+                }
+              ]
+            },
+            "variables": {
+              "config_format": "eleckoi.variable-config",
+              "config_version": 1,
+              "character_id": "character-<hex8><hex8><hex8><hex8>",
+              "name": "",
+              "version_name": "",
+              "active_version_id": "variable-config-default",
+              "initial_state": {},
+              "schema_code": "",
+              "objects": [],
+              "variables": [],
+              "expanded_object_ids": [],
+              "created_at": "",
+              "updated_at": "",
+              "config_updated_at": "<时间>"
+            },
+            "regex_rules": []
+          }
+        }
+      ]
+    },
+    {
+      "名": "两种都不是",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/怪卡.json",
+            "<工作>"
+          ],
+          "回": null,
+          "错": "DistError: 这张卡既不是 ElecKoi 卡也不是酒馆 V2 卡：认不出这是什么结构，不猜。请确认是酒馆 V2/V3 卡或世界书。",
+          "行": [],
+          "出": "收卡 怪卡.json\n\n"
+        }
+      ],
+      "树": []
+    },
+    {
+      "名": "卡名清洗",
+      "步": [
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "  甲.工程包  "
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "坏/名:字*号?问\"引<尖>竖|"
+          ],
+          "回": "坏_名_字_号_问_引_尖_竖_",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "...甲..."
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲.spec.card"
+          ],
+          "回": "甲.spec",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲.card.spec"
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲.card"
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲.工程包"
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            null
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "　 甲 　"
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲\n乙"
+          ],
+          "回": "甲\n乙",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲."
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            123
+          ],
+          "回": "123",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            ""
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "  "
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲\t乙"
+          ],
+          "回": "甲\t乙",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_clean_name",
+          "参数": [
+            "甲\\乙"
+          ],
+          "回": "甲_乙",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_forge_version",
+          "参数": [],
+          "回": "0.28.8",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "MANIFEST",
+          "参数": [],
+          "回": "包信息.json",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "MANIFEST_FORMAT",
+          "参数": [],
+          "回": "forge.工程包",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "MANIFEST_VERSION",
+          "参数": [],
+          "回": 1,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "SKIP_DIRS",
+          "参数": [],
+          "回": [
+            ".forge",
+            ".git",
+            "__pycache__",
+            "node_modules",
+            "out"
+          ],
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "SKIP_TAILS",
+          "参数": [],
+          "回": [
+            ".pyc",
+            ".pyo"
+          ],
+          "错": null,
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": []
+    },
+    {
+      "名": "清单核验",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\甲乙",
+          "错": null,
+          "行": [],
+          "出": "收包 标准包.zip\n  甲乙 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 4 个文件 -> <工作>\\甲乙\n  清单核过：4 个文件与包信息一致。\n\n  甲乙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲乙\"\n        python forge.py ui --根 \"<工作>\"\n"
+        },
+        {
+          "调用": "改文件",
+          "参数": [
+            "<工作>/甲乙/hud/hud.css",
+            "被改过了\n"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>",
+            true,
+            false
+          ],
+          "回": "<工作>\\甲乙-2",
+          "错": null,
+          "行": [],
+          "出": "收包 标准包.zip\n  甲乙 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 4 个文件 -> <工作>\\甲乙-2\n\n  甲乙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲乙-2\"\n        python forge.py ui --根 \"<工作>\"\n"
+        }
+      ],
+      "树": [
+        {
+          "路径": "甲乙/读我.md",
+          "sha1": "bf2cd1defcaca8c335eb0b1c9d891718c1351a16"
+        },
+        {
+          "路径": "甲乙/hud/hud.conf.json",
+          "sha1": "d0f9f1d8020ba6694067e6dc7fafe055b4fb93c1"
+        },
+        {
+          "路径": "甲乙/hud/hud.css",
+          "sha1": "20bd8592228d609a2055fd1830b22ef866f37996"
+        },
+        {
+          "路径": "甲乙/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "甲乙"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        },
+        {
+          "路径": "甲乙-2/读我.md",
+          "sha1": "bf2cd1defcaca8c335eb0b1c9d891718c1351a16"
+        },
+        {
+          "路径": "甲乙-2/hud/hud.conf.json",
+          "sha1": "d0f9f1d8020ba6694067e6dc7fafe055b4fb93c1"
+        },
+        {
+          "路径": "甲乙-2/hud/hud.css",
+          "sha1": "3508ec37ee58d9866d8d645906b777440cd8e42c"
+        },
+        {
+          "路径": "甲乙-2/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "甲乙"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "名": "清单与卡名",
+      "步": [
+        {
+          "调用": "拷目录",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/工sample",
+            "<工作>/工sample"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "build_manifest",
+          "参数": [
+            "<工作>/工sample",
+            "给的卡名"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "工sample",
+            "生成时间": "<时间>",
+            "含酒馆卡": false,
+            "界面模块": [
+              "甲模块",
+              "乙模块"
+            ],
+            "皮肤": "夜",
+            "文件数": 7,
+            "清单": {
+              "读我.md": {
+                "大小": 2,
+                "校验": "73cb3858a687a849"
+              },
+              "hud/hud.conf.json": {
+                "大小": 55,
+                "校验": "7c22e2240aa9ea86"
+              },
+              "hud/hud.css": {
+                "大小": 7,
+                "校验": "2708d73bf31c36cd"
+              },
+              "hud/模块/甲模块/甲模块.js": {
+                "大小": 7,
+                "校验": "e7d4535e45723aea"
+              },
+              "source/甲.spec.yaml": {
+                "大小": 94,
+                "校验": "92a3bad65d9863ee"
+              },
+              "sub/b.txt": {
+                "大小": 2,
+                "校验": "0263829989b6fd95"
+              },
+              "sub/dir/深.txt": {
+                "大小": 4,
+                "校验": "c05e404700438cc6"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "<工作>/工sample"
+          ],
+          "回": {},
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_card_name_of",
+          "参数": [
+            "<工作>/工sample"
+          ],
+          "回": "工sample",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_modules_of",
+          "参数": [
+            "<工作>/工sample"
+          ],
+          "回": [
+            [
+              "甲模块",
+              "乙模块"
+            ],
+            "夜"
+          ],
+          "错": null,
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": [
+        {
+          "路径": "工sample/包信息.json",
+          "sha1": "bf21a9e8fbc5a3846fb05b4fa0859e0917b2202f"
+        },
+        {
+          "路径": "工sample/读我.md",
+          "sha1": "6fcf9dfbd479ed82697fee719b9f8c610a11ff2a"
+        },
+        {
+          "路径": "工sample/.git/config",
+          "sha1": "a5938ace3f424be1a26904781cdb06d55b614e6b"
+        },
+        {
+          "路径": "工sample/hud/hud.conf.json",
+          "sha1": "cd5cff3c2f649467f746de6e04f8311556138cc9"
+        },
+        {
+          "路径": "工sample/hud/hud.css",
+          "sha1": "eb49199fcc08a347035605d1d2d52736449f187a"
+        },
+        {
+          "路径": "工sample/hud/模块/甲模块/甲模块.js",
+          "sha1": "f05523da8de27750890c3adf7cb5d189d005a8f8"
+        },
+        {
+          "路径": "工sample/node_modules/z.js",
+          "sha1": "3a710d2a84f856bc4e1c0bbb93ca517893c48691"
+        },
+        {
+          "路径": "工sample/out/y.txt",
+          "sha1": "9063a9f0e032b6239403b719cbbba56ac4e4e45f"
+        },
+        {
+          "路径": "工sample/source/甲.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "工sample"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        },
+        {
+          "路径": "工sample/sub/a.pyc",
+          "sha1": "6c10289a8da7f774cf67bd2fc8502cd4b585346a"
+        },
+        {
+          "路径": "工sample/sub/b.txt",
+          "sha1": "89e6c98d92887913cadf06b2adb97f26cde4849b"
+        },
+        {
+          "路径": "工sample/sub/dir/深.txt",
+          "sha1": "72fb0e5bccf5975c35c99ae0b7605f1f4f2de76c"
+        }
+      ]
+    },
+    {
+      "名": "工程清单",
+      "步": [
+        {
+          "调用": "拷目录",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/工sample",
+            "<工作>/工sample"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "build_manifest",
+          "参数": [
+            "<工作>/工sample",
+            "给的卡名"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "工sample",
+            "生成时间": "<时间>",
+            "含酒馆卡": false,
+            "界面模块": [
+              "甲模块",
+              "乙模块"
+            ],
+            "皮肤": "夜",
+            "文件数": 7,
+            "清单": {
+              "读我.md": {
+                "大小": 2,
+                "校验": "73cb3858a687a849"
+              },
+              "hud/hud.conf.json": {
+                "大小": 55,
+                "校验": "7c22e2240aa9ea86"
+              },
+              "hud/hud.css": {
+                "大小": 7,
+                "校验": "2708d73bf31c36cd"
+              },
+              "hud/模块/甲模块/甲模块.js": {
+                "大小": 7,
+                "校验": "e7d4535e45723aea"
+              },
+              "source/甲.spec.yaml": {
+                "大小": 94,
+                "校验": "92a3bad65d9863ee"
+              },
+              "sub/b.txt": {
+                "大小": 2,
+                "校验": "0263829989b6fd95"
+              },
+              "sub/dir/深.txt": {
+                "大小": 4,
+                "校验": "c05e404700438cc6"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "build_manifest",
+          "参数": [
+            "<工作>/工sample",
+            "给的卡名",
+            [
+              "<工作>/工sample/读我.md",
+              "<工作>/工sample/没有这个.txt",
+              "<工作>/工sample/包信息.json",
+              "<工作>/工sample/sub/b.txt"
+            ],
+            true
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "工sample",
+            "生成时间": "<时间>",
+            "含酒馆卡": true,
+            "界面模块": [
+              "甲模块",
+              "乙模块"
+            ],
+            "皮肤": "夜",
+            "文件数": 2,
+            "清单": {
+              "读我.md": {
+                "大小": 2,
+                "校验": "73cb3858a687a849"
+              },
+              "sub/b.txt": {
+                "大小": 2,
+                "校验": "0263829989b6fd95"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "build_manifest",
+          "参数": [
+            "<工作>/工sample/sub",
+            "子目录卡"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "子目录卡",
+            "生成时间": "<时间>",
+            "含酒馆卡": false,
+            "界面模块": [],
+            "皮肤": "",
+            "文件数": 2,
+            "清单": {
+              "b.txt": {
+                "大小": 2,
+                "校验": "0263829989b6fd95"
+              },
+              "dir/深.txt": {
+                "大小": 4,
+                "校验": "c05e404700438cc6"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "build_manifest",
+          "参数": [
+            "<工作>/工sample",
+            "给的卡名",
+            [
+              "<工作>/工sample/读我.md",
+              "<工作>/工sample/读我.md"
+            ],
+            true
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "工sample",
+            "生成时间": "<时间>",
+            "含酒馆卡": true,
+            "界面模块": [
+              "甲模块",
+              "乙模块"
+            ],
+            "皮肤": "夜",
+            "文件数": 1,
+            "清单": {
+              "读我.md": {
+                "大小": 2,
+                "校验": "73cb3858a687a849"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_card_name_of",
+          "参数": [
+            "<工作>/工sample"
+          ],
+          "回": "工sample",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_card_name_of",
+          "参数": [
+            "<工作>/工sample/sub"
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_modules_of",
+          "参数": [
+            "<工作>/工sample"
+          ],
+          "回": [
+            [
+              "甲模块",
+              "乙模块"
+            ],
+            "夜"
+          ],
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_modules_of",
+          "参数": [
+            "<工作>/工sample/sub"
+          ],
+          "回": [
+            [],
+            ""
+          ],
+          "错": null,
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": [
+        {
+          "路径": "工sample/包信息.json",
+          "sha1": "bf21a9e8fbc5a3846fb05b4fa0859e0917b2202f"
+        },
+        {
+          "路径": "工sample/读我.md",
+          "sha1": "6fcf9dfbd479ed82697fee719b9f8c610a11ff2a"
+        },
+        {
+          "路径": "工sample/.git/config",
+          "sha1": "a5938ace3f424be1a26904781cdb06d55b614e6b"
+        },
+        {
+          "路径": "工sample/hud/hud.conf.json",
+          "sha1": "cd5cff3c2f649467f746de6e04f8311556138cc9"
+        },
+        {
+          "路径": "工sample/hud/hud.css",
+          "sha1": "eb49199fcc08a347035605d1d2d52736449f187a"
+        },
+        {
+          "路径": "工sample/hud/模块/甲模块/甲模块.js",
+          "sha1": "f05523da8de27750890c3adf7cb5d189d005a8f8"
+        },
+        {
+          "路径": "工sample/node_modules/z.js",
+          "sha1": "3a710d2a84f856bc4e1c0bbb93ca517893c48691"
+        },
+        {
+          "路径": "工sample/out/y.txt",
+          "sha1": "9063a9f0e032b6239403b719cbbba56ac4e4e45f"
+        },
+        {
+          "路径": "工sample/source/甲.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "工sample"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        },
+        {
+          "路径": "工sample/sub/a.pyc",
+          "sha1": "6c10289a8da7f774cf67bd2fc8502cd4b585346a"
+        },
+        {
+          "路径": "工sample/sub/b.txt",
+          "sha1": "89e6c98d92887913cadf06b2adb97f26cde4849b"
+        },
+        {
+          "路径": "工sample/sub/dir/深.txt",
+          "sha1": "72fb0e5bccf5975c35c99ae0b7605f1f4f2de76c"
+        }
+      ]
+    },
+    {
+      "名": "底层帮手",
+      "步": [
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/空.txt",
+            ""
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/甲.txt",
+            "hello"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/目录",
+            null
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/子目录/深.txt",
+            "deep\n"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/两.txt",
+            "ab"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/目录/里面的.txt",
+            "x"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_digest",
+          "参数": [
+            "<工作>/甲.txt"
+          ],
+          "回": "2cf24dba5fb0a30e",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_digest",
+          "参数": [
+            "<工作>/空.txt"
+          ],
+          "回": "e3b0c44298fc1c14",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_digest",
+          "参数": [
+            "<工作>/两.txt",
+            2
+          ],
+          "回": "fb8e20fc2e4c3f24",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "好卡/文件.txt"
+          ],
+          "回": true,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "C:/Windows/x.txt"
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "好卡/数:据流.txt"
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            ".."
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "..."
+          ],
+          "回": true,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "~/家.txt"
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "/绝对.txt"
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "\\绝对.txt"
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            ""
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            null
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            123
+          ],
+          "回": true,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "好卡//空段.txt"
+          ],
+          "回": true,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "好卡/./点段.txt"
+          ],
+          "回": true,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_safe_member",
+          "参数": [
+            "好卡/.."
+          ],
+          "回": false,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            [
+              "好卡/a.txt",
+              "好卡/b.txt",
+              "散文件.txt"
+            ]
+          ],
+          "回": "好卡",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            [
+              "散文件.txt",
+              "好卡/a.txt"
+            ]
+          ],
+          "回": "好卡",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            [
+              "",
+              "甲/b.txt"
+            ]
+          ],
+          "回": "甲",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            []
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            [
+              "\\头\\条.txt"
+            ]
+          ],
+          "回": "",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_top_of",
+          "参数": [
+            [
+              "/头/条.txt",
+              "乙/x.y"
+            ]
+          ],
+          "回": "乙",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_settle",
+          "参数": [
+            "<工作>/新地方",
+            false
+          ],
+          "回": "<工作>/新地方",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_settle",
+          "参数": [
+            "<工作>/目录",
+            false
+          ],
+          "回": null,
+          "错": "DistError: 目标已经存在：<工作>/目录\n  换个地方（--到 目录），或者加 --改名 让它自动叫「…-2」。",
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_settle",
+          "参数": [
+            "<工作>/目录",
+            true
+          ],
+          "回": "<工作>/目录-2",
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "_settle",
+          "参数": [
+            "<工作>/目录",
+            true
+          ],
+          "回": "<工作>/目录-2",
+          "错": null,
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": [
+        {
+          "路径": "两.txt",
+          "sha1": "da23614e02469a0d7c7bd1bdab5c9c474b1904dc"
+        },
+        {
+          "路径": "甲.txt",
+          "sha1": "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d"
+        },
+        {
+          "路径": "空.txt",
+          "sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+        },
+        {
+          "路径": "子目录/深.txt",
+          "sha1": "698a7985db24f12a6425f6ed97a6ef5df053f3fb"
+        },
+        {
+          "路径": "目录/里面的.txt",
+          "sha1": "11f6ad8ec52a2984abaafd7c3b516503785c2072"
+        }
+      ]
+    },
+    {
+      "名": "清单读法",
+      "步": [
+        {
+          "调用": "import_pack",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip",
+            "<工作>"
+          ],
+          "回": "<工作>\\甲乙",
+          "错": null,
+          "行": [],
+          "出": "收包 标准包.zip\n  甲乙 · 由 forge 0.28.8 生成 · <时间>\n\n  解开 4 个文件 -> <工作>\\甲乙\n  清单核过：4 个文件与包信息一致。\n\n  甲乙：条目 0 · 分组 0 · 变量 0 · 正则 0\n  体检：1 错 · 0 警告 · 0 提示\n\n下一步： python forge.py check \"<工作>\\甲乙\"\n        python forge.py ui --根 \"<工作>\"\n"
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/光目录/占位.txt",
+            "x\n"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "写文件",
+          "参数": [
+            "<工作>/光目录/包信息.json",
+            "{ 这不是 json"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "<工作>/甲乙/包信息.json"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/标准包.zip"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "甲乙",
+            "生成时间": "<时间>",
+            "含酒馆卡": false,
+            "界面模块": [
+              "甲模块"
+            ],
+            "皮肤": "默认",
+            "文件数": 3,
+            "清单": {
+              "source/甲乙.spec.yaml": {
+                "大小": 91,
+                "校验": "6c12d421f16524ac"
+              },
+              "hud/hud.css": {
+                "大小": 12,
+                "校验": "7772393bc3155665"
+              },
+              "hud/hud.conf.json": {
+                "大小": 45,
+                "校验": "5a13319011e40a72"
+              },
+              "读我.md": {
+                "大小": 7,
+                "校验": "70a1610f8f66a178"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "<工作>/光目录"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/不是zip.zip"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "<工作>/压根没有这个目录"
+          ],
+          "回": null,
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/清单对不上.zip"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "工具": "forge 0.28.8",
+            "卡名": "坏的包",
+            "生成时间": "<时间>",
+            "含酒馆卡": true,
+            "界面模块": [],
+            "皮肤": "",
+            "文件数": 3,
+            "清单": {
+              "hud/hud.css": {
+                "大小": 19,
+                "校验": "7772393bc3155665"
+              },
+              "source/甲乙.spec.yaml": {
+                "大小": null,
+                "校验": "deadbeefdeadbeef"
+              },
+              "不见了.txt": {
+                "大小": 3,
+                "校验": "aaaaaaaaaaaaaaaa"
+              }
+            }
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        },
+        {
+          "调用": "read_manifest",
+          "参数": [
+            "E:\\workGZQ\\制卡工具/差分/语料/dist/空名.zip"
+          ],
+          "回": {
+            "格式": "forge.工程包",
+            "版本": 1,
+            "卡名": "   ",
+            "清单": {}
+          },
+          "错": null,
+          "行": [],
+          "出": ""
+        }
+      ],
+      "树": [
+        {
+          "路径": "光目录/包信息.json",
+          "sha1": "bb3260ee8d0b828432425384e5f45307f60fae08"
+        },
+        {
+          "路径": "光目录/占位.txt",
+          "sha1": "6fcf9dfbd479ed82697fee719b9f8c610a11ff2a"
+        },
+        {
+          "路径": "甲乙/读我.md",
+          "sha1": "bf2cd1defcaca8c335eb0b1c9d891718c1351a16"
+        },
+        {
+          "路径": "甲乙/hud/hud.conf.json",
+          "sha1": "d0f9f1d8020ba6694067e6dc7fafe055b4fb93c1"
+        },
+        {
+          "路径": "甲乙/hud/hud.css",
+          "sha1": "3508ec37ee58d9866d8d645906b777440cd8e42c"
+        },
+        {
+          "路径": "甲乙/source/甲乙.spec.yaml",
+          "结构": {
+            "format": "eleckoi.character-card",
+            "version": 1,
+            "character": {
+              "name": "甲乙"
+            },
+            "library": {
+              "entries": []
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "沙箱还原": true
+}

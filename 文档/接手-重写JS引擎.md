@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（18/27 个模块逐字节绿）
+## 现状（20/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -35,8 +35,10 @@
 | `theme` | `forgejs\lib\theme.mjs` | ✔ 58,911 字节（886 行 · 8 情形 / 124 步） |
 | `coach` | `forgejs\lib\coach.mjs` | ✔ 709,969 字节（1,510 行 · 6 情形 · 37 步 · 18 个长常量逐字节核过） |
 | `export` | `forgejs\lib\export.mjs` | ✔ 115,144 字节（616 行 · 14 情形 / 14 次调用） |
+| `png` | `forgejs\lib\png.mjs` | ✔ 80,563 字节（748 行 · 26 情形 / 83 步 · **deflate 体已申报差异**，见纪律 14） |
+| `dist` | `forgejs\lib\dist.mjs` | ✔ 56,388 字节（721 行 · 17 情形 / 96 步） |
 
-**在跑**：`png`（384 行）＋ `dist`（373 行）。
+**在跑**：`preset`（500 行）＋ `lint`（293 行）。
 
 ## 怎么跑
 
@@ -55,10 +57,9 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`png`(384) ＋ `dist`(373)，两个子代理并排。`png` 一好就上 `preset`(500)。
+1. **在跑**：`preset`(500) ＋ `lint`(293)，两个子代理并排。`preset` 要的 `png` 已绿。
 2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
-   已可开工：`lint`(293 · 只 io/json/os/re/sys/yaml) · `plan`(262 · 只 sandbox) · `guard`(71 · 只 os)。
-   被卡的：`preset`(500) 等 `png` · `bundle`(119) 等 dist+export+manual。
+   已可开工：`plan`(262 · 只 sandbox) · `guard`(71 · 只 os) · `bundle`(119 · 要 hud/manual/model/pack/dist/export，**六件全绿**)。
    最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
@@ -71,7 +72,7 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
    `git diff -U0` 只看得到该看的行 · `--刷` 重刷后**旧黄金一个字节没动**。
 
 
-## 十三条纪律（差分台已经证明有用）
+## 十四条纪律（差分台已经证明有用）
 
 1. **行为照抄不顺手改**；要改先改 Python 版再同步过来。
 2. **能逐字节比的必须逐字节比**；唯一例外是 YAML（JS 不复刻 PyYAML 排版：读用自写子集、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
@@ -113,6 +114,13 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
     ⇒ 各自手写 `_fmt` / `_千分` / `_fmt1`；**Python `str.replace` 换全部、JS `String.replace` 只换第一处**；
     `str(pathlib.Path(v))` 会把 `/` 规范化成 `\`（`os.path.join` 不带）· `json.dumps(21.0)` 是 `21.0`、`JSON.stringify(21)` 是 `21`（归一化要「折浮」）。
     **「顶层不是对象」这类手写守卫必须写在 `try` 之外** —— 塞进 `try` 会被同一个 `except` 收成「读不出来」，两个分支合成一个。
+14. **真有「天生不可复现」时，走「申报差异 ＋ 折法」，不许删用例**（`png` · 2026-10-16 立的规矩）：
+    整段 **deflate 体**复现不出来 —— CPython 3.13.14 用上游 zlib **`1.3.1`**，Node v24.14.0 自带的是 fork **`1.3.1-e00f703`**；
+    `memLevel 1..9 × strategy 0..4` 全矩阵扫过：`strategy 1/2/3` 逐字节相同、`0/4`（含默认）不同，**没有组合能复现 Python 的默认产物**。
+    处理：差分台把这处折成**逐块分解**（每块记「类型 + 数据 sha1」；`tEXt eleckoi-card` 那块改记
+    「gzip 容器头 10 字节 + 容器尾 8 字节 + gunzip 后字节数/sha256」），折法与理由写进 `差分\语料\png.json` 的「说明」
+    **和生成器** `差分\_造png语料.py`（重跑语料不会丢），**用例一个不删**。先例还有 `validate` 的 `读不出来：<解析器原文>`。
+    **`preset` 若也写 PNG，直接照抄 `算_png`（差分台两侧就是模板）。**
 
 
 ## 官方卡格式还差两件（照 `docs/CHARACTER_CARD_TRANSFER.md` 核出来的真缺口）

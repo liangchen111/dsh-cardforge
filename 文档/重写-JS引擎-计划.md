@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（18/27）**
+**已搬完并逐字节绿（20/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -293,6 +293,8 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `theme` | `forgejs/lib/theme.mjs` | ✔ 58,911 字节（8 情形 / 124 步） |
 | `coach` | `forgejs/lib/coach.mjs` | ✔ 709,969 字节（6 情形 · 37 步 · 18 个长常量逐字节核过） |
 | `export` | `forgejs/lib/export.mjs` | ✔ 115,144 字节（14 情形 · 14 次调用） |
+| `png` | `forgejs/lib/png.mjs` | ✔ 80,563 字节（26 情形 / 83 步 / 14 个入口 · **deflate 体已申报差异**） |
+| `dist` | `forgejs/lib/dist.mjs` | ✔ 56,388 字节（17 情形 / 96 步） |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -300,9 +302,18 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`png`（384）＋ `dist`（373），两个子代理并排跑。
-`png` 要的 `export` 已绿；`dist` 要的 model/pack/sandbox/hud/bridge/validate 也全绿。
-之后：`preset`（500）要 `png`；`bundle`（119）要 dist＋export＋manual；`lint`（293）/ `plan`（262）/ `guard`（71）依赖最轻，随时可开。
+**在跑**：`preset`（500）＋ `lint`（293），两个子代理并排跑。
+`preset` 要的 `png` 已绿；`lint` 只依赖 `io/json/os/re/sys/yaml`（都已在 JS 侧备好）。
+之后：`plan`（262）／`guard`（71）／`bundle`（119）—— `bundle` 要的 hud＋manual＋model＋pack＋dist＋export 六件已全绿。
+
+> ⚠️ **`png` 申报了一处「天生不可复现」**（2026-10-16）：**整段 deflate 体复现不出来** ——
+> CPython 3.13.14 用上游 zlib **`1.3.1`**，Node v24.14.0 自带的是 fork **`1.3.1-e00f703`**。
+> `memLevel 1..9 × strategy 0..4` 全矩阵扫过：`strategy 1/2/3`（Z_FILTERED / Z_HUFFMAN_ONLY / Z_RLE）逐字节相同、
+> `0/4`（含默认 Z_DEFAULT）不同，**没有任何组合能复现 Python 的默认产物**；分歧还是数据相关的
+> （400×`A`、2400 B 渐变都逐字节同；388 B 卡 JSON 的**最短分歧前缀＝42 字节**）。
+> 差分台把这处折成**逐块分解**：每块记「类型 + 数据 sha1」；`tEXt eleckoi-card` 那块改记
+> 「gzip 容器头 10 字节 + 容器尾 8 字节 + gunzip 后字节数/sha256」—— 客户端要的四样两边仍逐字节相同。
+> **`preset` 若也写 PNG，直接照抄这套折法（差分台两侧 `算_png` 就是模板）。**
 
 **`opener` 的三条界面档支路已经真跑了**（2026-10-16）—— 新增夹具 `卯全界面`（`assets/骨架` 整份）
 后，`写回()`（界面档·标记数 3）与 `改正文(..., 写回=true)` 都进了语料（opener 黄金 228,776 → **341,131**）。
@@ -315,15 +326,13 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 > 干净的根下固定命中 `_tmp_scaffold-XXXX/前缀卡/source/前缀卡.spec.yaml`（`_` 排在 `a` 前面）；
 > 多一个 `_tmp_draft-*` 之类就会换一条结果。**这不是移植错，是语料本身依赖工作树形状**（待改成显式路径）。
 
-**之后照剩下来的大小排**：`coach`（1,353 · 最肥的一块）→ `preset`（500）→ `export`（396）／
-`png`（384）／`dist`（373）／`lint`（293）／`plan`（262）／`bundle`（119）／`guard`（71） → 命令层
+**之后照剩下来的大小排**：`preset`（500）→ `lint`（293）／`plan`（262）／`bundle`（119）／`guard`（71） → 命令层
 （`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
-`content`（2,158 行）已经吃掉最肥的一块。
+`content`（2,158 行）与 `coach`（1,353 行）已经吃掉最肥的两块。
 
-**依赖链（2026-10-16 实测 grep 过 `forge/*.py` 的 import）**：`coach` 要 content/draft/manual/model/pack/validate（**已全绿 ⇒ 可开**）·
-`export` 要 model/pack（**可开**）· `lint` 只要 `io/json/os/re/sys/yaml`（**可开**）· `plan` 只要 sandbox（**可开**）·
-`guard` 只要 os（**可开**）· `dist` 要 model/pack/sandbox/hud/bridge/validate ＋ `__version__`（**可开**）·
-`png` 要 export · `preset` 要 png · `bundle` 要 dist＋export＋manual。
+**依赖链（2026-10-16 实测 grep 过 `forge/*.py` 的 import）**：`lint` 只要 `io/json/os/re/sys/yaml`（**可开**）·
+`plan` 只要 sandbox（**已绿 ⇒ 可开**）· `guard` 只要 os（**可开**）· `preset` 要 png（**已绿 ⇒ 可开**）·
+`bundle` 要 hud/manual/model/pack/dist/export（**六件全绿 ⇒ 可开**）。
 
 **`hud`（693）要早点搬** —— `opener` 有 3 条分支（`写回` / 改正文时 `写回=true` / `补齐`界面档）
 与 `scaffold` 的 `build_hud` 都因为它没搬而留成抛错（差分覆盖率缺口就卡在这）。
