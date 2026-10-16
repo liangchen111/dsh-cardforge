@@ -1,0 +1,165 @@
+{
+  "说明": [
+    "plan.py（forge\\plan.py · 262 行）的差分语料。",
+    "",
+    "结构：{常量, 模板, 反推: [...], 查: [...], 主: [...]}",
+    "  · 每段按序调用并记录 回 / 错 / 出（stdout）；",
+    "  · 模板 / 反推 / 查 的路径参数支持 @工作@（工作目录建在 差分\\ 底下，跑完备删）；",
+    "  · `主` 复现 main(argv)：argv 里的路径由语料给出，`@工作@` 会被换成真路径；",
+    "    每步可选 `开关: [true|false]` 翻沙箱开关（_写文本 的两条支路各要覆盖一次）。",
+    "",
+    "★ 已申报差异（本机实测，两侧天生不可复现，见 plan.mjs 的「移植记号」）：",
+    "  `os.path.abspath` 走 GetFullPathNameW，对纯尾点串与 `//.` / `//..` 的批处理语义",
+    "  Node 侧没有对应 API：abspath('...') / ('....') / ('//.') / ('//..') 四条对不上。",
+    "  语料**只放真实用得到的路径形态**（'out.md'、带盘符绝对路径、带空格与中文的路径、",
+    "  '@工作@/名字.md'），这四条不进语料（167 串 × 7 函数 + 279 组 join 的对拍差异 = 4，全是它们）。",
+    "",
+    "★ 第二条已申报差异：json 读不出时的**原文措辞与定位**。",
+    "  Python `json.JSONDecodeError` 是 ValueError 的子类、JS 的 JSON.parse 抛 SyntaxError ⇒",
+    "  plan.mjs 自己把 Node 那句折成 CPython 的 `: line L column C (char N)`（L/C 直接搬 Node",
+    "  自己给的 `(line L column C)`，12 个样本实测两边一致；尺子见 差分\\_probe_plan_jsonpos.py）。",
+    "  措辞靠 startsWith 对照表折（'Expected , or } after property value' → 'Expecting , delimiter' …）。",
+    "  **两档折不平**：尾逗号（Py 指 column 8、Node 指 column 9）与未闭合串（Py 指串首 position 0、",
+    "  Node 指串尾 position 4）—— 语料不拿这两种形态当用例（不删用例、只不立用例）。",
+    "",
+    "★ 为什么没有「_写文本 落盘成功」以外的写盘用例：plan.py 的写盘入口只有 _写文本 / main(-o)。",
+    "  两条都进了语料，且 sandbox 开／关各覆盖一次。"
+  ],
+
+  "预置": [
+    {"目录": "卡"},
+    {"目录": "目录"},
+    {"文件": "目录/当卡用.json", "文本": "{}"},
+    {"文件": "不是ElecKoi.json", "文本": "{\n  \"format\": \"tavern.v2\",\n  \"version\": 1,\n  \"character\": {\"name\": \"野卡\"},\n  \"setting_library\": \"x\"\n}\n"},
+    {"文件": "坏.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\n}\n"},
+
+    {"文件": "卡/最小.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "最小卡", "group": ""},
+      "assets": [],
+      "setting_library": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"\",\"versions\":[{\"id\":\"v1\",\"name\":\"初版\",\"groups\":[],\"entries\":[]}]}",
+      "variable_config": "{\"format\":\"eleckoi.variable-config\",\"version\":1,\"character_id\":\"\",\"active_version_id\":\"v1\",\"versions\":[{\"id\":\"v1\",\"variables\":[],\"objects\":[]}]}",
+      "regex_rules": [],
+      "我自加的字段": {"保留": true}
+    }},
+
+    {"文件": "卡/齐备.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "齐备卡", "group": "g-root", "description": "一张用来测反推的卡"},
+      "assets": [{"id": "a1", "type": "image/png"}],
+      "setting_library": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"v1\",\"versions\":[{\"id\":\"v1\",\"name\":\"初版\",\"groups\":[{\"id\":\"g-1\",\"name\":\"角色\"},{\"id\":\"g-2\",\"name\":\"世界规则\"},{\"id\":\"g-3\",\"name\":\"\"}],\"entries\":[{\"id\":\"e-1\",\"kind\":\"entry\",\"title\":\"阿灯\",\"content\":\"一个卖灯的匠人。\",\"group_id\":\"g-1\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\",\"position\":\"before_character\"},{\"id\":\"e-2\",\"kind\":\"entry\",\"title\":\"城的样子\",\"content\":\"窄街、风灯、桥。\",\"group_id\":\"g-2\",\"trigger_mode\":\"always\",\"agent_read_strategy\":\"normal\",\"position\":\"after_character\"},{\"id\":\"e-3\",\"kind\":\"entry\",\"title\":\"谁是玩家\",\"content\":\"一个跑单帮的。\",\"group_id\":\"g-1\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\",\"position\":\"before_character\"},{\"id\":\"e-4\",\"kind\":\"entry\",\"title\":\"主线\",\"content\":\"把灯卖到城里。\",\"group_id\":\"g-2\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\",\"position\":\"before_character\"},{\"id\":\"e-5\",\"kind\":\"entry\",\"title\":\"势力：灯行\",\"content\":\"管着整条街的买卖。\",\"group_id\":\"g-2\",\"trigger_mode\":\"always\",\"agent_read_strategy\":\"normal\",\"position\":\"after_character\"},{\"id\":\"e-6\",\"kind\":\"entry\",\"title\":\"地理：河与桥\",\"content\":\"过河要过桥。\",\"group_id\":\"g-2\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\",\"position\":\"before_character\"},{\"id\":\"e-7\",\"kind\":\"entry\",\"title\":\"开场白\",\"content\":\"风灯刚点上。\",\"group_id\":\"g-1\",\"trigger_mode\":\"always\",\"agent_read_strategy\":\"normal\",\"position\":\"before_character\"},{\"id\":\"e-8\",\"kind\":\"opening\",\"title\":\"另一种开场\",\"content\":\"雨里有人敲门。\",\"group_id\":\"g-1\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\",\"position\":\"before_character\"},{\"id\":\"e-9\",\"kind\":\"entry\",\"title\":\"没有 content 的条目\",\"group_id\":\"g-3\",\"trigger_mode\":\"keyword\",\"agent_read_strategy\":\"keyword\"}]}]}",
+      "variable_config": "{\"format\":\"eleckoi.variable-config\",\"version\":1,\"character_id\":\"c-1\",\"active_version_id\":\"v1\",\"versions\":[{\"id\":\"v1\",\"variables\":[{\"id\":\"x-1\",\"name\":\"信任\"},{\"id\":\"x-2\",\"name\":\"钱\"},{\"id\":\"x-3\",\"name\":\"灯\"}],\"objects\":[]}]}",
+      "regex_rules": [{"id": "r-1", "name": "高亮"}, {"id": "r-2", "name": "选项"}],
+      "我自加的字段": true
+    }},
+
+    {"文件": "空库.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "空库卡"},
+      "setting_library": "{\"format\":\"eleckoi.setting-library-snapshot\",\"version\":1,\"active_version_id\":\"\",\"versions\":[]}"
+    }},
+    {"文件": "没versions.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\"name\": \"没versions\"},\n  \"setting_library\": \"{\\\"format\\\":\\\"eleckoi.setting-library-snapshot\\\"}\"\n}\n"},
+    {"文件": "库是字符串.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\"name\": \"库是字符串\"},\n  \"setting_library\": \"abc\"\n}\n"},
+    {"文件": "变量空对象.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\"name\": \"变量空对象\"},\n  \"setting_library\": \"{\\\"versions\\\":[{\\\"id\\\":\\\"v1\\\",\\\"groups\\\":[],\\\"entries\\\":[]}]}\",\n  \"variable_config\": {}\n}\n"},
+    {"文件": "变量字符串.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\"name\": \"变量字符串\"},\n  \"setting_library\": \"{\\\"versions\\\":[{\\\"id\\\":\\\"v1\\\",\\\"groups\\\":[],\\\"entries\\\":[]}]}\",\n  \"variable_config\": \"{\\\"variables\\\":[{\\\"name\\\":\\\"甲\\\"}]}\"\n}\n"},
+    {"文件": "变量列表.json", "文本": "{\n  \"format\": \"eleckoi.character-card\",\n  \"version\": 1,\n  \"character\": {\"name\": \"变量列表\"},\n  \"setting_library\": \"{\\\"versions\\\":[{\\\"id\\\":\\\"v1\\\",\\\"groups\\\":[],\\\"entries\\\":[]}]}\",\n  \"variable_config\": [1, 2, 3]\n}\n"},
+    {"文件": "无条目.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "无条目"},
+      "setting_library": "{\"versions\":[{\"id\":\"v1\"}]}",
+      "variable_config": "{\"variables\":[]}"
+    }},
+    {"文件": "没variable_config.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "没变量"},
+      "setting_library": "{\"versions\":[{\"id\":\"v1\",\"groups\":[],\"entries\":[]}]}"
+    }},
+    {"文件": "没设置.json", "对象": {
+      "format": "eleckoi.character-card",
+      "version": 1,
+      "character": {"name": "没设置"}
+    }}
+  ],
+
+  "常量": {
+    "格子": true,
+    "占位": true,
+    "头": true
+  },
+
+  "模板": [
+    {"名": null},
+    {"名": "我的卡"},
+    {"名": ""},
+    {"名": "卡：带【方括号】与 \"引号\""},
+    {"名": "{名} 自己"}
+  ],
+
+  "反推": [
+    {"卡": "@工作@/卡/最小.json"},
+    {"卡": "@工作@/卡/齐备.json", "名": null},
+    {"卡": "@工作@/卡/齐备.json", "名": "另起的名"},
+    {"卡": "@工作@/不是ElecKoi.json"},
+    {"卡": "@工作@/坏.json"},
+    {"卡": "@工作@/空库.json"},
+    {"卡": "@工作@/没versions.json"},
+    {"卡": "@工作@/库是字符串.json"},
+    {"卡": "@工作@/变量空对象.json"},
+    {"卡": "@工作@/变量字符串.json"},
+    {"卡": "@工作@/变量列表.json"},
+    {"卡": "@工作@/无条目.json"},
+    {"卡": "@工作@/没variable_config.json"},
+    {"卡": "@工作@/没设置.json"},
+    {"卡": "@工作@/目录/当卡用.json"},
+    {"卡": "@工作@/卡/不存在.json"},
+    {"卡": "@工作@/卡/齐备.json"}
+  ],
+
+  "查": [
+    {"名": "空模板", "文": "@模@", "行": 0},
+    {"名": "九节齐", "文": "## 一、一句话是什么\n\n一句话：一个卖灯的匠人。\n\n## 二、调子与体裁\n\n调子：慢热、克制。\n\n## 三、世界\n\n没有魔法，只有手艺。\n\n## 四、玩家是谁\n\n玩家是个跑单帮的。\n\n## 五、角色名册\n\n- 阿灯 —— **弱点**：怕黑；**腔调**：慢吞吞\n\n## 六、故事与推进\n\n主线：把灯卖到城里。\n\n## 七、要记的状态\n\n变量 3 条 —— **初值**与**更新**都想好了。\n\n## 八、玩法要哪几条\n\n只要闲聊。\n\n## 九、界面与交付\n\n导入手机端、一张卡图。\n", "行": 0},
+
+    {"名": "少两节", "文": "## 一、一句话是什么\n\n一句话：卖灯的。\n\n## 二、调子与体裁\n\n慢热。\n", "行": 0},
+
+    {"名": "空节", "文": "## 一、一句话是什么\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n## 四、玩家是谁\n\n玩家是跑单帮的。\n\n## 五、角色名册\n\n- 甲 —— **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n变量 1 条 —— **初值**与**更新**写了。\n\n## 八、玩法要哪几条\n\n只要闲聊。\n\n## 九、界面与交付\n\n导入、一张卡图。\n", "行": 0},
+
+    {"名": "占位残留", "文": "## 一、一句话是什么\n\n> 说明行\n\n- <在这里写>\n- TODO\n- ？？\n- （空）\n- ---\n- | 表头\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n没有魔法。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n**初值**与**更新**都写了。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "缺词带否定", "文": "## 一、一句话是什么\n\n一句话：卖灯的。\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n这是一座没有轮子的城。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- 甲 —— **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n变量 1 条 —— **初值**与**更新**都写了。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "缺词无否定", "文": "## 一、一句话是什么\n\n一句话：卖灯的。\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n一座城，有桥有灯。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- 甲 —— **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n变量 1 条 —— **初值**与**更新**都写了。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "同一节两遍", "文": "## 一、一句话是什么\n\n第一次写：卖灯的。\n\n## 一、一句话是什么\n\n第二次写：还是卖灯的。\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n没有魔法。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n**初值**与**更新**。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "星号列表", "文": "## 一、一句话是什么\n\n* 卖灯的。\n\n## 二、调子与体裁\n\n* 慢热。\n\n## 三、世界\n\n* 没有魔法。\n\n## 四、玩家是谁\n\n* 跑单帮的。\n\n## 五、角色名册\n\n* **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n* 主线：卖灯。\n\n## 七、要记的状态\n\n* **初值**与**更新**。\n\n## 八、玩法要哪几条\n\n* 闲聊。\n\n## 九、界面与交付\n\n* 导入。\n", "行": 0},
+
+    {"名": "节内含小节", "文": "## 一、一句话是什么\n\n开头一段。\n\n### 小标题\n\n后面还有。\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n没有魔法。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n**初值**与**更新**。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "行尾多空格", "文": "## 一、一句话是什么  \n\n一句话：卖灯的。\n\n## 二、调子与体裁\n\n慢热。\n\n## 三、世界\n\n没有魔法。\n\n## 四、玩家是谁\n\n跑单帮的。\n\n## 五、角色名册\n\n- **弱点**：怕黑；**腔调**：慢\n\n## 六、故事与推进\n\n主线：卖灯。\n\n## 七、要记的状态\n\n**初值**与**更新**。\n\n## 八、玩法要哪几条\n\n闲聊。\n\n## 九、界面与交付\n\n导入。\n", "行": 0},
+
+    {"名": "命中的是空节表头", "文": "## 一、一句话是什么\n\n## 二、调子与体裁\n\n## 三、世界\n\n## 四、玩家是谁\n\n## 五、角色名册\n\n## 六、故事与推进\n\n## 七、要记的状态\n\n## 八、玩法要哪几条\n\n## 九、界面与交付\n", "行": 0}
+  ],
+
+  "主": [
+    {"argv": [], "开关": false},
+    {"argv": [], "开关": true},
+    {"argv": ["-o", "@工作@/规划书.md"], "开关": true},
+    {"argv": ["-o", "@工作@/规划书.md"], "开关": false},
+    {"argv": ["--out", "@工作@/子目录/深一点/规划书.md"], "开关": false},
+    {"argv": ["-o"]},
+    {"argv": ["--查", "@工作@/规划书.md"]},
+    {"argv": ["--查", "@工作@/没这本.md"]},
+    {"argv": ["--check", "@工作@/不是ElecKoi.json"]},
+    {"argv": ["@工作@/卡/齐备.json"]},
+    {"argv": ["-o", "@工作@/从卡反推.md", "@工作@/卡/齐备.json"]},
+    {"argv": ["@工作@/卡/不存在.json"]},
+    {"argv": ["@工作@/坏.json"]},
+    {"argv": ["-o", "@工作@/目录/当作文件.md"]},
+    {"argv": ["@工作@/空库.json"]}
+  ]
+}

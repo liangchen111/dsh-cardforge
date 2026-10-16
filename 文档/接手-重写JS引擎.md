@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（22/27 个模块逐字节绿）
+## 现状（25/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -39,8 +39,11 @@
 | `dist` | `forgejs\lib\dist.mjs` | ✔ 56,388 字节（721 行 · 17 情形 / 96 步） |
 | `preset` | `forgejs\lib\preset.mjs` | ✔ 441,131 字节（802 行 · 8 情形 / 122 步 · **PNG 走 `算_png` 折法**） |
 | `lint` | `forgejs\lib\lint.mjs` | ✔ 161,769 字节（456 行 · 4 情形 / 87 步 · **`yaml` 走自写子集**） |
+| `plan` | `forgejs\lib\plan.mjs` | ✔ 40,095 字节（904 行 · 预置 16 · 模板 5 · 反推 17 · 查 12 · 主 15） |
+| `bundle` | `forgejs\lib\bundle.mjs` | ✔ 2,037,261 字节（397 行 · 5 情形 / 5 步 · zip 字节走申报差异） |
+| `guard` | `forgejs\lib\guard.mjs` | ✔ 13,193 字节 |
 
-**在跑**：`plan`（262 行）＋ `bundle`（119 行）。
+**在跑**：**命令层** —— `forge.py`（3,109 行 · 33 条命令）⇒ `forgejs\forge.mjs`；`forge\cli.py`（37）＋ `__main__.py`（8）⇒ `forgejs\cli.mjs`。
 
 ## 怎么跑
 
@@ -59,10 +62,10 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`plan`(262) ＋ `bundle`(119)，两个子代理并排。
-2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
-   已可开工：`guard`(71 · 只 os)。
-   最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
+1. **在跑**：**命令层** —— `forge.py`(3,109 行 · 33 条命令) ＋ `cli.py`(37) ＋ `__main__.py`(8)。**这是最后一块。**
+2. 它绿了就**全部搬完**：`forge/` 27 个模块 ＋ CLI 实体。
+   收尾三件：① 文档四份推到 26/26 与「全部搬完」；② 端到端实机验证（见「怎么验」一节）；③ 决定插件化形态
+   （`manifest.json` ＋ `cordis.yml` ＋ 纯 `.mjs`，**不进 npm**）—— 这一步要等玩家点头。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 3. 还欠着的两处：`content.restore()` 里那两处 `from . import opener as OP` 是**惰性导入**，

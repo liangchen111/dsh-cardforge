@@ -2040,6 +2040,98 @@ def 算_lint(料: dict) -> dict:
 算式["lint"] = 算_lint
 
 
+def 算_guard(料):
+    """`forge/guard.py` —— 只读禁区名单。
+
+    ★ 本模块的输入**全在环境里**（环境变量 ＋ 工具根下的名单文件 ＋ 目录里的 `.只读` 标记），
+      所以每个情形都把 `guard.ROOT` 临时指到自己的工作目录（`finally` 里还原），
+      名单文件就写在那底下 —— **绝不去碰工具根上那份真名单**。
+    ★ `os.environ` 也是模块外的状态：进门先存原值、出门逐字还原（`None` ＝ 原本就没有这个变量）。
+    """
+    import contextlib
+    import io as _io
+    import shutil
+
+    from forge import guard as G
+
+    原ROOT = G.ROOT
+    原env = os.environ.get(G.ENV)
+    情形们 = []
+
+    def 设环境(v):
+        if v is None:
+            os.environ.pop(G.ENV, None)
+        else:
+            os.environ[G.ENV] = v
+
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_guard-", dir=str(Path(__file__).resolve().parent)))
+            try:
+                G.ROOT = str(工作)
+                设环境(None if 情形.get("环境") is None else 出参数(情形["环境"], 工作, 根))
+                料名单 = 情形.get("名单")
+                if 料名单 is not None:
+                    # `_预置文` 的同一套写法：字符串＝原文、`{"@十六进制@": …}`＝二进制。
+                    # `出参数` 先替换 `@工作@`／`@根@`，再交给它折。
+                    (工作 / G.LIST_FILE).write_bytes(_预置文(出参数(料名单, 工作, 根)))
+                预置 = 情形.get("预置") or {}
+                # ★ `预置` 里的名字是**相对工作目录**的（与 `算_lint` 同形）—— 必须自己拼上
+                #   `工作`，否则 `Path("子")` 会按 cwd（＝工具根）造目录，往工具根里落垃圾树，
+                #   而那棵树里正好有 `.只读` ⇒ 后面所有情形的「往上找标记」都会撞上它。
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 出参数(名, 工作, 根)).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 出参数(名, 工作, 根)
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_bytes(_预置文(文))
+                出 = {"名": 情形["名"], "步": []}
+                for 步 in 情形["操作"]:
+                    # `参数` 可以写成裸字符串（一个参数）或表（多个参数）—— **不能**
+                    # 用 `步.get("参数") or []` 收口：`readonly_reason("")` 那个空串会让
+                    # `or` 把它折成「零个参数」，Python 抛 `TypeError` 而 JS 收到 `undefined`。
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参 = 出参数(原参 if isinstance(原参, list) else [原参], 工作, 根)
+                    rec = {"调用": 步["调用"], "参数": _动(参), "回": None, "错": None}
+                    buf = _io.StringIO()
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = getattr(G, 步["调用"])(*参)
+                        rec["回"] = _动(回)
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = 错文本(步["调用"], exc)
+                    rec["出"] = _净文本(buf.getvalue())
+                    出["步"].append(rec)
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+            # ★ 标记那一支的报错里印的是 `_norm()` 归一后的路径 —— **小写**的
+            #   （`os.path.normcase` 在 Windows 上 lower），而 `mkdtemp` 给的是原样大小写。
+            #   少了小写这两对，黄金里会留着 `_tmp_guard-qe9h6ohp` 这种本趟随机的尾巴。
+            对 = [
+                (str(工作), "<工作>"),
+                (str(工作).replace("\\", "\\\\"), "<工作>"),
+                (str(工作).lower(), "<工作>"),
+                (str(工作).lower().replace("\\", "\\\\"), "<工作>"),
+            ]
+            情形们.append(_换路径(收_uuid(出), 对))
+    finally:
+        G.ROOT = 原ROOT
+        # ★ 还原要**逐字**（`None` 在 `os.environ` 里就是「删掉」）：`os.environ[x] = None`
+        #   与 `pop` 等价，所以 `设环境` 一句就够。
+        设环境(原env)
+    出 = {
+        "常量": {"ROOT": str(原ROOT), "LIST_FILE": G.LIST_FILE, "ENV": G.ENV, "MARKER": G.MARKER},
+        "情形": 情形们,
+        "环境还原": os.environ.get(G.ENV) == 原env,
+    }
+    # 顶层那个 `ROOT` 也要折 —— 它是工具根的绝对路径，逐字比会把「本机装在哪儿」钉进黄金里。
+    return _换路径(出, [(str(根), "<根>"), (str(根).replace("\\", "\\\\"), "<根>")])
+
+
+算式["guard"] = 算_guard
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)

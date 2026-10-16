@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
-import { gunzipSync } from 'node:zlib'
+import { gunzipSync, inflateRawSync } from 'node:zlib'
 import * as M from '../forgejs/lib/model.mjs'
 import * as D from '../forgejs/lib/domain.mjs'
 import * as Z from '../forgejs/lib/zod.mjs'
@@ -155,6 +155,33 @@ try {
   LI = await import('../forgejs/lib/lint.mjs')
 } catch (e) {
   LI = null
+}
+
+// bundle 同样：它 import 四个兄弟（hud / manual / model / pack）＋ 惰性等 dist / export。
+// 名字用 BU —— B 没被占（BR 是 bridge、DI 是 dist、EX 是 export）。
+let BU = null
+try {
+  BU = await import('../forgejs/lib/bundle.mjs')
+} catch (e) {
+  BU = null
+}
+
+// plan：只 import 五个兄弟（model / validate / content / sandbox），但它碰沙箱开关 ⇒ 动态导入。
+// 名字用 PLAN —— 谁都没占。
+let PLAN = null
+try {
+  PLAN = await import('../forgejs/lib/plan.mjs')
+} catch (e) {
+  PLAN = null
+}
+
+// guard：只 import 了 plan 的路径工具（`os.path` 那一族），自己不带任何状态。
+// 名字用 GU —— 谁都没占（G 也没被占，但 GU 与 `guard` 对得上）。
+let GU = null
+try {
+  GU = await import('../forgejs/lib/guard.mjs')
+} catch (e) {
+  GU = null
 }
 
 const 这里 = dirname(fileURLToPath(import.meta.url))
@@ -1331,7 +1358,7 @@ function 折读不出来(x) {
 
 /** 把「解析器读不出 json」的整条异常文本折成 `解析器: <解析器说>` —— 申报差异 3，理由见 `出黄金.py:_折解析器`。 */
 function 折解析器(x) {
-  if (typeof x === 'string' && /^(JSONDecodeError|SyntaxError): [\s\S]*$/.test(x)) return '解析器: <解析器说>'
+  if (typeof x === 'string' && /^(JSONDecodeError|SyntaxError|ValueError): [\s\S]*$/.test(x)) return '解析器: <解析器说>'
   return x
 }
 
@@ -2165,6 +2192,385 @@ function 算_lint(料) {
   }
 }
 算式.lint = 算_lint
+
+/* ------------------------------------------------------------------ bundle */
+
+//  本模块的两处**申报差异**（与 出黄金.py 的 `_包大小` / `_折正文` 逐字对应）：
+//
+//  ① `N 个文件 · X KB` 里的那个 X —— CPython 的 zlib（1.3.1）与 Node 那个 fork
+//     （1.3.1-e00f703）对同一输入压出来的 deflate 体必然不同（实测同一份 `hud.core.js`
+//     32397 B：Python 11059 B、Node 11327 B），整包体积差一截。文件数与清单条数都是确定的，
+//     故只折大小那一格。**申报差异，不是放宽比对**（同 `算_png` 的 `_折出文`）。
+const _包大小 = /^(\s*\d+ 个文件 · )[\d.]+( KB · .*)$/
+const _折行 = (s) => (typeof s === 'string' ? s.replace(_包大小, '$1<包大小>$2') : s)
+
+//  ② 新发的 uuid4 —— `pack.build` 与 HUD 写回会给卡 / spec / 预览页里每条正则与每个条目
+//     **新发 uuid4**（卡里写成带连字符的 `8-4-4-4-12`，源码里是连写的 32 位十六进制）。
+//     不折的话 `.card.json` / `.spec.yaml` / `预览.html` 这一大片正文每次都不同。
+const _UUID4 = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
+const _UUID32 = /(?<![0-9a-f])[0-9a-f]{32}(?![0-9a-f])/g
+const _折正文 = (s) => 净文本(String(s).replace(_UUID4, '<uuid4>').replace(_UUID32, '<uuid4>'))
+
+//  ★ 公共的 `净文本` / `走树` 一个字不动（同 `算_coach` 的 `树带卡` 那一手：只改本地这份树）。
+
+/** 读一个 zip：返回 `[{内部名, 体: Buffer}]`，顺序照**中央目录**（＝写进去的顺序）。 */
+function _读zip(路径) {
+  const buf = readFileSync(路径)
+  let 尾 = -1
+  const 下限 = Math.max(0, buf.length - 22 - 65535)
+  for (let i = buf.length - 22; i >= 下限; i -= 1) {
+    if (buf.readUInt32LE(i) === 0x06054b50) { 尾 = i; break }
+  }
+  if (尾 < 0) throw new Error('不是 zip：找不到中央目录结尾')
+  const 条数 = buf.readUInt16LE(尾 + 10)
+  let p = buf.readUInt32LE(尾 + 16)
+  const 表 = []
+  for (let n = 0; n < 条数; n += 1) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error('不是 zip：中央目录坏了')
+    const 旗 = buf.readUInt16LE(p + 8)
+    const 法 = buf.readUInt16LE(p + 10)
+    const 压 = buf.readUInt32LE(p + 20)
+    const 名长 = buf.readUInt16LE(p + 28)
+    const 附长 = buf.readUInt16LE(p + 30)
+    const 注长 = buf.readUInt16LE(p + 32)
+    const 偏移 = buf.readUInt32LE(p + 42)
+    const 名 = buf.subarray(p + 46, p + 46 + 名长).toString((旗 & 0x800) ? 'utf8' : 'latin1')
+    表.push({ 名, 法, 压, 偏移 })
+    p += 46 + 名长 + 附长 + 注长
+  }
+  const 解一条 = (项) => {
+    const q = 项.偏移
+    if (buf.readUInt32LE(q) !== 0x04034b50) throw new Error('不是 zip：本地头坏了')
+    const 名长 = buf.readUInt16LE(q + 26)
+    const 附长 = buf.readUInt16LE(q + 28)
+    const 起 = q + 30 + 名长 + 附长
+    const 体 = buf.subarray(起, 起 + 项.压)
+    if (项.法 === 0) return Buffer.from(体)
+    if (项.法 === 8) return inflateRawSync(体)
+    throw new Error(`不是 zip：不支持的压缩方式 ${项.法}`)
+  }
+  //  ★ CPython 的 `ZipFile.read(name)` 查的是 `NameToInfo` —— **后写覆盖前写**。
+  //    `bundle.py:98` 那个恒假判断会让工程根那份旧 `包信息.json` 也进包，
+  //    于是 zip 里 `骨架/包信息.json` 出现两次，而 `read()` 两条都回**后写**那份。
+  //    这里必须照抄 last-wins，否则两条同名条目的内容对不上黄金。
+  const 后写 = new Map()
+  for (const 项 of 表) 后写.set(项.名, 项)
+  return 表.map((项) => ({ 内部名: 项.名, 体: 解一条(后写.get(项.名)) }))
+}
+
+//  Python 的 `b.decode("utf-8")` 读不出就抛 `UnicodeDecodeError`；`TextDecoder` 要 fatal。
+//  `ignoreBOM: true` ＝**不**把开头那个 BOM 当签名吃掉（Python 的 `decode` 也不吃）。
+const _UTF8严 = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
+
+/** 照 `出黄金.py` 的 `_zip`：逐条目记「内部名 / 大小 / 文字（或 sha256）」。 */
+function _zip(路径) {
+  const 暂 = mkdtempSync(join(tmpdir(), '_zip-'))
+  try {
+    return _读zip(路径).map(({ 内部名, 体 }) => {
+      //  spec 走**结构**比（与 `走树` 里 `.spec.` 那一支同一口径）：JS 侧 `hud.patch_spec`
+      //  的落盘走 `M.jdump`（写 JSON）、Python 侧走 `M.ydump`（写 YAML）—— **字节**天生
+      //  不同（计划 §二① 备案过的申报差异），只能按读回来的结构比。临时文件落系统 temp。
+      const 单片 = 内部名.split(/[\\/]/).pop()
+      if (单片.includes('.spec.')) {
+        const 临时 = join(暂, 单片)
+        writeFileSync(临时, 体)
+        return { 内部名, 结构: 动(M.loadStructured(临时)) }
+      }
+      try {
+        return { 内部名, 大小: 体.length, 文字: _折正文(_UTF8严.decode(体)) }
+      } catch {
+        return { 内部名, 大小: 体.length, sha256: createHash('sha256').update(体).digest('hex') }
+      }
+    })
+  } finally {
+    rmSync(暂, { recursive: true, force: true })
+  }
+}
+
+/** 照 `出黄金.py` 的 `_折树包`：`.zip` 换逐条目折法、可比文本换正文，**只改本地这份树**。 */
+function _折树包(树, 工作) {
+  for (const 项 of 树) {
+    const rel = 项.路径 || ''
+    if (!('sha1' in 项)) continue
+    const p = join(工作, rel)
+    let 是文件 = false
+    try { 是文件 = statSync(p).isFile() } catch { 是文件 = false }
+    if (!是文件) continue
+    const 低 = rel.toLowerCase()
+    if (低.endsWith('.zip')) {
+      delete 项.sha1
+      项.ZIP = _zip(p)
+    } else if (['.card.json', '.md', '.html', '.json', '.js', '.css'].some((t) => 低.endsWith(t))) {
+      delete 项.sha1
+      项.文本 = _折正文(readFileSync(p, 'utf8'))
+    }
+  }
+  return 树
+}
+
+function 算_bundle(料) {
+  if (!BU) throw new Error('forgejs/lib/bundle.mjs 没导入成功，先把它落地再跑 bundle')
+  const 语料根 = join(这里, '语料', 'bundle')
+  //  ★ `hud.mjs:93` 的模块级出口 `let _出口 = _print` 会被 `bundle.run` 里那句
+  //    `HUD.build(..., out=out_print)`（`hud.mjs:863 setOut`）**永久换掉**，hud 自己也不还原
+  //    —— 不收拾就会让**排在 bundle 后面跑的 `算_hud`** 把输出吐进一个已经没人看的收集器，
+  //    hud 当场红（实测：`bundle hud` 红 / `hud bundle` 绿）。`算_bridge` 从不碰它 ⇒ 进这里
+  //    之前恒是初始的 `_print`。`hud.mjs` 没导出读 `_出口` 的口，故按**已知初值**放回
+  //    （`setOut` 是唯一改它的地方）。照 `算_dist` 存还原沙箱那一手。
+  const 原出口 = (s = '') => { process.stdout.write(String(s) + '\n') }
+  const 情形们 = []
+  for (const 情 of 料.情形) {
+    //  ★ 工作目录必须建在**差分目录**底下：建在工具根下会被 scaffold 语料第 27 条
+    //    （`abspath("")` ＝ 工具根）照进快照当场顶红；建在系统 temp 又会撞上 8.3 短名，
+    //    两侧 `abspath` 归一对不上。
+    const 工作 = mkdtempSync(join(这里, '_tmp_bundle-'))
+    const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+    try {
+      const 工程名 = 情.夹具
+      if (工程名) 拷目录(join(语料根, 工程名), join(工作, 工程名))
+      for (const 旧 of 情.守旧 || []) {
+        const 旧路径 = join(工作, 旧.路径)
+        mkdirSync(dirname(旧路径), { recursive: true })
+        writeFileSync(旧路径, 旧.正文, 'utf8')
+      }
+
+      const 出 = { 名: 情.名 ?? null, 步: [] }
+      for (const 步 of 情.步骤 || []) {
+        const 原参 = 步.参数 || []
+        const 参数0 = 原参.map((a) => (typeof a === 'string'
+          ? 换路径(a, [['@工作@', 工作], ['@根@', 根]])
+          : a))
+        //  可调用参数没法进 JSON ⇒ 语料写口令 `"@行@"`，这里换成收集器；两边都把它当
+        //  `行.append`（Python）/ `(s)=>行.push(String(s))`（JS），收进 `rec.行` ——
+        //  这样**出口本身**也进了差分。记进 `rec.参数` 的仍写回口令（bound method 不是 JSON）。
+        const 行 = []
+        const 参数 = 参数0.map((a) => (a === '@行@' ? ((s) => 行.push(String(s))) : a))
+        let 出文 = ''
+        const 原写 = process.stdout.write.bind(process.stdout)
+        process.stdout.write = (s) => { 出文 += String(s); return true }
+        const rec = { 调用: 步.调用, 参数: null }
+        try {
+          const 回 = BU.run(...参数)
+          rec.回 = JSON.parse(JSON.stringify(动(回 ?? null)))
+          rec.错 = null
+        } catch (e) {
+          rec.回 = null
+          rec.错 = 净文本(`${e.constructor.name}: ${e.message}`)
+        } finally {
+          process.stdout.write = 原写
+        }
+        rec.参数 = 动(原参)
+        rec.行 = 行.map((x) => _折行(净文本(x)))
+        rec.出 = _折行(净文本(出文))
+        出.步.push(rec)
+      }
+      出.树 = _折树包(走树(工作), 工作)
+      情形们.push(换路径(折浮(收_uuid(出)), 对))
+    } finally {
+      rmSync(工作, { recursive: true, force: true })
+      if (H) H.setOut(原出口)
+    }
+  }
+  return { 情形: 情形们 }
+}
+算式.bundle = 算_bundle
+
+// --------------------------------------------------------------------- plan
+//
+// 同 算_scaffold / 算_draft 的架构：预置夹具 → 按序调入口 → 记 stdout／返回值／异常消息。
+//   ① 工作目录**建在 `差分\` 根底下**（不用系统 temp：8.3 短名会让两侧的路径归一对不上；
+//      也不能建在工具根：会被 `scaffold` 语料第 27 条 `abspath("")`＝工具根照进快照）。
+//   ② 语料里的 `@工作@` 一律写**正斜杠**（`@工作@/卡/齐备.json`）：Python 侧 `.as_posix()`
+//      后再替换、这里拼串时直接换 —— 反斜杠形态在 JSON 里要翻倍，两头容易对不上。
+//   ③ `_写文本` 的两条支路（沙箱开／关）靠语料里 `"开关"` 翻：进门先摁回**关**、跑完还原
+//      —— 沙箱开关是进程级状态，黄金必须与调用顺序无关（同 算_scaffold）。
+function 算_plan(料) {
+  if (!PLAN) throw new Error('forgejs/lib/plan.mjs 没导入成功，先把它落地再跑 plan')
+  const 工作 = mkdtempSync(join(根, '差分', '_tmp_plan-'))
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+  const 出 = { 常量: {}, 模板: [], 反推: [], 查: [], 主: [] }
+  try {
+    for (const 件 of 料.预置) {
+      if (件.目录 !== undefined) {
+        mkdirSync(join(工作, 件.目录), { recursive: true })
+        continue
+      }
+      const p = join(工作, 件.文件)
+      mkdirSync(dirname(p), { recursive: true })
+      // ★ 与 Python 侧一一对应：`对象` 走 `JSON.stringify(x, null, 2)` + 末尾一个 \n
+      //   （与 `json.dumps(ensure_ascii=False, indent=2)` 同形），`文本` 原样写。
+      const 文 = 件.对象 !== undefined ? JSON.stringify(件.对象, null, 2) + '\n' : 件.文本
+      writeFileSync(p, 文, 'utf8')
+    }
+    // 语料一律正斜杠：`join` 出来的反斜杠形态也要能替（两侧各替一次，谁先命中都行）
+    const 替 = (s) => String(s).split('@工作@').join(工作.split('\\').join('/'))
+    for (const 名 of Object.keys(料.常量)) 出.常量[名] = 动(料.常量[名] ? PLAN[名] : null)
+
+    for (const 步 of 料.模板) {
+      出.模板.push({ 参数: 动(步.名 ?? null), 回: 动(模板调用(步.名)) })
+    }
+
+    for (const 步 of 料.反推) {
+      const rec = { 卡: 替(步.卡), 名: 动(步.名 ?? null), 回: null, 错: null }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        rec.回 = 动(反推调用(替(步.卡), 步.名))
+      } catch (e) {
+        rec.错 = 折解析器(净文本(`${e.constructor.name}: ${e.message}`))
+      } finally {
+        process.stdout.write = 原写
+      }
+      出.反推.push(rec)
+    }
+
+    for (const 步 of 料.查) {
+      const rec = { 名: 步.名, 行: [] }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        rec.回 = 动(PLAN.查(替(步.文).split('@模@').join(PLAN.模板())))
+      } catch (e) {
+        rec.错 = 折解析器(净文本(`${e.constructor.name}: ${e.message}`))
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.查.push(rec)
+    }
+
+    for (const 步 of 料.主) {
+      if (步.开关 !== undefined) SB.enable(步.开关)
+      const rec = { argv: 步.argv.map(替), 开关: 动(步.开关 ?? null), 回: null, 错: null }
+      let 出文 = ''
+      const 原写 = process.stdout.write.bind(process.stdout)
+      process.stdout.write = (s) => { 出文 += String(s); return true }
+      try {
+        rec.回 = 动(PLAN.main(步.argv.map(替)))
+      } catch (e) {
+        rec.错 = 折解析器(净文本(`${e.constructor.name}: ${e.message}`))
+      } finally {
+        process.stdout.write = 原写
+      }
+      rec.出 = 净文本(出文)
+      出.主.push(rec)
+    }
+  } finally {
+    SB.enable(原沙箱)
+    rmSync(工作, { recursive: true, force: true })
+  }
+  // ★ Windows 文件找不到时报错文本里路径走 `%r`（反斜杠翻倍）⇒ 归一表里要同时有「翻倍」那份，
+  //   否则 `FileNotFoundError: [Errno 2] … 'E:\\workGZQ\\…\\_tmp_plan-x\\卡\\不存在.json'` 替不掉。
+  return 换路径(出, [[工作.split('\\').join('/'), '<工作>'], [工作, '<工作>'],
+    [工作.split('\\').join('\\\\'), '<工作>'], [工作.split('\\').join('\\\\').replace(/\\/g, '/'), '<工作>']])
+}
+
+function 模板调用(名) {
+  return 名 === null || 名 === undefined ? PLAN.模板() : PLAN.模板(名)
+}
+
+function 反推调用(卡, 名) {
+  return 名 === null || 名 === undefined ? PLAN.反推(卡) : PLAN.反推(卡, 名)
+}
+
+算式.plan = 算_plan
+
+/** `guard.py` 的 JS 侧 —— 与 `出黄金.py::算_guard` 同形。
+ *
+ *  ★ 本模块的输入**全在模块外**：环境变量 `FORGE_READONLY`、`guard.ROOT` 下的名单文件、
+ *    目录里的 `.只读` 标记。所以每个情形都把 `GU.ROOT` 指到自己的工作目录（`finally` 还原）、
+ *    `process.env` 进出逐字还原 —— **绝不去碰工具根上那份真名单**。
+ */
+function 算_guard(料) {
+  if (!GU) throw new Error('forgejs/lib/guard.mjs 没导入成功，先把它落地再跑 guard')
+  const ENV名 = GU.ENV
+  const 原ROOT = GU.ROOT
+  const 原env缺 = !(ENV名 in process.env)
+  const 原env = 原env缺 ? null : process.env[ENV名]
+  const 设环境 = (v) => {
+    if (v === null || v === undefined) delete process.env[ENV名]
+    else process.env[ENV名] = String(v)
+  }
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(这里, '_tmp_guard-'))
+      GU._setROOT(工作)
+      设环境(情形.环境 === null || 情形.环境 === undefined ? null : 出参数(情形.环境, 工作, 根))
+      let 出 = null
+      try {
+        if (情形.名单 !== null && 情形.名单 !== undefined) {
+          const 是二进制 =
+            typeof 情形.名单 === 'object' && !Array.isArray(情形.名单) &&
+            Object.keys(情形.名单).length === 1 && '@十六进制@' in 情形.名单
+          writeFileSync(join(工作, GU.LIST_FILE), _预置文(是二进制 ? 情形.名单 : 出参数(情形.名单, 工作, 根)))
+        }
+        const 预置 = 情形.预置 ?? {}
+        // ★ 与 `算_lint` 同形：`预置` 里的名字是**相对工作目录**的，必须自己拼上 `工作`。
+        //   漏了这一拼（`mkdirSync("子")`）：目录按 cwd（＝工具根）造出来，那棵树里的 `.只读`
+        //   会让后续所有情形的「往上找标记」全部命中工具根 —— 单看 JS 还看不出来，因为是
+        //   Python 那一趟先把垃圾树造在工具根上、JS 这一趟才撞上的。
+        for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 出参数(名, 工作, 根)), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+          const p = join(工作, 出参数(名, 工作, 根))
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, _预置文(文))
+        }
+        出 = { 名: 情形.名 ?? null, 步: [] }
+        for (const 步 of 情形.操作) {
+          // 与 Python 侧同形：`参数` 可以是裸值（一个参数）或表（多个参数）。
+          // ★ 别用 `步.参数 ?? []` —— `readonly_reason("")` 的空串会被 ?? 保住（这点 JS 比
+          //   Python 的 `or` 好），但 `??` 会把「显式 null」与「缺省」混一起，仍用 `in` 判。
+          const 原参 = '参数' in 步 ? 步.参数 : []
+          const 参 = 出参数(Array.isArray(原参) ? 原参 : [原参], 工作, 根)
+          const rec = { 调用: 步.调用, 参数: 动(参), 回: null, 错: null }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            const 回 = GU[步.调用](...参)
+            rec.回 = 动(回 === undefined ? null : 回)
+          } catch (e) {
+            rec.回 = null
+            rec.错 = 错文本(步.调用, e)
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.出 = 净文本(出文)
+          出.步.push(rec)
+        }
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+      // ★ 标记那一支的报错里印的是 `_norm()` 归一后的路径 —— **小写**的（`_normcase` 会 lower），
+      //   而 `mkdtempSync` 给的是原样大小写。少了小写这两对，两边会各留各的随机尾巴。
+      const 对 = [
+        [工作, '<工作>'],
+        [工作.split('\\').join('\\\\'), '<工作>'],
+        [工作.toLowerCase(), '<工作>'],
+        [工作.toLowerCase().split('\\').join('\\\\'), '<工作>'],
+      ]
+      情形们.push(换路径(收_uuid(出), 对))
+    }
+  } finally {
+    GU._setROOT(原ROOT)
+    if (原env缺) delete process.env[ENV名]
+    else process.env[ENV名] = 原env
+  }
+  return 换路径(
+    {
+      常量: { ROOT: 根, LIST_FILE: GU.LIST_FILE, ENV: GU.ENV, MARKER: GU.MARKER },
+      情形: 情形们,
+      环境还原: (ENV名 in process.env) !== 原env缺 && (原env缺 || process.env[ENV名] === 原env),
+    },
+    [[根, '<根>'], [根.split('\\').join('\\\\'), '<根>']],
+  )
+}
+
+算式.guard = 算_guard
 
 const 要跑的 = process.argv.slice(2)
 const 名单 = 要跑的.length ? 要跑的 : Object.keys(算式).sort()

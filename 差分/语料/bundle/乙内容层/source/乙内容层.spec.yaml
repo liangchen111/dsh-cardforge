@@ -1,0 +1,10 @@
+format: eleckoi.character-card
+version: 1
+character:
+  name: 乙内容层
+  description: 一个只有内容层的最小工程。
+library:
+  entries:
+    - id: e1
+      title: 一条
+      content: 正文一行。

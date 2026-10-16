@@ -271,7 +271,7 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 
 ## 八、当前状态（2026-10-16 凌晨 · 交接用）
 
-**已搬完并逐字节绿（22/27）**
+**已搬完并逐字节绿（25/27）**
 
 | 模块 | JS 文件 | 差分 |
 |---|---|---|
@@ -297,6 +297,9 @@ python 差分/数覆盖.py          # validate 47/47 · domain 5/5 · 其余无 
 | `dist` | `forgejs/lib/dist.mjs` | ✔ 56,388 字节（17 情形 / 96 步） |
 | `preset` | `forgejs/lib/preset.mjs` | ✔ 441,131 字节（802 行 · 8 情形 / 122 步 ＋ 21 个 `常量:名`） |
 | `lint` | `forgejs/lib/lint.mjs` | ✔ 161,769 字节（456 行 · 4 情形 / 87 步 · 6 条正则 84 个样本） |
+| `plan` | `forgejs/lib/plan.mjs` | ✔ 40,095 字节（904 行 · 预置 16 · 模板 5 · 反推 17 · 查 12 · 主 15） |
+| `bundle` | `forgejs/lib/bundle.mjs` | ✔ 2,037,261 字节（397 行 · 5 情形 / 5 步 · zip 字节走申报差异） |
+| `guard` | `forgejs/lib/guard.mjs` | ✔ 13,193 字节 |
 
 ```
 python 差分\跑.py              # 一条命令跑全套（比一比）
@@ -304,8 +307,9 @@ python 差分\跑.py --刷 validate # 只在确认行为变更时刷黄金
 python 差分\数覆盖.py           # 数「语料走到了源码里的哪些诊断 code」
 ```
 
-**在跑**：`plan`（262）＋ `bundle`（119），两个子代理并排跑。两者依赖都已全绿；
-`guard`（71）随后，最后是**命令层**（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
+**在跑**：**命令层**（`forge.py` 3,109 行 · 33 条命令 ⇒ `forgejs/forge.mjs`；`forge/cli.py` 37 ＋ `__main__.py` 8 ⇒ `forgejs/cli.mjs`）。
+`forge.py` 是**单文件**，不能拆两个代理同时写 ⇒ 一人一遍过；其中 `cmd_selftest` 一个人占 950–2470 行（约 1,500 行）。
+**这是最后一块** —— 它绿了，整个 `forge/` ＋ CLI 就搬完了。
 
 > ⚠️ **`png` 申报了一处「天生不可复现」**（2026-10-16）：**整段 deflate 体复现不出来** ——
 > CPython 3.13.14 用上游 zlib **`1.3.1`**，Node v24.14.0 自带的是 fork **`1.3.1-e00f703`**。
