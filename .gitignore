@@ -18,3 +18,5 @@ dist/
 # 工作区（见 README「一张卡工程长什么样」）
 .forge/_取/
 .forge/回收站/
+
+*.tgz

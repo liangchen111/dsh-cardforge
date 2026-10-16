@@ -1,3 +1,21 @@
+## 0.30.1 · 2026-10-16
+
+**面板挂到「两套壳」上 —— 0.30.0 只挂了 ElecKoi，在 DSH 里装上照样看不见。**
+
+- 0.30.0 把面板挂在 DSH 自己的 `main` 与 `sidebar.panellist` 两个槽上。可 ElecKoi 的
+  `eleckoi-plugin-host.patch.yml` 把 `ui-layout` 与 `ui-sidebar` 都 `disabled: true` 了
+  （它用 `@eleckoi/dsh-client-shell` 换掉整套壳）。0.30.1 **三个槽都注册**：
+  `sidebar.panellist`（侧栏入口）＋ `main`（整页）＋ **`eleckoi.roleplay.conversation.input.dock`**
+  （list / session，ElecKoi 输入框上方那一区）。`ctx.slots.inject` 只是排队等着 ——
+  哪套壳声明了哪个槽就哪个生效，另一边不声明也不会报错。
+- **「点一下就发话」两条路自动挑**：ElecKoi 走官方服务 `eleckoiConversations`
+  （`readSelection` ＋ `writeInputDraft` ＋ `submitInput`，文本会先在输入框里露一下）；
+  DSH 那边没有这个服务（它是 ElecKoi 自己的）⇒ 直接找输入框写值、派发 `input` 与回车事件，
+  不行再点「发送」。纯 DOM，**不依赖任何服务名**。
+- **升级提醒**：profile 里那份依赖以前是 `^0.28.1` —— `0.x` 的 `^` 永远升不到 `0.30`，
+  装过 0.28 的不会自动升级。本仓库带 `插件/_装进壳.mjs`，用本地 tarball 装
+  （`--到 dsh` 或 `--到 eleckoi`），换依赖写法并补 profile 的 bundle 条目。
+
 ## 0.30.0 · 2026-10-16
 
 **加了一整页界面 —— 用它的人再也不用记命令。**
