@@ -13,7 +13,7 @@
 - 整份引擎的非标准库依赖**只有 `yaml`**，且只在 `forge\model.py` 与 `forge\lint.py` 出现。
 - 插件形态（手机端实测）：`manifest.json` ＋ `cordis.yml` ＋ **纯 `.mjs`**，**没有 npm / package.json / 依赖声明**。桌面端继续用现在的 npm bundle，**同一个仓库出两种壳**。
 
-## 现状（20/27 个模块逐字节绿）
+## 现状（22/27 个模块逐字节绿）
 
 | 模块 | JS | 差分 |
 |---|---|---|
@@ -37,8 +37,10 @@
 | `export` | `forgejs\lib\export.mjs` | ✔ 115,144 字节（616 行 · 14 情形 / 14 次调用） |
 | `png` | `forgejs\lib\png.mjs` | ✔ 80,563 字节（748 行 · 26 情形 / 83 步 · **deflate 体已申报差异**，见纪律 14） |
 | `dist` | `forgejs\lib\dist.mjs` | ✔ 56,388 字节（721 行 · 17 情形 / 96 步） |
+| `preset` | `forgejs\lib\preset.mjs` | ✔ 441,131 字节（802 行 · 8 情形 / 122 步 · **PNG 走 `算_png` 折法**） |
+| `lint` | `forgejs\lib\lint.mjs` | ✔ 161,769 字节（456 行 · 4 情形 / 87 步 · **`yaml` 走自写子集**） |
 
-**在跑**：`preset`（500 行）＋ `lint`（293 行）。
+**在跑**：`plan`（262 行）＋ `bundle`（119 行）。
 
 ## 怎么跑
 
@@ -57,9 +59,9 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（照顺序）
 
-1. **在跑**：`preset`(500) ＋ `lint`(293)，两个子代理并排。`preset` 要的 `png` 已绿。
+1. **在跑**：`plan`(262) ＋ `bundle`(119)，两个子代理并排。
 2. 剩下按**依赖**排（每个模块的 import 先 grep 一遍，别照计划 §四 那份旧批次表）：
-   已可开工：`plan`(262 · 只 sandbox) · `guard`(71 · 只 os) · `bundle`(119 · 要 hud/manual/model/pack/dist/export，**六件全绿**)。
+   已可开工：`guard`(71 · 只 os)。
    最后是命令层（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
    **行数以 Python 实测为准**（`forge/` 合计 13,134 行）—— 别用 PowerShell 的
    `(Get-Content 文件).Count`，它按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。

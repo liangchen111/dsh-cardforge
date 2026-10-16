@@ -139,6 +139,24 @@ try {
   DI = null
 }
 
+// preset 同理：它 import 三个兄弟（model / png / sandbox）＋ 复用 theme 的路径工具。
+// 名字用 PR —— P 被 pack、PN 被 png 占了。
+let PR = null
+try {
+  PR = await import('../forgejs/lib/preset.mjs')
+} catch (e) {
+  PR = null
+}
+
+// lint 同理：它只 import yaml（读卡稿那一路）与三个兄弟（validate / content / yaml）。
+// 名字用 LI —— L 谁都没占，别去抢已有的。
+let LI = null
+try {
+  LI = await import('../forgejs/lib/lint.mjs')
+} catch (e) {
+  LI = null
+}
+
 const 这里 = dirname(fileURLToPath(import.meta.url))
 const 根 = resolve(这里, '..')
 const 语料目录 = join(根, '差分', '语料')
@@ -1922,6 +1940,85 @@ function 算_png(料) {
 
 算式.png = 算_png
 
+// ---------------------------------------------------------------- preset
+// 与 `算_png` 逐条同形，只多两处：步名带 `常量:` 前缀 ⇒ 返回模块常量本身（不调用）；
+// 异常里嵌的解析器原文两边天生不同（CPython 的 `json.JSONDecodeError` vs Node 的
+// `SyntaxError`）⇒ 换一条折叠表 `_折错预设`（**已申报差异**，写在 差分/语料/preset.json
+// 的「说明」里）。前缀逐个留着比，只丢措辞。
+const _折错预设 = /(读不了预设 JSON：|设定库那段 JSON 解不开：|JSONDecodeError: )[\s\S]*/g
+
+function _折错预设文(文) {
+  // Node 的 `JSON.parse` 抛的是 `SyntaxError`（CPython 抛 `json.JSONDecodeError`）：
+  // 先把类名换成 Python 那个，再把原文折掉（同一处差异的两种表现）。
+  return String(文)
+    .replace(/SyntaxError: [\s\S]*/, 'JSONDecodeError: <解析器说>')
+    .replace(_折错预设, '$1<解析器说>')
+}
+
+function 算_preset(料) {
+  if (!PR) throw new Error('forgejs/lib/preset.mjs 没导入成功，先把它落地再跑 preset')
+
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      // ★ 工作目录必须建在 `差分/` 底下（不是工具根、更不是系统 temp）：
+      //   `default_out` 是从 abspath(源路径) 推出来的，系统 temp 在 Windows 上可能是
+      //   8.3 短名（C:\Users\ADMINI~1\…），Python abspath 与 Node resolve 会算出两种写法；
+      //   工具根则会被 scaffold 语料第 27 条（abspath("") ＝ 工具根）撞上。
+      const 工作 = mkdtempSync(join(这里, '_tmp_preset-'))
+      const 对 = [
+        [工作, '<工作>'],
+        [工作.split('\\').join('\\\\'), '<工作>'],
+      ]
+      try {
+        const 预置 = 情形.预置 || {}
+        for (const 名 of 预置.目录 || []) mkdirSync(join(工作, 名), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 || {})) {
+          const p = join(工作, 名)
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, _预置文(文))
+        }
+
+        const 出 = { 名: 情形.名, 步: [] }
+        for (const 步 of 情形.操作) {
+          const 原参 = '参数' in 步 ? 步.参数 : []
+          const 参数 = (Array.isArray(原参) ? 原参 : [原参]).map((a) => _参(a, 工作, 根))
+          const 调用 = 步.调用
+          const rec = { 调用, 参数: 动(_折壳(_折字节(参数))) }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            let 回
+            if (调用.startsWith('常量:')) 回 = PR[调用.slice(3)]
+            else 回 = PR[调用](...参数)
+            rec.回 = _折回(_折字节(动(动回(回 === undefined ? null : 回))))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = _折错预设文(_折错(错文本(调用, e)))
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.出 = _折出文(净文本(出文))
+          出.步.push(rec)
+        }
+        出.树 = _折树(走树(工作), 工作)
+        情形们.push(换路径(收_uuid(出), 对))
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+    }
+  } finally {
+    SB.enable(原沙箱)
+  }
+  return { 情形: 情形们, 沙箱还原: SB.enabled() === 原沙箱 }
+}
+
+算式.preset = 算_preset
+
 /** 找第一处不同，返回人话。 */
 function 第一处不同(a, b) {
   const n = Math.min(a.length, b.length)
@@ -1940,6 +2037,134 @@ function 第一处不同(a, b) {
   }
   return ''
 }
+
+// ------------------------------------------------------------------- lint
+// 与 preset 同形（情形制、工作目录建在**差分目录**底下、每步比 stdout / 返回值 / 异常、
+// 最后比整棵树）。语料自带的两个标记（`@造文本@` / `@标准输出@`）与两处**已申报差异**
+// 都在这里本地处理 —— 与 Python 侧 `算_lint` 逐行同形。
+function 算_lint(料) {
+  if (!LI) throw new Error('forgejs/lib/lint.mjs 没导入成功，先把它落地再跑 lint')
+  const 展 = (x) => {
+    if (_是标记(x, '@造文本@')) {
+      const [头, 次] = x['@造文本@']
+      return String(头) + '汉'.repeat(Number(次))
+    }
+    if (Array.isArray(x)) return x.map(展)
+    if (x !== null && typeof x === 'object') {
+      const 出 = {}
+      for (const [k, v] of Object.entries(x)) 出[k] = 展(v)
+      return 出
+    }
+    return x
+  }
+  const 折 = (x) => {
+    if (typeof x === 'string') {
+      return x
+        .replace(/(这个 \.json 读不出来：)[\s\S]*/, '$1<解析器说>')
+        .replace(/^(?:FileNotFoundError|Error): (?:\[Errno \d+\]|ENOENT)[\s\S]*/, '<文件系统错>')
+    }
+    if (Array.isArray(x)) return x.map(折)
+    if (x !== null && typeof x === 'object') {
+      const 出 = {}
+      for (const [k, v] of Object.entries(x)) 出[k] = 折(v)
+      return 出
+    }
+    return x
+  }
+  const 印 = (s = '') => { process.stdout.write(String(s) + '\n') }
+  /** 比树，但把 `main -o` 写出来的那份报告换成**正文**再比（与 Python 侧 `_树lint` 同形）：
+   *  报告正文里嵌着源文件的绝对路径，而那个路径每次 mkdtemp 都不一样 —— sha1 折不掉；
+   *  换成正文以后，外层 `换路径` 会把工作目录整个替换成 `<工作>`，两侧就对得上了。 */
+  const 树lint = (工作) => {
+    const 树 = 走树(工作)
+    for (const 项 of 树) {
+      const 名 = 项.路径.split('/').pop()
+      if (名.startsWith('报告') && 名.endsWith('.md')) {
+        delete 项.sha1
+        项.文本 = 净文本(readFileSync(join(工作, 项.路径), 'utf8'))
+      }
+    }
+    return 树
+  }
+  const 原沙箱 = SB.enabled()
+  SB.enable(false)
+  const 情形们 = []
+  try {
+    for (const 情形 of 料.情形) {
+      const 工作 = mkdtempSync(join(这里, '_tmp_lint-'))
+      let 出 = null
+      try {
+        const 预置 = 情形.预置 ?? {}
+        for (const 名 of 预置.目录 ?? []) mkdirSync(join(工作, 名), { recursive: true })
+        for (const [名, 文] of Object.entries(预置.文件 ?? {})) {
+          const p = join(工作, 名)
+          mkdirSync(dirname(p), { recursive: true })
+          writeFileSync(p, _预置文(展(文)))
+        }
+        出 = { 名: 情形.名 ?? null, 步: [] }
+        for (const 步 of 情形.操作) {
+          const 原参 = 步.参数 ?? []
+          const 显示参 = []
+          const 调用参 = []
+          for (const a of (Array.isArray(原参) ? 原参 : [原参])) {
+            const v = 展(a)
+            if (_是标记(v, '@标准输出@')) {
+              显示参.push('<标准输出>')
+              调用参.push(印)
+            } else {
+              const w = 出参数(v, 工作, 根)
+              显示参.push(w)
+              调用参.push(w)
+            }
+          }
+          const rec = { 调用: 步.调用, 参数: 动(显示参) }
+          let 出文 = ''
+          const 原写 = process.stdout.write.bind(process.stdout)
+          process.stdout.write = (s) => { 出文 += String(s); return true }
+          try {
+            const 回 = LI[步.调用](...调用参)
+            rec.回 = 动(动回(回 === undefined ? null : 回))
+            rec.错 = null
+          } catch (e) {
+            rec.回 = null
+            rec.错 = 错文本(步.调用, e)
+          } finally {
+            process.stdout.write = 原写
+          }
+          rec.出 = 净文本(出文)
+          出.步.push(rec)
+        }
+        出.树 = 树lint(工作)
+      } finally {
+        rmSync(工作, { recursive: true, force: true })
+      }
+      const 对 = [[工作, '<工作>'], [工作.split('\\').join('\\\\'), '<工作>']]
+      情形们.push(换路径(折(收_uuid(出)), 对))
+    }
+  } finally {
+    SB.enable(原沙箱)
+  }
+  const 正则 = (料.正则 ?? []).map((试) => {
+    const 条 = LI[试.名]
+    if (typeof 条 === 'string') return { 名: 试.名, 串: 条 }
+    return {
+      名: 试.名,
+      样本: 试.样本,
+      中: 试.样本.map((s) => {
+        const r = new RegExp(条.source, 条.flags.includes('g') ? 条.flags : `${条.flags}g`)
+        return [...s.matchAll(r)].map((m) => [V.lenPy(s.slice(0, m.index)), m[0]])
+      }),
+    }
+  })
+  return {
+    汉字: LI.汉字,
+    标准: LI.标准.map((x) => [...x]),
+    正则,
+    情形: 情形们,
+    沙箱还原: SB.enabled() === 原沙箱,
+  }
+}
+算式.lint = 算_lint
 
 const 要跑的 = process.argv.slice(2)
 const 名单 = 要跑的.length ? 要跑的 : Object.keys(算式).sort()

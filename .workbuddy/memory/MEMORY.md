@@ -126,14 +126,16 @@
   数「语料走到了源码里的哪些诊断 code」。
 - **铁律**：**行为照抄不顺手改**（要改先改 Python 版再同步）；**能逐字节比的必须逐字节比**，
   唯一例外是 **YAML**（读用自写子集 `forgejs\lib\yaml.mjs`、写默认 JSON，比对时用 PyYAML 解析回来做**结构相等**）。
-- **进度：20/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
+- **进度：22/27 逐字节绿** —— `model` · `domain` · `zod` · `pack` · `validate`（47/47 种 code 全覆盖）·
   YAML 子集读取器 · `sandbox` · **`content`（`content.py` 2,158 行 · 本工程最大的一块；产出 `content.mjs` 2,794 行）** ·
   **`opener`（341,131 字节 · 界面档三条支路已真跑）** · **`scaffold`（331,130 字节）** · **`draft`（59,823 字节）** ·
   **`mods`（303,578 字节）** · **`bridge`（273,900 字节 · `bridge.mjs` 1,274 行）** · **`hud`（70,619 字节 · `hud.mjs` 952 行）** ·
   **`manual`（73,272 字节 · `manual.mjs` 870 行）** · **`theme`（58,911 字节 · `theme.mjs` 886 行）** ·
   **`coach`（709,969 字节 · `coach.mjs` 1,510 行）** · **`export`（115,144 字节 · `export.mjs` 616 行）** ·
-  **`png`（80,563 字节 · `png.mjs` 748 行 · 26 情形 / 83 步）** · **`dist`（56,388 字节 · `dist.mjs` 721 行 · 17 情形 / 96 步）**。
-  下一波在跑：**`preset`（500 行）** ＋ **`lint`（293 行）**。
+  **`png`（80,563 字节 · `png.mjs` 748 行 · 26 情形 / 83 步）** · **`dist`（56,388 字节 · `dist.mjs` 721 行 · 17 情形 / 96 步）** ·
+  **`preset`（441,131 字节 · `preset.mjs` 802 行 · 8 情形 / 122 步）** · **`lint`（161,769 字节 · `lint.mjs` 456 行 · 4 情形 / 87 步）**。
+  下一波在跑：**`plan`（262 行）** ＋ **`bundle`（119 行）**；随后 `guard`（71）＋**命令层**（`cli.py` 37 ＋ `__main__.py` 8 ＋ `forge.py` 3,106 行 · 33 条命令，名字一个不改）。
+  `preset` 撞到的坑：**`in` 成员测试 ≠ 真值判断** —— `TRIGGER_MODES` 里有**空串**，JS 里 `''` 是假值 ⇒ `!_pick(x,表,null)` 会把合法的 `''` 判成「不收」（Python 原句是 `x not in TRIGGER_MODES`）；**含空串/0 的表一律用成员测试，别用真值判断**。
   依实测 grep 的依赖链：`plan` · `guard` · `bundle`（要 hud/manual/model/pack/dist/export 六件，**已全绿**）**现在就能开**；`preset` 要 `png`（已绿）。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。

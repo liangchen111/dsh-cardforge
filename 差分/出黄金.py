@@ -1815,6 +1815,231 @@ def 算_png(料: dict) -> dict:
 算式["png"] = 算_png
 
 
+# ---------------------------------------------------------------- preset
+# 与 png 那套同形（情形制、工作目录建在 `差分/` 底下、每步比 stdout/返回值/异常、最后比整棵树），
+# 只多两处：
+#   · 步名带 `常量:` 前缀 ⇒ 返回模块常量本身（不调用）—— 用来把 FORMAT / KINDS /
+#     ENTRY_KEYS / TRIGGER_MODES / _DEFAULTS … 逐个比一遍；
+#   · 异常里嵌的**解析器 / 解码器原文**两边天生不同（CPython 的 `json.JSONDecodeError`
+#     vs Node 的 `SyntaxError`，措辞与列号都不一路）⇒ 换一条折叠表 `_折错预设`（已申报差异）。
+_折错预设 = re.compile(r"(读不了预设 JSON：|设定库那段 JSON 解不开：|JSONDecodeError: )[\s\S]*")
+
+
+def _折错预设文(文: str) -> str:
+    """把嵌在消息里的**解析器 / 解码器原文**折成 `<解析器说>`（已申报差异）。
+
+    只丢措辞，不丢「在哪一层失败的」—— 前缀（`读不了预设 JSON：` / `设定库那段 JSON 解不开：`
+    / `JSONDecodeError: `）逐个留着比。
+    """
+    return _折错预设.sub(lambda m: m.group(1) + "<解析器说>", 文)
+
+
+def 算_preset(料: dict) -> dict:
+    """顺序跑一串 preset 操作，每步比 stdout / 返回值 / 异常消息，最后比整棵工作树。
+
+    与 `算_png` 逐条同形（照着它改的），三处差别：
+
+      · `F` 换成 `forge.preset` 的模块级名字表；步名带 `常量:` 前缀时返回**常量本身**；
+      · 异常走 `_折错预设文`（解析器原文两边不同，见上）；
+      · 临时目录前缀是 `_tmp_preset-`。
+
+    ★ 工作目录必须建在 `差分/` 底下（不是工具根、更不是系统 temp）：`default_out`
+      是从 `abspath(源路径)` 推出来的，系统 temp 在 Windows 上可能是 8.3 短名
+      （`C:\\Users\\ADMINI~1\\…`），Python `abspath` 与 Node `resolve` 会算出两种写法；
+      工具根则会被 `scaffold` 语料第 27 条（`abspath("")` ＝ 工具根）撞上。
+    """
+    import contextlib
+    import io
+    import shutil
+
+    from forge import preset as P
+    from forge import sandbox as _SB
+
+    差分 = Path(__file__).resolve().parent
+    F = {名: getattr(P, 名) for 名 in dir(P) if not 名.startswith("__")}
+
+    原沙箱 = _SB.enabled()
+    # ★ 沙箱开关是**进程级**状态；`SB.land` 开着时走"复制"而不是 `os.replace`，
+    #   黄金必须与「单跑 / 整套跑」的调用顺序无关 ⇒ 进门一律先关掉，出门按原样还原。
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_preset-", dir=str(差分)))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                预置 = 情形.get("预置") or {}
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 名).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 名
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_bytes(_预置文(文))
+
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in 情形["操作"]:
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    参数 = [_参(a, 工作, 根) for a in (原参 if isinstance(原参, list) else [原参])]
+                    调用 = 步["调用"]
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 调用, "参数": _动(_折壳(_折字节(参数)))}
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            if 调用.startswith("常量:"):
+                                回 = F[调用[len("常量:"):]]
+                            else:
+                                回 = F[调用](*参数)
+                        rec["回"] = _折回(_折字节(_动(动回(回))))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = _折错预设文(_折错(错文本(调用, exc)))
+                    rec["出"] = _折出文(_净文本(buf.getvalue()))
+                    出["步"].append(rec)
+                出["树"] = _折树(_树(工作), 工作)
+                情形们.append(_换路径(收_uuid(出), 对))
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+    finally:
+        _SB.enable(原沙箱)
+    return {"情形": 情形们, "沙箱还原": _SB.enabled() == 原沙箱}
+
+
+算式["preset"] = 算_preset
+
+
+# ---------------------------------------------------------------- lint
+# 与 png / preset 那套同形（情形制、工作目录建在 `差分/` 底下、每步比 stdout/返回值/异常、
+# 最后比整棵树），只多三处：
+#   · 语料自带 `{"@造文本@": [头, 次数]}` ⇒ `头 + "汉" * 次数`：造 2000/2001 字的单轮分界
+#     与 8000/16000 字的长文本（配 `%.2f` / `%.3f` 的半值取偶）；
+#   · 语料自带 `{"@标准输出@": true}` ⇒ 这个位置参数传 `print` —— `体检` 的 out 是第 2 个
+#     位置参，语料递不了函数，只能这样塞进去（它**不进** `rec["参数"]`，否则没法序列化）；
+#   · 两处**已申报差异**在下面本地折（不动共享的 `错文本`）：坏 .json 里嵌的解析器原文、
+#     文件不存在时 Python / Node 的错类名与措辞。
+_折错lint = re.compile(r"(这个 \.json 读不出来：)[\s\S]*")
+_折错lint文件 = re.compile(r"^(?:FileNotFoundError|Error): (?:\[Errno \d+\]|ENOENT)[\s\S]*")
+
+
+def _展文本(x):
+    if isinstance(x, dict) and list(x.keys()) == ["@造文本@"]:
+        头, 次 = x["@造文本@"]
+        return str(头) + "汉" * int(次)
+    if isinstance(x, dict):
+        return {k: _展文本(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_展文本(v) for v in x]
+    return x
+
+
+def _折文本lint(x):
+    if isinstance(x, str):
+        return _折错lint文件.sub("<文件系统错>", _折错lint.sub(r"\1<解析器说>", x))
+    if isinstance(x, dict):
+        return {k: _折文本lint(v) for k, v in x.items()}
+    if isinstance(x, list):
+        return [_折文本lint(v) for v in x]
+    return x
+
+
+def _树lint(工作):
+    """比树，但把 `main -o` 写出来的那份报告换成**正文**再比。
+
+    报告正文里嵌着源文件的**绝对路径**，而那个路径每次 mkdtemp 都不一样 —— sha1 折不掉。
+    换成正文以后，外层 `_换路径` 会把工作目录整个替换成 `<工作>`，两侧就对得上了。
+    """
+    树 = _树(工作)
+    for 项 in 树:
+        名 = 项["路径"].split("/")[-1]
+        if 名.startswith("报告") and 名.endswith(".md"):
+            del 项["sha1"]
+            项["文本"] = _净文本((工作 / 项["路径"]).read_text(encoding="utf-8"))
+    return 树
+
+
+def 算_lint(料: dict) -> dict:
+    """跑 lint（正文体检）：常量与六条正则的命中、六个查* 函数、体检 的打印与三条结尾、
+    读 的三种输入与两条异常支、main 的 argv 分派与 `-o` 报告落盘，最后比整棵工作树。
+    """
+    import contextlib
+    import io
+    import shutil
+
+    from forge import lint as LI
+    from forge import sandbox as _SB
+
+    原沙箱 = _SB.enabled()
+    _SB.enable(False)
+    情形们 = []
+    try:
+        for 情形 in 料["情形"]:
+            工作 = Path(tempfile.mkdtemp(prefix="_tmp_lint-", dir=str(Path(__file__).resolve().parent)))
+            对 = [(str(工作), "<工作>"), (str(工作).replace("\\", "\\\\"), "<工作>")]
+            try:
+                预置 = 情形.get("预置") or {}
+                for 名 in 预置.get("目录") or []:
+                    (工作 / 名).mkdir(parents=True, exist_ok=True)
+                for 名, 文 in (预置.get("文件") or {}).items():
+                    p = 工作 / 名
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_bytes(_预置文(_展文本(文)))
+
+                出: dict = {"名": 情形.get("名"), "步": []}
+                for 步 in 情形["操作"]:
+                    原参 = 步["参数"] if "参数" in 步 else []
+                    显示参: list = []
+                    调用参: list = []
+                    for a in (原参 if isinstance(原参, list) else [原参]):
+                        v = _展文本(a)
+                        if isinstance(v, dict) and list(v.keys()) == ["@标准输出@"]:
+                            显示参.append("<标准输出>")
+                            调用参.append(print)
+                        else:
+                            w = 出参数(v, 工作, 根)
+                            显示参.append(w)
+                            调用参.append(w)
+                    buf = io.StringIO()
+                    rec: dict = {"调用": 步["调用"], "参数": _动(显示参)}
+                    try:
+                        with contextlib.redirect_stdout(buf):
+                            回 = getattr(LI, 步["调用"])(*调用参)
+                        rec["回"] = _动(动回(list(回) if isinstance(回, tuple) else 回))
+                        rec["错"] = None
+                    except Exception as exc:  # noqa: BLE001
+                        rec["回"] = None
+                        rec["错"] = 错文本(步["调用"], exc)
+                    rec["出"] = _净文本(buf.getvalue())
+                    出["步"].append(rec)
+                出["树"] = _树lint(工作)
+            finally:
+                shutil.rmtree(工作, ignore_errors=True)
+            情形们.append(_换路径(_折文本lint(收_uuid(出)), 对))
+    finally:
+        _SB.enable(原沙箱)
+
+    正则 = []
+    for 试 in 料.get("正则") or []:
+        条 = getattr(LI, 试["名"])
+        if isinstance(条, str):
+            正则.append({"名": 试["名"], "串": 条})
+            continue
+        正则.append({
+            "名": 试["名"],
+            "样本": 试["样本"],
+            "中": [[[m.start(), m.group()] for m in 条.finditer(s)] for s in 试["样本"]],
+        })
+    return {
+        "汉字": LI.汉字,
+        "标准": [list(x) for x in LI.标准],
+        "正则": 正则,
+        "情形": 情形们,
+        "沙箱还原": _SB.enabled() == 原沙箱,
+    }
+
+
+算式["lint"] = 算_lint
+
+
 def main(argv):
     要跑的 = argv[1:] or sorted(算式)
     黄金目录.mkdir(parents=True, exist_ok=True)
