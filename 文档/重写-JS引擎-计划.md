@@ -144,18 +144,25 @@ JS 版只在差分全绿之后才允许成为默认路径。
 
 ```
 E:\workGZQ\制卡工具\
-  forgejs\               ← 新引擎（零依赖 ESM）
-    manifest.json        ← 手机端插件形态
-    cordis.yml
-    index.mjs            ← 插件入口（注册 cardforge 工具）
-    lib\*.mjs            ← 引擎模块
-    tests\*.mjs
+  forgejs\                    ← 新引擎（零依赖 ESM）· **真源只在这里**
+    lib\*.mjs                 ← 引擎模块（27 个，差分逐字节绿）
+    forge.mjs                 ← 命令层（33 条命令）
+    cli.mjs                   ← 仓库内薄壳（它要旁边有 forge.py，手机壳不搬它）
+  插件\制卡工坊-手机\          ← 手机壳（**自包含**，由 forgejs 同步而来，2026-10-16 建成）
+    manifest.json             ← schemaVersion 1 · id eleckoi-cardforge · files 白名单 88 条
+    cordis.yml                ← 照 APK 内置插件那份形状
+    制卡工坊.mjs              ← Host 入口：注册 cardforge 工具，引擎在宿主进程里跑
+    README.md                 ← 装机与维护说明
+    forgejs\ assets\ samples\  ← 同步产物，别在壳里手改
+  插件\制卡工坊\              ← 桌面壳（package.json ＋ cordis.patch.yml，**当前仍走 Python**）
   差分\
     语料\  黄金\
     出黄金.py   比一比.mjs
 ```
 
 `forgejs/` 与 Python 版**并存**，先在 `forgejs` 里跑通差分，再谈换默认路径。
+**手机壳是「同步产物」**：引擎只在 `forgejs\` 改，改完跑 `node 插件\同步手机壳.mjs` 推过去
+（脚本会按落盘结果重写 `manifest.json` 的 `files`）；验证跑 `node 插件\手机壳自测.mjs`。
 
 ---
 

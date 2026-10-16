@@ -1,0 +1,44 @@
+[
+  {
+    "name": "骰子显示 · 羊皮卷（对抗 · 大成功）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^\\n▸▶]{1,80}?)\\s*▸\\s*([^\\n▶]{1,80}?)\\s*▶\\s*大成功/g",
+    "replacement": "<div style=\"border:1px solid #c9a227;border-left:3px solid #ad8527;border-radius:5px;background:linear-gradient(150deg,#fdf7e4 0%,#f3e5b8 62%,#e9d59b 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#ad8527;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 <b style=\"color:#8d2a22\">▸</b> <span style=\"color:#6b5a3e\">$3</span></div><div style=\"margin-top:4px;border-top:1px solid #d8bd6a;padding-top:4px;font-weight:700;color:#8a6410;letter-spacing:.06em\">▶ 大成功</div></div>",
+    "order": 25
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（对抗 · 大失败）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^\\n▸▶]{1,80}?)\\s*▸\\s*([^\\n▶]{1,80}?)\\s*▶\\s*大失败/g",
+    "replacement": "<div style=\"border:1px solid #a87f6d;border-left:3px solid #6b1f16;border-radius:5px;background:linear-gradient(150deg,#f7ece5 0%,#e9d5c7 62%,#dcc0ae 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#8d2a22;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 <b style=\"color:#8d2a22\">▸</b> <span style=\"color:#6b5a3e\">$3</span></div><div style=\"margin-top:4px;border-top:1px solid #c9a08c;padding-top:4px;font-weight:700;color:#6b1f16;letter-spacing:.06em\">▶ 大失败</div></div>",
+    "order": 26
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（带DC · 大成功）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^▶\\n]{1,80}?)\\s*▶\\s*(?:DC|难度)\\s*(\\d+)\\s*[·、,，:：\\-—]*\\s*大成功/g",
+    "replacement": "<div style=\"border:1px solid #c9a227;border-left:3px solid #ad8527;border-radius:5px;background:linear-gradient(150deg,#fdf7e4 0%,#f3e5b8 62%,#e9d59b 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#ad8527;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 ▶ DC $3 · <b style=\"color:#8a6410\">大成功</b></div></div>",
+    "order": 27
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（带DC · 大失败）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^▶\\n]{1,80}?)\\s*▶\\s*(?:DC|难度)\\s*(\\d+)\\s*[·、,，:：\\-—]*\\s*大失败/g",
+    "replacement": "<div style=\"border:1px solid #a87f6d;border-left:3px solid #6b1f16;border-radius:5px;background:linear-gradient(150deg,#f7ece5 0%,#e9d5c7 62%,#dcc0ae 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#8d2a22;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 ▶ DC $3 · <b style=\"color:#6b1f16\">大失败</b></div></div>",
+    "order": 28
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（对抗）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^\\n▸▶]{1,80}?)\\s*▸\\s*([^\\n▶]{1,80}?)\\s*▶\\s*(大成功|大失败|胜|负|平|成功|失败)/g",
+    "replacement": "<div style=\"border:1px solid #a3874f;border-left:3px solid #8d2a22;border-radius:5px;background:linear-gradient(150deg,#f8f0dc 0%,#efe1be 62%,#e1cea4 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#ad8527;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 <b style=\"color:#8d2a22\">▸</b> <span style=\"color:#6b5a3e\">$3</span></div><div style=\"margin-top:4px;border-top:1px dashed #c8b07a;padding-top:4px;font-weight:700\">▶ $4</div></div>",
+    "order": 29
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（带DC）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([^▶\\n]{1,80}?)\\s*▶\\s*(?:DC|难度)\\s*(\\d+)\\s*[·、,，:：\\-—]*\\s*(大成功|大失败|成功|失败)/g",
+    "replacement": "<div style=\"border:1px solid #a3874f;border-left:3px solid #8d2a22;border-radius:5px;background:linear-gradient(150deg,#f8f0dc 0%,#efe1be 62%,#e1cea4 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#ad8527;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2 ▶ DC $3 · <b>$4</b></div></div>",
+    "order": 30
+  },
+  {
+    "name": "骰子显示 · 羊皮卷（兜底）",
+    "pattern": "/〔骰·([^〕]{1,16})〕\\s*([0-9dD][^\\n]{0,119})/g",
+    "replacement": "<div style=\"border:1px solid #a3874f;border-left:3px solid #ad8527;border-radius:5px;background:linear-gradient(150deg,#f8f0dc 0%,#efe1be 62%,#e1cea4 100%);color:#3a2a19;font-family:Georgia,serif;font-size:.94em;line-height:1.7;padding:7px 12px;margin:8px 0\"><div style=\"color:#ad8527;font-weight:700;letter-spacing:.08em\">骰 · $1</div><div style=\"margin-top:2px\">$2</div></div>",
+    "order": 31
+  }
+]

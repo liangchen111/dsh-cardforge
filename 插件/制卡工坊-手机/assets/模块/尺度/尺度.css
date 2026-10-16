@@ -1,0 +1,37 @@
+/* ============================================================================
+ * 尺度模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ * ========================================================================== */
+
+.hud-scalehint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  margin-top: 10px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-scalehint__k {
+  color: var(--hud-ink);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.hud-scalehint__v {
+  color: var(--hud-ink-2);
+}
+
+.hud-scalehint__p {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+  opacity: 0.85;
+}

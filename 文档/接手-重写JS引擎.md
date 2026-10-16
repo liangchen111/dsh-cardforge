@@ -64,10 +64,14 @@ python 差分\数覆盖.py           # 数「语料走到了源码里的哪些�
 
 ## 下一步（**搬完了**，剩下的都是「交货」不是「搬」）
 
-1. **端到端实机验证**：在只有 Node 的环境（或手机）上，拿一张真工程跑一遍
-   `node forgejs\cli.mjs new / entry / build / png`，产物与 Python 版逐字节比。
-   差分台只证明了「每个函数等价」，还没证明「整条命令行在无 Python 的机器上跑得起来」。
-2. **决定插件化形态**（`manifest.json` ＋ `cordis.yml` ＋ 纯 `.mjs`，**不进 npm**）—— **要玩家点头再动**。
+1. ~~端到端实机验证~~ **已做（2026-10-16）**：把 PATH 里的 Python 摘干净后（`Get-Command python` 为假），
+   `new / build / png / check / selftest` 五个 rc 全 0、正常出卡出图；两版卡 JSON 都是 114,315 字节。
+   **还差手机真机那一步**（待玩家操作）。
+2. ~~决定插件化形态~~ **已做（2026-10-16，玩家 m02325「做吧」）**：手机壳在
+   `E:\workGZQ\制卡工具\插件\制卡工坊-手机\`（`manifest.json` ＋ `cordis.yml` ＋ `制卡工坊.mjs`
+   ＋ 同步来的 `forgejs\ assets\ samples\`），`node 插件\手机壳自测.mjs` 九条命令全绿。
+   **引擎只在工具根 `forgejs\` 改，改完跑 `node 插件\同步手机壳.mjs` 推过去**（它会重写 `manifest.json` 的 `files`）。
+   桌面壳 `插件\制卡工坊\` **仍走 Python，本轮一个字没动**。
 3. 若只想在手机上改卡、不想背全量：**语料与黄金 27 份全部可复用**，砍子集不必重建差分台。
 
 > **行数以 Python 实测为准**（`forge\` 合计 13,134 行，`forge.py` 3,110 行 / 155,166 字节）—— 别用 PowerShell 的

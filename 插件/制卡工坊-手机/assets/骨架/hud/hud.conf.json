@@ -1,0 +1,29 @@
+{
+  "卡名": "骨架",
+  "id_prefix": "skel",
+  "style_id": "skel-hud-style",
+  "global": "SKEL_HUD",
+  "开场白": {
+    "条目": "fixed-opening-assistant",
+    "正文": "欢迎来到这张骨架卡。\n\n在故事开始之前，请先写下你的名字。\n\n\u200b\u200b\u200b"
+  },
+  "模块": [],
+  "正则": [
+    {
+      "name": "建卡界面 · 羊皮卷",
+      "pattern": "/\\u200B{3}/",
+      "view": "view_create.html",
+      "order": 10
+    },
+    {
+      "name": "面板 · 羊皮卷",
+      "pattern": "〔面板〕",
+      "view": "view_card.html",
+      "order": 20
+    }
+  ],
+  "校验": {
+    "page_max": 400000,
+    "must_contain": ["data-view="]
+  }
+}

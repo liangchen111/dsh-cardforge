@@ -148,7 +148,16 @@
   `preset` 撞到的坑：**`in` 成员测试 ≠ 真值判断** —— `TRIGGER_MODES` 里有**空串**，JS 里 `''` 是假值 ⇒ `!_pick(x,表,null)` 会把合法的 `''` 判成「不收」（Python 原句是 `x not in TRIGGER_MODES`）；**含空串/0 的表一律用成员测试，别用真值判断**。
   - **别用 `git checkout -- <共享文件>` 复原**（2026-10-16 事故 · 已立成接手页第 15 条纪律）：`guard` 子代理为复原自己误加的 BOM 跑了 `git checkout -- 差分/出黄金.py`，把 `plan`／`bundle` 两个**并行**子代理**尚未提交**的 `算_plan`／`算_bundle` ＋ 注册一起抹掉（100,888 → 95,831 字节）；`git log -S`／`git fsck --lost-found --no-reflogs` 全查过 —— **从未进过提交、无 dangling blob ⇒ 不可从 git 恢复**；更阴的是 `跑.py` 不带 `--刷` 时只跑 JS 侧比对 ⇒ **差分仍报 25 绿，绿灯把损坏盖住了**。父级照 `差分\比一比.mjs` 的 JS 侧镜像重写了两个算式：`算_plan` 重建后 `差分\黄金\plan.json` md5 **`CFB869B2AD9EDCE47DF50ED6C08C6DC8`**、`算_bundle` 重建后 `bundle.json` md5 **`5090C4D977938BEDC931FB3D1D060986`**，**两侧都与事故前的黄金逐字节相同**（提交 `e84a4bb`）。
     由此立的四条：① 取回旧文用 `git show HEAD:<路径>` 输出到临时文件再**定点重贴**，**绝不 `git checkout`**；② 并行子代理时**每块交付即刻提交**（未提交的定点追加是最脆的东西）；③ **子代理一旦结束 `send_message` 就到不了**（报 `active teammate "…" not found`，已第二次验证）⇒ 只能自己重建；④ **中文源码一律用 write/edit 工具写、别过 pwsh** —— PowerShell 5.1 的 `Set-Content -Encoding UTF8` 会给无 BOM 的 UTF-8 文件**加 BOM**，`.Replace` 还会一次命中全部 21 处（这正是上面那场事故的起因）。
-  依实测 grep 的依赖链：`plan` · `guard` · `bundle`（要 hud/manual/model/pack/dist/export 六件，**已全绿**）**现在就能开**；`preset` 要 `png`（已绿）。
+  **手机壳（2026-10-16 · 玩家 m02325「做吧」授权后落成）**：`E:\workGZQ\制卡工具\插件\制卡工坊-手机\` ——
+  `manifest.json`（`schemaVersion:1` · id `eleckoi-cardforge` · `cordisConfig:"cordis.yml"` · **`files` 是本插件全部文件的白名单，88 条**）
+  ＋ `cordis.yml`（照 APK 两个内置插件的形状：顶层数组 · `- id:` / `name: ./x.mjs` / `config:`）
+  ＋ `制卡工坊.mjs`（`export const name='cardforge'` · `inject=['tools']` · `apply(ctx, config)`；
+  **用普通对象注册工具，不 import `@deepseek-ai/dsh-tools` 的 `defineTool`** —— 实测 `register()` 只校验 `output.render` 与 schema，
+  且手机上外部插件**拿不到宿主内部包**；引擎在宿主进程内跑、劫持 `process.stdout.write`，无 Python）
+  ＋ 同步来的 `forgejs\ assets\ samples\`（85 个文件）。`node 插件\手机壳自测.mjs` 九条命令全绿。
+  **引擎只在工具根 `forgejs\` 改，改完跑 `node 插件\同步手机壳.mjs` 推过去**（脚本自己按落盘结果重写 `files`；
+  不搬 `forgejs\cli.mjs` —— 它要旁边有 `forge.py`）。桌面壳 `插件\制卡工坊\` **仍走 Python，本轮一个字没动**。
+  手机真机跑一遍那一步**待玩家操作**。
   **行数一律用 Python 数**（`read_bytes().count(b"\n")`，`forge/` 合计 13,134 行）——
   PowerShell 的 `(Get-Content 文件).Count` 按 GBK 读 UTF-8，`draft.py` 会被数成 649（实际 815）。
 - **★ 真「天生不可复现」就走「申报差异 ＋ 折法」，不许删用例**（`png` · 2026-10-16 立的规矩）：

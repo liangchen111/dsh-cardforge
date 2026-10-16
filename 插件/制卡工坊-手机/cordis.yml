@@ -1,0 +1,17 @@
+# 手机壳的 cordis 配置（DSH_HOME 里的插件装载入口）。
+#
+# 形状照 APK 里两个内置插件（`assets/dsh-plugins/`）实测：一个顶层数组，每项
+#   - id   这个插件在宿主里的编号
+#     name 入口文件（相对于本目录）
+#     config 传给 `apply(ctx, config)` 的那个对象
+#
+# `!!js` 可以让某个值是「取环境变量」，内置插件用它做开关：
+#   disabled: !!js "!process.env.ELECKOI_HOST_TOOLS_URL"
+# 本插件不需要开关，两个值都是常量。
+- id: cardforge
+  name: ./制卡工坊.mjs
+  config:
+    # 默认工作目录；留空 ＝ `<用户目录>/Documents/ElecKoi卡库`（没有就自动建）。
+    cwd: ''
+    # 单次命令的墙钟上限（毫秒）。超了不会硬杀（引擎在宿主进程里跑），只在 stderr 里报一句。
+    timeoutMs: 180000

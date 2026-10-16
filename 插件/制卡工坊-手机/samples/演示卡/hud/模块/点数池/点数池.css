@@ -1,0 +1,170 @@
+/* ============================================================================
+ * 点数池模块 · 样式
+ *
+ * 规矩跟 hud.css 一样，只多一条更严的：**只用那三个颜色槽**
+ * （--hud-ink / --hud-ink-2 / --hud-line，定义在 .hud 上）。
+ * 模块不该自带一套配色 —— 一张卡换掉那三个槽，模块得跟着一起变，
+ * 不然接上之后就是一页里两种风格。
+ *
+ * 框、扣子、输入框都用核心那几套类（.hud-input / .hud-btn），
+ * 这里只补这一块自己的演示卡：那一行预算、六格输入、两个小标题、一行状态提示。
+ * ========================================================================== */
+
+.hud-pool {
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--hud-line);
+}
+
+/* 那一行预算：池子名、剩余、可分配/已用、以及它是怎么算出来的 */
+.hud-pool__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 9px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  border-radius: 0 3px 3px 0;
+}
+
+.hud-pool__k {
+  color: var(--hud-ink);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.hud-pool__n {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+/* 超支：加一道下划线，不另立一个颜色 —— 配色只有那三个槽 */
+.hud-pool__n.is-over {
+  border-bottom: 2px double var(--hud-ink);
+}
+
+.hud-pool__of {
+  color: var(--hud-ink-2);
+}
+
+.hud-pool__eq {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  opacity: 0.9;
+}
+
+.hud-pool__eq b {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+/* 六格：窄屏两列、宽屏三列，别让一格挤成一条缝 */
+.hud-pool__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 7px 9px;
+  margin-top: 9px;
+}
+
+.hud-pool__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.hud-pool__cl {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+}
+
+.hud-pool__in {
+  text-align: center;
+}
+
+/* 职业与永久奖励那一行 */
+.hud-pool__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 9px;
+}
+
+.hud-pool__side {
+  display: flex;
+  flex: 1 1 46%;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 120px;
+}
+
+.hud-pool__acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+/* 临时加成那一块：淡一档，跟上面那份「长在身上的」分得开 */
+.hud-pool__addbox {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hud-line);
+}
+
+.hud-pool__al {
+  color: var(--hud-ink-2);
+  font-size: 11.5px;
+  line-height: 1.7;
+}
+
+.hud-pool__cell--add .hud-pool__in {
+  background: rgba(120, 94, 52, 0.04);
+}
+
+.hud-pool__note {
+  margin-top: 8px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.07);
+  border-radius: 0 3px 3px 0;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.hud-pool__note.is-error {
+  border-left-color: #a8442f;
+  background: rgba(168, 68, 47, 0.09);
+  color: #7d3324;
+}
+
+/* 面板上那一行：跟别的小结长得一样，只是多两截 */
+.hud-poolhint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin-top: 10px;
+  padding: 6px 9px;
+  border-left: 2px solid var(--hud-line);
+  background: rgba(120, 94, 52, 0.05);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.hud-poolhint__n {
+  color: var(--hud-ink);
+  font-weight: 700;
+}
+
+.hud-poolhint__of {
+  color: var(--hud-ink-2);
+}
+
+.hud-poolhint__a {
+  margin-left: auto;
+  color: var(--hud-ink-2);
+}
