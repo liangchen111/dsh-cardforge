@@ -20,3 +20,5 @@ dist/
 .forge/回收站/
 
 *.tgz
+.workbuddy/
+
